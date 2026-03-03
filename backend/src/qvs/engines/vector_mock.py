@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, List
 import math
 
-from .base import SearchEngineStrategy, SearchResult
+from . import SearchEngineStrategy, SearchResult
 
 
 class VectorMockEngine(SearchEngineStrategy):
