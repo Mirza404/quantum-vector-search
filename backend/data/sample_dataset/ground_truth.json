@@ -1,0 +1,22 @@
+[
+  {
+    "id": "query_car",
+    "text": "a red sports car parked on a street",
+    "target_id": "car_01"
+  },
+  {
+    "id": "query_planet",
+    "text": "earth photographed from space",
+    "target_id": "planet_02"
+  },
+  {
+    "id": "query_forest",
+    "text": "foggy evergreen forest trail",
+    "target_id": "forest_03"
+  },
+  {
+    "id": "query_robot",
+    "text": "friendly humanoid robot waving",
+    "target_id": "robot_04"
+  }
+]
