@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import List
 
 from qvs.benchmark import load_benchmark_queries
-from qvs.engines.quantum_mock import QuantumMockEngine
-from qvs.engines.vector_mock import VectorMockEngine
+from qvs.engines.faiss_flat import FaissFlatEngine
+from qvs.engines.qiskit_swaptest import QiskitSwapTestEngine
 from qvs.pipeline import EmbeddingCache, MockCLIPEmbeddingGenerator
 from qvs.repository import LocalCSVDataLoader
 
@@ -42,13 +42,13 @@ def main() -> None:
     print(f"Demo query ({demo_query.id}): {demo_query.text}")
 
     engines = [
-        VectorMockEngine(),
-        QuantumMockEngine(seed=42),
+        FaissFlatEngine(dimension=DEMO_DIMENSION),
+        QiskitSwapTestEngine(),
     ]
 
     for engine in engines:
         engine.build_index(vectors=vectors, ids=dataset.ids())
-        result = engine.search(query_vector=query_vector, top_k=3, shots=2048, layers=2)
+        result = engine.search(query_vector=query_vector, top_k=3, shots=2048)
         print(f"\nEngine: {engine.name}")
         print("IDs:", result.ids)
         print("Scores:", result.scores)
