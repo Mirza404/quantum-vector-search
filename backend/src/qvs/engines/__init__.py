@@ -17,7 +17,7 @@ class SearchEngineStrategy(ABC): #Strategy INTERFACE
     @property
     @abstractmethod
     def name(self) -> str:
-        # Human-readable engine identifier (e.g., 'faiss_cosine', 'qiskit_qaoa', 'mock').
+        """Human-readable engine identifier (e.g., 'faiss_cosine', 'qiskit_qaoa', 'mock')."""
 
     @abstractmethod
     def build_index(self, *, vectors: List[List[float]], ids: List[str], **params: Any) -> None:
