@@ -26,7 +26,7 @@ A small but fully wired spike that follows the *Master Architecture Plan*:
 ├── README.md
 └── backend
     ├── data/sample_dataset/
-    │   ├── images/*.jpg      # lightweight placeholders to keep paths stable
+    │   ├── images/*.jpg      # lightweight placeholders
     │   ├── metadata.csv      # id,text,image_path
     │   └── ground_truth.json # 4 predefined benchmark queries
     ├── main.py               # demo entrypoint that loads the dataset + strategies
