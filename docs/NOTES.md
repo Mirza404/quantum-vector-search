@@ -1,22 +1,11 @@
-# MASTER PROJECT DOCUMENT: QUANTUM VECTOR SEARCH
+# Quantum-Enhanced Multi-Modal Vector Search: A Hybrid Database Web App 
 
-## 1. Project Meta-Information
-* **Project Title:** Quantum-Enhanced Multi-Modal Vector Search: A Hybrid Database Web App 
-* **Supervisor:** Dr. Ali Almisreb 
-* **Approval Date:** 27/Feb/2026 
-* **Status:** I confirm that the proposed Graduation Project topic is appropriate in scope and level for a Graduation Project. I further confirm my willingness to supervise this project and work with the listed student(s) on the defined topic, subject to Faculty regulations.
-* **Team Members (Software Engineering Program):**
-    * Elhan Mahmutović (ID: 220302161) 
-    * Mirza Abdulahović (ID: 220302176) 
-    * Adnan Mušanović (ID: 220302237) 
-    * Adna Kikanović (ID: 220302187) 
-
-## 2. Problem Statement & Project Overview
+## Problem Statement & Project Overview
 Modern applications often require similarity search on large amounts of cross-modal data (for example: searching images using text description). Classic vector and embedding methods provide sufficient solutions, however new quantum computing techniques could offer performance and accuracy improvement. In this project, we aim to bridge the gap in existing research by directly comparing classical vector search methods with emerging quantum-based techniques.
 
 We plan to create a hybrid web application that performs cross-modal search using both classical and quantum engines. Results and metrics (accuracy and performance) will be displayed in a web-based dashboard. Since current quantum hardware and simulators operate differently than classical processors, our primary goal is not merely to compare raw execution speed, as this heavily depends on the underlying hardware rather than just the algorithmic implementation. Instead, our empirical study will evaluate accuracy trade-offs, state-preparation overhead (data transition), and scaling behavior to determine when, or it, quantum processing offers theoretical or practical benefits at a small scale. The project scope includes system design, implementation, testing and result analysis. This project combines software engineering implementation with empirical evaluation.
 
-## 3. Objectives & Expected Deliverables
+## Objectives & Expected Deliverables
 **Objectives:**
 * Develop two parallel search engines: classical vector and quantum model, so they can be compared side-by-side.
 * Build a share embedding pipeline that converts text and images into a single space, so their vector representations can be compared.
@@ -29,14 +18,14 @@ We plan to create a hybrid web application that performs cross-modal search usin
 * Comparison between classical and quantum methods.
 * Conclusion about practical benefits and limitations of quantum vector search.
 
-## 4. Core Engineering Philosophy
+## Core Engineering Philosophy
 To ensure project stability and prevent late-stage rewrites, the implementation strictly adheres to the following boundaries:
 * **Modular Monolith:** Everything lives in one Python repository with strictly isolated folders. The web server remains agnostic to quantum math.
 * **API-First Design:** Core logic runs behind a Python web framework (FastAPI/Flask). Hooking up the React frontend requires zero backend changes.
 * **No UI in MVP:** The MVP is driven 100% by an Automated Python Benchmarking Script. No React code is written in this phase.
 * **Strategy Pattern:** Data loading, search engines, and data storage MUST use Interfaces (Base Classes) to allow swapping underlying technologies while keeping the codebase clean and modular.
 
-## 5. System Architecture & Implementation Phases
+## System Architecture & Implementation Phases
 First step in our approach is to convert data into numerical embedding using machine learning models. They will be stored and queried using a classical vector search system like FAISS. We will also implement quantum similarity module using quantum computing frameworks such as Qiskit. Classical vectors will be encoded into quantum states.
 
 ### Phase 1: The Repository Layer (Data Management)
