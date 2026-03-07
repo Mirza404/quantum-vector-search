@@ -51,7 +51,10 @@ Responsible for executing, storing, and compiling the empirical study. Writing d
 * **Direct DB Writes:** We will exclusively write benchmark results directly to a Database. There is no CSV file support.
 * **Granular Storage:** Results from each distinct benchmark run are stored granularly in the DB (e.g., linked to specific run IDs or configuration profiles).
 * **Aggregation to Markdown:** Analysis is decoupled from execution. A dedicated script will read the granular data from the database and aggregate it into a single, human-readable Markdown report (`Report.md`).
-* **Database State Sharing (Docker):** We require a utility script to dump the database state and save the dump file into the repository. This allows any team member to spin up a local Docker database container and instantly load the shared benchmark data.
+* **Strictly Decoupled State Sharing:** To allow team members to share the local database state seamlessly, the infrastructure and database dumps must be strictly decoupled into three isolated layers:
+    1. **Docker Infrastructure:** The container setup (e.g., `docker-compose.yml`) only spins up the raw, empty database engine. It knows nothing about our tables or data.
+    2. **Schema Dump:** A dedicated script/file (`schema.sql`) that only handles creating the empty table structures and relations required for the project.
+    3. **Data Dump:** A separate script/file (`data.sql`) that extracts and loads only the actual benchmark result data. This separation allows team members to safely wipe, update, or share experimental data without breaking or overwriting the underlying database architecture.
 
 ### Phase 5: API & React Dashboard (The Final Deliverables)
 The web application's frontend will be built using React, while we are leaning toward Python for the backend due to its vast ecosystem of libraries that support quantum computing integration.
