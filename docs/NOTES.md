@@ -55,6 +55,7 @@ Responsible for executing, storing, and compiling the empirical study. Writing d
     1. **Docker Infrastructure:** The container setup only spins up the raw, empty database engine. It knows nothing about our tables or data.
     2. **Schema Dump:** A dedicated script/file (`schema.sql`) that only handles creating the empty table structures and relations required for the project.
     3. **Data Dump:** A separate script/file (`data.sql`) that extracts and loads only the actual benchmark result data. This separation allows team members to safely wipe, update, or share experimental data without breaking or overwriting the underlying database architecture.
+* **Isolated Database Directory Structure:** To maintain a clean Modular Monolith, all database infrastructure and dump files must live strictly outside of the Python API. The Python backend only connects to the database; it does not manage its infrastructure. 
 
 ### Phase 5: API & React Dashboard (The Final Deliverables)
 The web application's frontend will be built using React, while we are leaning toward Python for the backend due to its vast ecosystem of libraries that support quantum computing integration.
