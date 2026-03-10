@@ -10,7 +10,7 @@ import numpy as np
 
 @dataclass
 class EmbeddingCacheEntry:
-    text_hash: str
+    content_hash: str
     index: int
 
 
@@ -39,10 +39,12 @@ class EmbeddingCache:
             return None
         with self._manifest_path.open("r", encoding="utf-8") as handle:
             raw = json.load(handle)
-        entries = {
-            _id: EmbeddingCacheEntry(text_hash=entry["text_hash"], index=int(entry["index"]))
-            for _id, entry in raw.get("entries", {}).items()
-        }
+        entries = {}
+        for _id, entry in raw.get("entries", {}).items():
+            content_hash = entry.get("content_hash") or entry.get("text_hash")
+            if content_hash is None:
+                raise ValueError(f"manifest entry {_id} missing content hash")
+            entries[_id] = EmbeddingCacheEntry(content_hash=content_hash, index=int(entry["index"]))
         return EmbeddingCacheSnapshot(dimension=int(raw["dimension"]), entries=entries)
 
     def load_matrix(self) -> np.ndarray | None:
@@ -56,7 +58,7 @@ class EmbeddingCache:
         serializable = {
             "dimension": dimension,
             "entries": {
-                _id: {"text_hash": entry.text_hash, "index": entry.index}
+                _id: {"content_hash": entry.content_hash, "index": entry.index}
                 for _id, entry in entries.items()
             },
         }
