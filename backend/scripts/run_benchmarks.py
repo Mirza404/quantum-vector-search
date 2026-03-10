@@ -11,7 +11,7 @@ import numpy as np
 from qvs.benchmark import BenchmarkResult, CsvMarkdownStorage, load_benchmark_queries
 from qvs.engines.quantum_mock import QuantumMockEngine
 from qvs.engines.vector_mock import VectorMockEngine
-from qvs.pipeline import EmbeddingCache, MockCLIPEmbeddingGenerator
+from qvs.pipeline import CLIPEmbeddingModel, EmbeddingCache
 from qvs.repository import LocalCSVDataLoader
 
 
@@ -56,12 +56,19 @@ def main() -> None:
     parser.add_argument("--ground-truth", default=None, help="Ground-truth JSON (defaults to <dataset>/ground_truth.json)")
     parser.add_argument("--output-dir", default="artifacts/benchmarks", help="Directory for CSV + Markdown outputs")
     parser.add_argument("--metadata", default="metadata.csv", help="Dataset metadata filename")
-    parser.add_argument("--dimensions", nargs="+", type=int, default=[8], help="List of vector dimensions to test")
+    parser.add_argument("--dimensions", nargs="+", type=int, default=[128], help="List of vector dimensions to test")
     parser.add_argument("--top-k", type=int, default=3, help="Number of neighbors to retrieve")
     parser.add_argument("--shots", type=int, default=2048, help="Quantum shots parameter")
     parser.add_argument("--layers", type=int, default=2, help="Quantum layers parameter")
-    parser.add_argument("--seed", type=str, default="mock-clip", help="Seed for embedding generator")
     parser.add_argument("--quantum-seed", type=int, default=42, help="Seed for quantum noise rng")
+    parser.add_argument("--clip-model", default="ViT-B/32", help="CLIP model name for query embeddings")
+    parser.add_argument("--device", default=None, help="Torch device override passed to CLIP")
+    parser.add_argument("--batch-size", type=int, default=16, help="Batch size for CLIP query embedding")
+    parser.add_argument(
+        "--no-normalize",
+        action="store_true",
+        help="Disable L2 normalization for CLIP query embeddings (enabled by default)",
+    )
     args = parser.parse_args()
 
     dataset_dir = Path(args.dataset_dir).resolve()
@@ -90,15 +97,30 @@ def main() -> None:
         markdown_path=output_dir / "Report.md",
     )
 
-    embedder = MockCLIPEmbeddingGenerator(seed=args.seed)
+    clip_model = CLIPEmbeddingModel(
+        model_name=args.clip_model,
+        device=args.device,
+        batch_size=args.batch_size,
+        normalize=not args.no_normalize,
+    )
+    if cached_dim > clip_model.embedding_dimension:
+        raise SystemExit(
+            f"Cache dimension ({cached_dim}) exceeds CLIP output ({clip_model.embedding_dimension}). Rebuild embeddings."
+        )
     dataset_ids = dataset.ids()
+    query_matrix = clip_model.encode_texts([query.text for query in queries])
+    if cached_dim < query_matrix.shape[1]:
+        query_matrix = query_matrix[:, :cached_dim]
+    query_vectors = {
+        query.id: query_matrix[idx].astype(np.float32).tolist() for idx, query in enumerate(queries)
+    }
 
     for dimension in sorted(args.dimensions):
         vectors = _prepare_vectors(matrix, dimension)
         for query in queries:
             # Build query embedding and trim to current dimension
-            query_full = embedder.embed(query.text, dimension=cached_dim)
-            query_vector = query_full[:dimension]
+            full_query_vector = query_vectors[query.id]
+            query_vector = full_query_vector[:dimension]
             for engine in _create_engines(args.quantum_seed):
                 key = (query.id, engine.name, dimension)
                 if storage.has_record(key):
