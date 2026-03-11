@@ -111,13 +111,13 @@ Create a README specific to the backend containing:
 
 ## 9. Execution Convention
 
-All benchmark scripts must be run from inside `backend/src/` using `python3`:
+All benchmark scripts must be run from the `backend/` root using `python3`:
 
 ```bash
-cd backend/src && python3 ../../scripts/run_benchmarks.py
+cd backend && python3 scripts/run_benchmarks.py
 ```
 
-Update all documentation, script headers, and inline comments to reflect this. Never use `python`, always `python3`.
+The script must add `src/` to `sys.path` itself (via `sys.path.insert`) so it works from `backend/` without any `PYTHONPATH` setup. Update the shebang to `#!/usr/bin/env python3`, all documentation, script headers, and inline comments to reflect this. Never use `python`, always `python3`.
 
 ---
 
@@ -127,7 +127,7 @@ The file is the source of truth for the paper and needs to reflect the actual cu
 
 **What to update:**
 
-- Add a **"Current Status"** section near the top that briefly lists which phases are complete, in progress, or pending. This gives an accurate snapshot for writing the paper.
+- Keep the file relevant and updated to always reflect the actual state of the entire `backend/` folder. It is the source of truth for the paper — if the code changes, this file changes too.
 - In **Phase 2 (Embedding Pipeline)**, remove any mention of `build_embeddings.py` and the incremental hash cache — those no longer exist. Describe embeddings as being generated on the fly per benchmark run.
 - In **Phase 4 (Benchmarking Storage)**, confirm the three-layer DB structure described there (`docker-compose.yml`, `schema.sql`, `data.sql` in `db/`) matches what was actually created in item 1 above. Correct any discrepancies.
 - Remove or update any references to CSV files — there is no CSV in the current design.
