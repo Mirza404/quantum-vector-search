@@ -13,9 +13,3 @@ CREATE TABLE IF NOT EXISTS benchmark_results (
     parameters   JSONB       NOT NULL DEFAULT '{}'::jsonb,
     UNIQUE (query_id, engine_name, dimension)
 );
-
-CREATE INDEX IF NOT EXISTS idx_benchmark_results_query
-    ON benchmark_results (query_id, engine_name);
-
-CREATE INDEX IF NOT EXISTS idx_benchmark_results_recorded_at
-    ON benchmark_results (recorded_at DESC);
