@@ -1,0 +1,3 @@
+-- Placeholder for benchmark_results data exports.
+-- Replace this file with `pg_dump --data-only --table=benchmark_results $DSN > db/data.sql`
+-- when you need to share the latest rows with the rest of the team.
