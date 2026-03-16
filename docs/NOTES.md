@@ -1,97 +1,106 @@
-# Quantum-Enhanced Multi-Modal Vector Search: A Hybrid Database Web App 
+# Quantum-Enhanced Multi-Modal Vector Search: A Hybrid Database Web App
 
 ## Problem Statement & Project Overview
 Modern applications often require similarity search on large amounts of cross-modal data (for example: searching images using text description). Classic vector and embedding methods provide sufficient solutions, however new quantum computing techniques could offer performance and accuracy improvement. In this project, we aim to bridge the gap in existing research by directly comparing classical vector search methods with emerging quantum-based techniques.
 
-We plan to create a hybrid web application that performs cross-modal search using both classical and quantum engines. Results and metrics (accuracy and performance) will be displayed in a web-based dashboard. Since current quantum hardware and simulators operate differently than classical processors, our primary goal is not merely to compare raw execution speed, as this heavily depends on the underlying hardware rather than just the algorithmic implementation. Instead, our empirical study will evaluate accuracy trade-offs, state-preparation overhead (data transition), and scaling behavior to determine when, or it, quantum processing offers theoretical or practical benefits at a small scale. The project scope includes system design, implementation, testing and result analysis. This project combines software engineering implementation with empirical evaluation.
+We plan to create a hybrid web application that performs cross-modal search using both classical and quantum engines. Results and metrics will be displayed in a web-based dashboard. Since current quantum hardware and simulators operate differently than classical processors, our primary goal is not to compare raw execution speed — this is meaningless when quantum runs on a classical simulator. Instead, we evaluate accuracy trade-offs, quantum circuit resource cost (circuit depth, qubit count), and scaling behaviour to determine when, or if, quantum processing offers theoretical or practical benefits at a small scale.
 
 ## Objectives & Expected Deliverables
 **Objectives:**
-* Develop two parallel search engines: classical vector and quantum model, so they can be compared side-by-side.
-* Build a share embedding pipeline that converts text and images into a single space, so their vector representations can be compared.
-* Desing and develop interactive web interface that allows users to submit queries and view their results.
+* Develop parallel search engines: classical vector and quantum, so they can be compared side-by-side.
+* Build a shared embedding pipeline that converts text and images into a single space using CLIP.
+* Design and develop an interactive web interface that allows users to submit text queries and view matching images.
 * Provide analysis about results and draw conclusions based on returned metrics.
 
 **Expected Deliverables:**
-* Fully functional web application that demonstrates the cross-modal search.
+* Fully functional web application that demonstrates cross-modal search.
 * Experimental dataset and evaluation pipeline.
 * Comparison between classical and quantum methods.
 * Conclusion about practical benefits and limitations of quantum vector search.
 
 ## Core Engineering Philosophy
-To ensure project stability and prevent late-stage rewrites, the implementation strictly adheres to the following boundaries:
-* **Modular Monolith:** Everything lives in one Python repository with strictly isolated folders. The web server remains agnostic to quantum math.
-* **API-First Design:** Core logic runs behind a Python web framework (FastAPI/Flask). Hooking up the React frontend requires zero backend changes.
-* **No UI in MVP:** The MVP is driven 100% by an Automated Python Benchmarking Script. No React code is written in this phase.
-* **Strategy Pattern:** Data loading, search engines, and data storage MUST use Interfaces (Base Classes) to allow swapping underlying technologies while keeping the codebase clean and modular.
+* **Modular Monolith:** Everything lives in one repository with strictly isolated folders. The web server remains agnostic to quantum math.
+* **API-First Design:** Core logic runs behind FastAPI. Hooking up the React frontend requires zero backend changes.
+* **No UI in MVP:** The MVP is driven 100% by an automated Python benchmarking script.
+* **Strategy Pattern:** Data loading, search engines, and storage use interfaces (base classes) to allow swapping underlying technologies.
+
+---
 
 ## System Architecture & Implementation Phases
-First step in our approach is to convert data into numerical embedding using machine learning models. They will be stored and queried using a classical vector search system like FAISS. We will also implement quantum similarity module using quantum computing frameworks such as Qiskit. Classical vectors will be encoded into quantum states.
 
-### Phase 1: The Repository Layer (Data Management)
+### Phase 1: The Repository Layer (Data Management) ✅
 Responsible for fetching the experimental dataset.
-* **Component:** `BaseDataLoader` interface with a `get_dataset()` method. 
-* **MVP Implementation:** `LocalCSVDataLoader` (reads local images and a CSV mapping text to image paths).
-* **Strict Rule:** NO user uploads for the MVP. An unpredictable dataset corrupts empirical data. A stable, controlled baseline is required.
+* **Component:** `BaseDataLoader` interface with a `get_dataset()` method.
+* **Implementation:** `LocalCSVDataLoader` — reads local images and a CSV mapping text to image paths from `backend/data/sample_dataset/`.
+* **Rule:** No user uploads for the MVP. A stable, controlled baseline is required for reproducible empirical results.
 
-### Phase 2: The On-Demand Embedding Pipeline (The Translator)
-The CLIP-based pipeline converts cross-modal data (text/images) into a shared embedding space whenever a benchmark run starts. There is no preprocessing or cache builder—the harness loads the dataset, encodes images/text with `CLIPEmbeddingModel`, and reuses those vectors throughout the run.
-* **MVP Implementation:** `CLIPEmbeddingModel` (for real CLIP) plus the deterministic `MockCLIPEmbeddingGenerator` for lightweight tests. Both implementations live behind the `EmbeddingGenerator` interface so we can swap models without changing callers.
+### Phase 2: The On-Demand Embedding Pipeline ✅
+CLIP-based pipeline converts cross-modal data (text/images) into a shared embedding space whenever a benchmark run starts. There is no preprocessing or cache — the harness loads the dataset, encodes images and text with `CLIPEmbeddingModel`, and reuses those vectors for the duration of the run.
+* **Implementations:** `CLIPEmbeddingModel` (real CLIP, ViT-B/32) and `MockCLIPEmbeddingGenerator` for lightweight tests. Both live behind the `EmbeddingGenerator` interface.
 
-### Phase 3: The Modular Search Engines (The Core Comparison)
-Two parallel engines strictly adhering to a `BaseSearchEngine` interface.
-* **MVP Implementations:**
-    1. `FAISSEngine`: Classical vector search baseline.
-    2. `QiskitEngine`: Quantum module on a local simulator. Similatiry between vectors will be calculated using quantum operations (like swap test). We plan to execute the comparison on simulators or available cloud-based quantum hardware.
-* **Strict Rule:** Engines MUST accept dynamic parameters via `search(query, params)` (e.g., `dimensions=4`, `shots=1024`, `encoding_type='amplitude'`). Dimensionality reduction (e.g., PCA) must be applied on the fly to prevent RAM crashes on local simulators. Moving to real hardware means passing `hardware='ibm_cloud'`.
+### Phase 3: The Modular Search Engines ✅
+Four engines, all implementing `SearchEngineStrategy` with `build_index()` and `search()`:
 
-### Phase 4: Database Benchmarking Storage, Sharing & Aggregation
-Responsible for executing, storing, and compiling the empirical study. Writing directly to a database simplifies the backend requirements for Phase 5.
-* **The Strategy Pattern:** Data storage MUST use a `BaseBenchmarkStorage` interface (e.g., implemented as `DatabaseStorage`). This keeps database communication clean and decoupled from the search logic.
-* **Direct DB Writes:** We will exclusively write benchmark results directly to a Database. There is no CSV file support.
-* **Granular Storage:** Results from each distinct benchmark run are stored granularly in the DB (e.g., linked to specific run IDs or configuration profiles).
-* **Aggregation to Markdown:** Analysis is decoupled from execution. A dedicated script will read the granular data from the database and aggregate it into a single, human-readable Markdown report (`Report.md`).
-* **Strictly Decoupled State Sharing:** To allow team members to share the local database state seamlessly, the infrastructure and database dumps must be strictly decoupled into three isolated layers:
-    1. **Docker Infrastructure:** The container setup only spins up the raw, empty database engine. It knows nothing about our tables or data.
-    2. **Schema Dump:** A dedicated script/file (`schema.sql`) that only handles creating the empty table structures and relations required for the project.
-    3. **Data Dump:** A separate script/file (`data.sql`) that extracts and loads only the actual benchmark result data. This separation allows team members to safely wipe, update, or share experimental data without breaking or overwriting the underlying database architecture.
-* **Isolated Database Directory Structure:** To maintain a clean Modular Monolith, all database infrastructure and dump files must live strictly outside of the Python API. The Python backend only connects to the database; it does not manage its infrastructure. 
+| Engine | Class | Type |
+|---|---|---|
+| `vector_mock_cosine` | `VectorMockEngine` | Deterministic cosine similarity, brute-force NumPy. Fast baseline. |
+| `faiss_flat_l2` | `FaissFlatEngine` | Real FAISS `IndexFlatL2`. Production-grade classical search. |
+| `quantum_mock_sampler` | `QuantumMockEngine` | Cosine + configurable noise simulating quantum measurement error. No real circuits. |
+| `qiskit_swap_test` | `QiskitSwapTestEngine` | Real Qiskit circuit running a swap test on AerSimulator. |
 
-### Phase 5: API & React Dashboard (The Final Deliverables)
-The web application's frontend will be built using React, while we are leaning toward Python for the backend due to its vast ecosystem of libraries that support quantum computing integration.
-* **The Backend (API):** Exposes endpoints:
-    * `POST /search`: Routes query to both engines in parallel and returns image IDs. When users enter queries, both engines will work in parallel to provide accuracy measurements and metrics.
-    * `GET /api/benchmarks`: Retrieves historical test data directly from the Database.
-* **The Frontend (React - POST-MVP):**
-    * **User Search:** Text bar returning side-by-side images.
-    * **Benchmark Dashboard:** Consumes `/api/benchmarks` to chart empirical data (Accuracy vs. Dimensions, Speed comparisons).
+Active engines are controlled by `backend/config/benchmarks.yaml` — comment out entries to skip without code changes.
 
-## 6. Configuration-Driven Benchmarking Strategy
-We will automate the empirical study using a highly controlled, configuration-driven approach to avoid repetitive work and complex state management.
+### Phase 4: Database Benchmarking Storage ✅
+All benchmark results write directly to PostgreSQL. No CSV files.
 
-### A. The "Ground Truth" Evaluation
-* Uses a JSON test suite of 30-50 predefined text queries, each mapped to a `target_image` (e.g., `image_042.jpg`).
-* **Grading Logic:** The script evaluates the top 3 results from both engines. #1 placement = 100%, lower placements = reduced scores, misses = 0%.
+**Infrastructure (in `db/`, outside Python backend):**
+* `docker-compose.yml` — starts bare Postgres + Adminer web UI (http://localhost:8080). No tables created automatically.
+* `schema.sql` — drops and recreates `benchmark_results`. Run manually after container start.
+* `data.sql` — seeds from a prior export. Run manually. Generated by `db/dump.sh` (uses `pg_dump` inside the container — no local Postgres tools needed).
 
-### B. Configuration Files & Granular Execution
-* **Manual Configurations:** `backend/config/benchmarks.yaml` lists the exact engines, vector dimensions, and query IDs that should run on the next invocation. Comment out lines to skip a dimension/engine without touching Python.
-* **Isolated Runs:** The testing script (`cd backend && python3 scripts/run_benchmarks.py`) executes strictly based on that config file. Each run can target one engine/dimension/query subset at a time, keeping experiments deterministic.
+**`benchmark_results` table columns:**
+`query_id`, `engine_name`, `dimension`, `target_ids`, `top_ids`, `accuracy`, `state_prep_ms`, `search_ms`, `total_ms`, `parameters`, `dataset_size`, `circuit_depth`, `num_qubits`
 
-### C. Granular Data Recording (To Database)
-During an isolated run, the script records:
-1. **Classical (FAISS):** Execution time and returned IDs.
-2. **Quantum (Qiskit):** State-Preparation Time vs. Circuit Execution Time (tracked separately).
-3. **Accuracy:** Computed against the Ground Truth target.
-*The results are then passed to the `BaseBenchmarkStorage` implementation to be saved directly into the database as a distinct dataset for that specific configuration.*
+**Report generation:** `backend/scripts/generate_report.py` queries the DB and writes `backend/docs/benchmark_report.md`.
 
-### D. The Aggregation Script
-Because benchmarks are executed and stored granularly in the DB, a separate Python aggregation script is required. This script will:
-1. Query all the separated benchmark results from the database.
-2. Compile, compare, and analyze the metrics.
-3. Automatically generate the final, aggregated, human-readable Markdown file (`Report.md`).
+### Phase 5: API & React Dashboard (in progress)
+* **Backend (FastAPI):** `POST /search` routes a text query to both engines and returns image IDs. `GET /api/benchmarks` retrieves historical results from the DB.
+* **Frontend (React):** Text search bar returning matching images side-by-side. Benchmark dashboard charting accuracy vs. dimensions, circuit complexity, shots-to-accuracy.
+* **Vector storage:** The live search endpoint requires CLIP embeddings for all dataset images to be stored persistently in PostgreSQL via the **pgvector** extension. See `docs/VECTOR_STORAGE.md` for the implementation plan.
 
-### E. Empirical Metrics Measured
-1. **Accuracy Trade-offs:** The Ground Truth score. Measures accuracy lost/gained by translating classical data into quantum states using probabilities (shots) and dimensionality reduction.
-2. **State-Preparation Overhead:** Time taken to encode classical numerical vectors into qubits (e.g., Amplitude Encoding). Critical to see if data-loading negates the quantum speed advantage.
-3. **Raw Execution Speed:** FAISS search time vs. Qiskit Swap Test circuit + measurement time.
-4. **Scaling Behavior:** How metrics change across our granular runs when vector dimensions increase (e.g., 2 to 4 to 8). Tracks if quantum execution time scales linearly or exponentially.
+---
+
+## Configuration-Driven Benchmarking
+
+`backend/config/benchmarks.yaml` controls every benchmark run:
+* **List sections:** `engines`, `dimensions`, `queries` — comment out entries to skip.
+* **Scalar values:** `top_k` (results per query), `shots` (quantum measurement count), `layers` (variational circuit depth).
+
+CLI flags (`--top-k`, `--shots`, `--layers`) override the YAML values for one-off runs.
+
+Run from the backend root:
+```bash
+cd backend && python3 scripts/run_benchmarks.py
+```
+
+---
+
+## KPIs & Metrics
+
+Cross-engine comparisons use **quality metrics only**. Cross-engine speed comparison is intentionally excluded — the quantum engine runs on a classical simulator, so wall-clock time reflects simulation overhead, not real quantum hardware latency.
+
+**Quality KPIs (cross-engine):**
+| Metric | Description |
+|---|---|
+| Weighted Accuracy | Positional score: 1.0 (rank 1) / 0.66 (rank 2) / 0.33 (rank 3). NDCG-lite. |
+| Recall@K | Did the relevant item appear anywhere in top-K? |
+| MRR | Mean Reciprocal Rank — where did the first relevant result land? |
+
+**Quantum-specific KPIs:**
+| Metric | Description |
+|---|---|
+| Circuit depth | Sequential gate layers — proxy for decoherence risk on real hardware. |
+| Num qubits | Qubits required — proxy for hardware allocation cost. |
+| Shots vs. accuracy | Minimum measurement budget to reach acceptable accuracy. |
+
+**Speed (per-engine only):** Valid to compare dim=64 vs dim=128 *within* the same engine to observe scaling. Not valid across engines.
