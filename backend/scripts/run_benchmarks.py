@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from __future__ import annotations
 
 import argparse
@@ -6,8 +6,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
 from typing import Callable, List
+import sys
 
 import numpy as np
+
+BACKEND_ROOT = Path(__file__).resolve().parent.parent
+SRC_PATH = BACKEND_ROOT / "src"
+if str(SRC_PATH) not in sys.path:
+    sys.path.insert(0, str(SRC_PATH))
 
 from qvs.benchmark import BenchmarkQuery, BenchmarkResult, DatabaseStorage, load_benchmark_queries
 from qvs.engines.quantum_mock import QuantumMockEngine
