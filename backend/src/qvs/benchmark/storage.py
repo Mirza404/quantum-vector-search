@@ -1,12 +1,40 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-import csv
-from dataclasses import dataclass
+import contextlib
+import os
 from pathlib import Path
-from typing import Dict, List
 
 from .models import BenchmarkResult
+
+
+def _load_env_file(path: Path) -> None:
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip("'").strip('"')
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+def _bootstrap_env() -> None:
+    base_path = Path(__file__).resolve()
+    candidates = []
+    for depth in (3, 4):  # backend/, then repo root fallback
+        try:
+            candidate = base_path.parents[depth] / ".env"
+        except IndexError:
+            continue
+        if candidate.exists():
+            candidates.append(candidate)
+    for path in candidates:
+        _load_env_file(path)
+
+
+_bootstrap_env()
 
 
 class BaseBenchmarkStorage(ABC):
@@ -19,97 +47,79 @@ class BaseBenchmarkStorage(ABC):
         ...
 
 
-@dataclass
-class CsvMarkdownStorage(BaseBenchmarkStorage):
-    csv_path: Path
-    markdown_path: Path
+class DatabaseStorage(BaseBenchmarkStorage):
+    """Persist benchmark results inside PostgreSQL."""
 
-    def __post_init__(self) -> None:
-        self.csv_path.parent.mkdir(parents=True, exist_ok=True)
-        self.markdown_path.parent.mkdir(parents=True, exist_ok=True)
-        self._fieldnames = [
-            "timestamp",
-            "query_id",
-            "engine_name",
-            "dimension",
-            "target_id",
-            "top_ids",
-            "accuracy",
-            "state_prep_ms",
-            "search_ms",
-            "total_ms",
-            "parameters",
-        ]
-        if not self.csv_path.exists():
-            with self.csv_path.open("w", newline="", encoding="utf-8") as handle:
-                writer = csv.DictWriter(handle, fieldnames=self._fieldnames)
-                writer.writeheader()
-        self._keys = self._load_existing_keys()
+    def __init__(self, *, dsn: str | None = None, env_var: str = "QVS_BENCHMARK_DSN") -> None:
+        self._dsn = dsn or os.getenv(env_var)
+        if not self._dsn:
+            raise RuntimeError(
+                f"DatabaseStorage requires a PostgreSQL DSN. Set the {env_var} environment variable."
+            )
+        psycopg_mod, json_wrapper = self._load_psycopg()
+        self._json_wrapper = json_wrapper
+        self._conn = psycopg_mod.connect(self._dsn)
+        self._conn.autocommit = True
+
+    @staticmethod
+    def _load_psycopg():
+        try:
+            import psycopg  # type: ignore
+            from psycopg.types import json as psycopg_json  # type: ignore
+        except ImportError as exc:  # pragma: no cover - import guard
+            raise RuntimeError(
+                "DatabaseStorage requires the 'psycopg' package. Install it with `pip install psycopg[binary]`."
+            ) from exc
+        return psycopg, psycopg_json.Json
 
     def has_record(self, key: tuple[str, str, int]) -> bool:
-        return key in self._keys
+        query_id, engine_name, dimension = key
+        sql = """
+            SELECT 1
+            FROM benchmark_results
+            WHERE query_id = %s AND engine_name = %s AND dimension = %s
+            LIMIT 1
+        """
+        with self._conn.cursor() as cursor:
+            cursor.execute(sql, (query_id, engine_name, dimension))
+            return cursor.fetchone() is not None
 
     def append(self, result: BenchmarkResult) -> None:
-        row = result.as_csv_row()
-        with self.csv_path.open("a", newline="", encoding="utf-8") as handle:
-            writer = csv.DictWriter(handle, fieldnames=self._fieldnames)
-            writer.writerow(row)
-        self._keys.add(result.key())
-        self._write_report()
-
-    def _load_existing_keys(self) -> set[tuple[str, str, int]]:
-        keys: set[tuple[str, str, int]] = set()
-        with self.csv_path.open(newline="", encoding="utf-8") as handle:
-            reader = csv.DictReader(handle)
-            for row in reader:
-                try:
-                    keys.add((row["query_id"], row["engine_name"], int(row["dimension"])))
-                except (KeyError, ValueError):
-                    continue
-        return keys
-
-    def _write_report(self) -> None:
-        rows = self._read_rows()
-        if not rows:
-            self.markdown_path.write_text("# Benchmark Report\n\nNo runs recorded yet.\n")
-            return
-        summary: Dict[tuple[str, int], Dict[str, float]] = {}
-        counts: Dict[tuple[str, int], int] = {}
-        for row in rows:
-            key = (row["engine_name"], int(row["dimension"]))
-            counts[key] = counts.get(key, 0) + 1
-            group = summary.setdefault(key, {"accuracy": 0.0, "total_ms": 0.0})
-            group["accuracy"] += float(row["accuracy"])
-            group["total_ms"] += float(row["total_ms"])
-
-        lines = ["# Benchmark Report", "", "## Summary by Engine + Dimension", ""]
-        lines.append("| Engine | Dimension | Runs | Avg Accuracy | Avg Total ms |")
-        lines.append("| ------ | --------- | ---- | ------------ | ------------ |")
-        for (engine, dimension), agg in sorted(summary.items()):
-            count = counts[(engine, dimension)]
-            avg_acc = agg["accuracy"] / count
-            avg_total = agg["total_ms"] / count
-            lines.append(
-                f"| {engine} | {dimension} | {count} | {avg_acc:.3f} | {avg_total:.2f} |"
-            )
-
-        lines.append("")
-        lines.append("## Latest Runs")
-        lines.append("")
-        latest = rows[-10:]
-        lines.append(
-            "| Timestamp | Query | Engine | Dim | Accuracy | Total ms | Targets (top-3) |"
+        sql = """
+            INSERT INTO benchmark_results (
+                recorded_at,
+                query_id,
+                engine_name,
+                dimension,
+                target_id,
+                top_ids,
+                accuracy,
+                state_prep_ms,
+                search_ms,
+                total_ms,
+                parameters
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (query_id, engine_name, dimension) DO NOTHING
+        """
+        payload = (
+            result.timestamp,
+            result.query_id,
+            result.engine_name,
+            result.dimension,
+            result.target_id,
+            self._json_wrapper(result.top_ids),
+            result.accuracy,
+            result.state_prep_ms,
+            result.search_ms,
+            result.total_ms,
+            self._json_wrapper(result.parameters),
         )
-        lines.append("| --------- | ----- | ------ | --- | -------- | --------- | ---------------- |")
-        for row in latest:
-            top_ids = row["top_ids"].replace("\"", "")
-            lines.append(
-                f"| {row['timestamp']} | {row['query_id']} | {row['engine_name']} | {row['dimension']} | "
-                f"{float(row['accuracy']):.3f} | {float(row['total_ms']):.2f} | {top_ids} |"
-            )
-        self.markdown_path.write_text("\n".join(lines))
+        with self._conn.cursor() as cursor:
+            cursor.execute(sql, payload)
 
-    def _read_rows(self) -> List[Dict[str, str]]:
-        with self.csv_path.open("r", newline="", encoding="utf-8") as handle:
-            reader = csv.DictReader(handle)
-            return list(reader)
+    def close(self) -> None:
+        self._conn.close()
+
+    def __del__(self) -> None:  # pragma: no cover - defensive cleanup
+        with contextlib.suppress(Exception):
+            self.close()
