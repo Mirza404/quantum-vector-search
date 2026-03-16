@@ -11,7 +11,7 @@ from typing import Any, Dict, Iterable, List
 class BenchmarkQuery:
     id: str
     text: str
-    target_id: str
+    target_ids: List[str]
 
 
 def load_benchmark_queries(path: Path) -> List[BenchmarkQuery]:
@@ -24,7 +24,7 @@ class BenchmarkResult:
     query_id: str
     engine_name: str
     dimension: int
-    target_id: str
+    target_ids: List[str]
     top_ids: List[str]
     accuracy: float
     state_prep_ms: float | None
@@ -42,7 +42,7 @@ class BenchmarkResult:
             "query_id": self.query_id,
             "engine_name": self.engine_name,
             "dimension": self.dimension,
-            "target_id": self.target_id,
+            "target_ids": json.dumps(self.target_ids),
             "top_ids": json.dumps(self.top_ids),
             "accuracy": f"{self.accuracy:.4f}",
             "state_prep_ms": f"{self.state_prep_ms:.4f}" if self.state_prep_ms is not None else "",

@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS benchmark_results (
     query_id     TEXT        NOT NULL,
     engine_name  TEXT        NOT NULL,
     dimension    INTEGER     NOT NULL,
-    target_id    TEXT        NOT NULL,
+    target_ids   JSONB       NOT NULL,
     top_ids      JSONB       NOT NULL,
     accuracy     DOUBLE PRECISION NOT NULL,
     state_prep_ms DOUBLE PRECISION,

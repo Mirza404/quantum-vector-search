@@ -26,15 +26,19 @@ class BenchmarkSelection:
 CONFIG_KEYS = {"engines", "dimensions", "queries"}
 
 
-def _accuracy_score(target_id: str, ranked_ids: List[str]) -> float:
+def _accuracy_score(target_ids: List[str], ranked_ids: List[str]) -> float:
     weights = [1.0, 0.66, 0.33]
-    try:
-        idx = ranked_ids.index(target_id)
-    except ValueError:
+    best_idx: int | None = None
+    for target in target_ids:
+        try:
+            idx = ranked_ids.index(target)
+        except ValueError:
+            continue
+        if best_idx is None or idx < best_idx:
+            best_idx = idx
+    if best_idx is None or best_idx >= len(weights):
         return 0.0
-    if idx >= len(weights):
-        return 0.0
-    return weights[idx]
+    return weights[best_idx]
 
 
 def _prepare_vectors(matrix: np.ndarray, dimension: int) -> List[List[float]]:
@@ -214,7 +218,7 @@ def main() -> None:
                 search_ms = (perf_counter() - search_start) * 1000
                 total_ms = prep_ms + search_ms
 
-                accuracy = _accuracy_score(query.target_id, result.ids)
+                accuracy = _accuracy_score(query.target_ids, result.ids)
                 parameters = {
                     "dimension": dimension,
                     "top_k": args.top_k,
@@ -227,7 +231,7 @@ def main() -> None:
                         query_id=query.id,
                         engine_name=engine.name,
                         dimension=dimension,
-                        target_id=query.target_id,
+                        target_ids=query.target_ids,
                         top_ids=result.ids,
                         accuracy=accuracy,
                         state_prep_ms=prep_ms if "quantum" in engine.name else 0.0,
