@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 import contextlib
 import os
 from pathlib import Path
 
+from .base import BaseBenchmarkStorage
 from .models import BenchmarkResult
 
 
@@ -35,16 +35,6 @@ def _bootstrap_env() -> None:
 
 
 _bootstrap_env()
-
-
-class BaseBenchmarkStorage(ABC):
-    @abstractmethod
-    def has_record(self, key: tuple[str, str, int]) -> bool:
-        ...
-
-    @abstractmethod
-    def append(self, result: BenchmarkResult) -> None:
-        ...
 
 
 class DatabaseStorage(BaseBenchmarkStorage):
