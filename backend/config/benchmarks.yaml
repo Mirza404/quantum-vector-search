@@ -1,0 +1,16 @@
+# Controls which (engine, dimension, query) combinations run during benchmarks.
+# Comment out entries to skip them without touching the Python code.
+
+engines:
+  - vector_mock_cosine
+  - quantum_mock_sampler
+
+dimensions:
+  - 64
+  - 128
+
+queries:
+  - query_car
+  - query_planet
+  - query_forest
+  - query_robot
