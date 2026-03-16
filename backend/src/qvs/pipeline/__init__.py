@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-from .embedding import (
-    CLIPEmbeddingModel,
-    CLIPTextEmbeddingGenerator,
-    EmbeddingGenerator,
-    MockCLIPEmbeddingGenerator,
-)
+from .base import EmbeddingGenerator
+from .clip_model import CLIPEmbeddingModel, CLIPTextEmbeddingGenerator
+from .mock_clip import MockCLIPEmbeddingGenerator
 
 __all__ = [
-    "CLIPEmbeddingModel",
-    "CLIPTextEmbeddingGenerator",
     "EmbeddingGenerator",
     "MockCLIPEmbeddingGenerator",
+    "CLIPEmbeddingModel",
+    "CLIPTextEmbeddingGenerator",
 ]
