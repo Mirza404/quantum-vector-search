@@ -31,6 +31,9 @@ class BenchmarkResult:
     search_ms: float
     total_ms: float
     parameters: Dict[str, Any] = field(default_factory=dict)
+    dataset_size: int = 0
+    circuit_depth: int | None = None
+    num_qubits: int | None = None
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def key(self) -> tuple[str, str, int]:

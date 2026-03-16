@@ -1,4 +1,6 @@
-CREATE TABLE IF NOT EXISTS benchmark_results (
+DROP TABLE IF EXISTS benchmark_results;
+
+CREATE TABLE benchmark_results (
     id           BIGSERIAL PRIMARY KEY,
     recorded_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     query_id     TEXT        NOT NULL,
@@ -11,5 +13,8 @@ CREATE TABLE IF NOT EXISTS benchmark_results (
     search_ms    DOUBLE PRECISION NOT NULL,
     total_ms     DOUBLE PRECISION NOT NULL,
     parameters   JSONB       NOT NULL DEFAULT '{}'::jsonb,
+    dataset_size INTEGER     NOT NULL DEFAULT 0,
+    circuit_depth INTEGER,
+    num_qubits   INTEGER,
     UNIQUE (query_id, engine_name, dimension)
 );

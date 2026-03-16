@@ -87,8 +87,11 @@ class DatabaseStorage(BaseBenchmarkStorage):
                 state_prep_ms,
                 search_ms,
                 total_ms,
-                parameters
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                parameters,
+                dataset_size,
+                circuit_depth,
+                num_qubits
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (query_id, engine_name, dimension) DO NOTHING
         """
         payload = (
@@ -103,6 +106,9 @@ class DatabaseStorage(BaseBenchmarkStorage):
             result.search_ms,
             result.total_ms,
             self._json_wrapper(result.parameters),
+            result.dataset_size,
+            result.circuit_depth,
+            result.num_qubits,
         )
         with self._conn.cursor() as cursor:
             cursor.execute(sql, payload)

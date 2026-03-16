@@ -1,16 +1,43 @@
 # Controls which (engine, dimension, query) combinations run during benchmarks.
-# Comment out entries to skip them without touching the Python code.
+# Comment out any entry to skip it without touching Python code.
 
+# Available engines:
+#   vector_mock_cosine  — deterministic cosine similarity (no index, brute-force). Fast baseline.
+#   faiss_flat_l2       — real FAISS IndexFlatL2 index. Production-grade classical search.
+#   quantum_mock_sampler — cosine similarity + configurable noise to simulate quantum measurement
+#                          error. Uses shots/layers below. No real quantum hardware.
+#   qiskit_swap_test    — real Qiskit circuit running a swap test on AerSimulator.
+#                         Measures vector similarity via quantum overlap. Slow on large datasets.
 engines:
   - vector_mock_cosine
   - quantum_mock_sampler
+  # - faiss_flat_l2
+  # - qiskit_swap_test
 
+# Embedding dimensions to benchmark. Each engine is run once per dimension.
+# Higher dimensions = richer embeddings but slower search.
 dimensions:
   - 64
   - 128
 
+# Query IDs to run. Must match entries in data/sample_dataset/ground_truth.json.
 queries:
   - query_car
   - query_planet
   - query_forest
   - query_robot
+
+# Number of results each engine should return per query.
+# Affects Recall@K and MRR — a result outside top_k is treated as a miss.
+top_k: 3
+
+# Number of quantum circuit measurement shots per query.
+# More shots = more accurate results but higher cost on real hardware.
+# Only used by quantum_mock_sampler and qiskit_swap_test.
+shots: 2048
+
+# Number of variational layers in the quantum circuit.
+# More layers = deeper circuit (higher circuit_depth) and potentially better accuracy,
+# but increases decoherence risk on real hardware.
+# Only used by quantum_mock_sampler.
+layers: 2

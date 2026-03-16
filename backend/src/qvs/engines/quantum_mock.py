@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import random
 from typing import Any, List
 
@@ -15,6 +16,7 @@ class QuantumMockEngine(SearchEngineStrategy):
         self._rng = random.Random(seed)
         self._matrix: np.ndarray | None = None
         self._ids: List[str] = []
+        self._num_qubits: int = 0
 
     @property
     def name(self) -> str:
@@ -30,6 +32,9 @@ class QuantumMockEngine(SearchEngineStrategy):
         norms[norms == 0.0] = 1.0
         self._matrix = matrix / norms
         self._ids = ids
+        # Theoretical qubit count: amplitude encoding requires ceil(log2(n)) qubits
+        # to represent n items in superposition.
+        self._num_qubits = math.ceil(math.log2(max(len(ids), 2)))
 
     def search(
         self,
@@ -55,5 +60,13 @@ class QuantumMockEngine(SearchEngineStrategy):
         best_idx = np.argsort(scores)[-top_k:][::-1]
         ids = [self._ids[i] for i in best_idx]
         best_scores = [float(scores[i]) for i in best_idx]
-        meta = {"shots": shots, "layers": layers, "noise_scale": noise_scale}
+        # circuit_depth proxy: each variational layer acts on all qubits once.
+        circuit_depth = layers * self._num_qubits
+        meta = {
+            "shots": shots,
+            "layers": layers,
+            "noise_scale": noise_scale,
+            "circuit_depth": circuit_depth,
+            "num_qubits": self._num_qubits,
+        }
         return SearchResult(ids=ids, scores=best_scores, meta=meta)

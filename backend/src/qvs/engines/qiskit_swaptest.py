@@ -24,6 +24,8 @@ class QiskitSwapTestEngine(SearchEngineStrategy):
         self._records: List[_EncodedState] = []
         self._ids: List[str] = []
         self._vector_dim: int | None = None
+        self._circuit_depth: int | None = None
+        self._num_qubits: int | None = None
 
     @property
     def name(self) -> str:
@@ -54,6 +56,8 @@ class QiskitSwapTestEngine(SearchEngineStrategy):
         meta = {
             "shots": shots,
             "score_semantics": "swap_test_overlap_probability",
+            "circuit_depth": self._circuit_depth,
+            "num_qubits": self._num_qubits,
         }
         return SearchResult(ids=[i for i, _ in top], scores=[s for _, s in top], meta=meta)
 
@@ -92,6 +96,9 @@ class QiskitSwapTestEngine(SearchEngineStrategy):
             circuit.cswap(ancilla, ql, qr)
         circuit.h(ancilla)
         circuit.measure(ancilla, 0)
+        if self._circuit_depth is None:
+            self._circuit_depth = circuit.depth()
+            self._num_qubits = circuit.num_qubits
         job = self._backend.run(circuit, shots=shots)
         result = job.result()
         counts = result.get_counts()
