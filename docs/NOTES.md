@@ -34,9 +34,9 @@ Responsible for fetching the experimental dataset.
 * **MVP Implementation:** `LocalCSVDataLoader` (reads local images and a CSV mapping text to image paths).
 * **Strict Rule:** NO user uploads for the MVP. An unpredictable dataset corrupts empirical data. A stable, controlled baseline is required.
 
-### Phase 2: The Incremental Embedding Pipeline (The Translator)
-The ML pipeline (e.g., CLIP) that converts cross-modal data (text/images) into a single shared embedding space.
-* **MVP Implementation:** A standalone setup script running before the main server to process and save the dataset embeddings manually, avoiding repetitive model execution.
+### Phase 2: The On-Demand Embedding Pipeline (The Translator)
+The CLIP-based pipeline converts cross-modal data (text/images) into a shared embedding space whenever a benchmark run starts. There is no preprocessing or cache builder—the harness loads the dataset, encodes images/text with `CLIPEmbeddingModel`, and reuses those vectors throughout the run.
+* **MVP Implementation:** `CLIPEmbeddingModel` (for real CLIP) plus the deterministic `MockCLIPEmbeddingGenerator` for lightweight tests. Both implementations live behind the `EmbeddingGenerator` interface so we can swap models without changing callers.
 
 ### Phase 3: The Modular Search Engines (The Core Comparison)
 Two parallel engines strictly adhering to a `BaseSearchEngine` interface.
@@ -74,8 +74,8 @@ We will automate the empirical study using a highly controlled, configuration-dr
 * **Grading Logic:** The script evaluates the top 3 results from both engines. #1 placement = 100%, lower placements = reduced scores, misses = 0%.
 
 ### B. Configuration Files & Granular Execution
-* **Manual Configurations:** We will define exact benchmark parameters (e.g., target engine, dimensions, shots) inside configuration files edited by us *before* running the scripts.
-* **Isolated Runs:** The testing script executes strictly based on the provided config file. You can run one specific benchmark at a time (e.g., running *only* "Quantum 2 dim" or *only* "Classical Vector").
+* **Manual Configurations:** `backend/config/benchmarks.yaml` lists the exact engines, vector dimensions, and query IDs that should run on the next invocation. Comment out lines to skip a dimension/engine without touching Python.
+* **Isolated Runs:** The testing script (`cd backend && python3 scripts/run_benchmarks.py`) executes strictly based on that config file. Each run can target one engine/dimension/query subset at a time, keeping experiments deterministic.
 
 ### C. Granular Data Recording (To Database)
 During an isolated run, the script records:
