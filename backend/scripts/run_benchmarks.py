@@ -8,10 +8,10 @@ from typing import List
 
 import numpy as np
 
-from qvs.benchmark import BenchmarkResult, CsvMarkdownStorage, load_benchmark_queries
+from qvs.benchmark import BenchmarkResult, DatabaseStorage, load_benchmark_queries
 from qvs.engines.quantum_mock import QuantumMockEngine
 from qvs.engines.vector_mock import VectorMockEngine
-from qvs.pipeline import CLIPEmbeddingModel, EmbeddingCache
+from qvs.pipeline import CLIPEmbeddingModel
 from qvs.repository import LocalCSVDataLoader
 
 
@@ -31,17 +31,6 @@ def _prepare_vectors(matrix: np.ndarray, dimension: int) -> List[List[float]]:
     return truncated.tolist()
 
 
-def _ensure_cache(cache_dir: Path) -> tuple[np.ndarray, int]:
-    cache = EmbeddingCache(cache_dir)
-    snapshot = cache.load()
-    if not snapshot:
-        raise SystemExit(f"No embedding cache found in {cache_dir}. Run scripts/build_embeddings.py first.")
-    matrix = cache.load_matrix()
-    if matrix is None:
-        raise SystemExit(f"Embeddings file missing at {cache.embeddings_path()}")
-    return matrix, snapshot.dimension
-
-
 def _create_engines(seed: int | None) -> list:
     return [
         VectorMockEngine(),
@@ -49,12 +38,15 @@ def _create_engines(seed: int | None) -> list:
     ]
 
 
+def _encode_dataset_vectors(model: CLIPEmbeddingModel, image_paths: List[Path]) -> np.ndarray:
+    matrix = model.encode_images(image_paths)
+    return matrix.astype(np.float32, copy=False)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Automated benchmarking harness")
     parser.add_argument("--dataset-dir", default="data/sample_dataset", help="Dataset directory")
-    parser.add_argument("--cache-dir", default=None, help="Embedding cache directory (defaults to <dataset>/cache)")
     parser.add_argument("--ground-truth", default=None, help="Ground-truth JSON (defaults to <dataset>/ground_truth.json)")
-    parser.add_argument("--output-dir", default="artifacts/benchmarks", help="Directory for CSV + Markdown outputs")
     parser.add_argument("--metadata", default="metadata.csv", help="Dataset metadata filename")
     parser.add_argument("--dimensions", nargs="+", type=int, default=[128], help="List of vector dimensions to test")
     parser.add_argument("--top-k", type=int, default=3, help="Number of neighbors to retrieve")
@@ -72,8 +64,6 @@ def main() -> None:
     args = parser.parse_args()
 
     dataset_dir = Path(args.dataset_dir).resolve()
-    cache_dir = Path(args.cache_dir) if args.cache_dir else dataset_dir / "cache"
-    cache_dir = cache_dir.resolve()
     ground_truth_path = (
         Path(args.ground_truth).resolve()
         if args.ground_truth
@@ -84,39 +74,30 @@ def main() -> None:
     dataset = loader.get_dataset()
     queries = load_benchmark_queries(ground_truth_path)
 
-    matrix, cached_dim = _ensure_cache(cache_dir)
-    max_requested = max(args.dimensions)
-    if cached_dim < max_requested:
-        raise SystemExit(
-            f"Cache dimension ({cached_dim}) is smaller than requested dimension ({max_requested}). Re-run build_embeddings.py."
-        )
-
-    output_dir = Path(args.output_dir).resolve()
-    storage = CsvMarkdownStorage(
-        csv_path=output_dir / "results.csv",
-        markdown_path=output_dir / "Report.md",
-    )
-
     clip_model = CLIPEmbeddingModel(
         model_name=args.clip_model,
         device=args.device,
         batch_size=args.batch_size,
         normalize=not args.no_normalize,
     )
-    if cached_dim > clip_model.embedding_dimension:
+    dataset_matrix = _encode_dataset_vectors(clip_model, [record.image_path for record in dataset.records])
+    dataset_dim = dataset_matrix.shape[1]
+    max_requested = max(args.dimensions)
+    if max_requested > dataset_dim:
         raise SystemExit(
-            f"Cache dimension ({cached_dim}) exceeds CLIP output ({clip_model.embedding_dimension}). Rebuild embeddings."
+            f"Requested dimension ({max_requested}) exceeds dataset embedding dimension ({dataset_dim}). Reduce --dimensions."
         )
     dataset_ids = dataset.ids()
     query_matrix = clip_model.encode_texts([query.text for query in queries])
-    if cached_dim < query_matrix.shape[1]:
-        query_matrix = query_matrix[:, :cached_dim]
+    if query_matrix.shape[1] > dataset_dim:
+        query_matrix = query_matrix[:, :dataset_dim]
     query_vectors = {
         query.id: query_matrix[idx].astype(np.float32).tolist() for idx, query in enumerate(queries)
     }
+    storage = DatabaseStorage()
 
     for dimension in sorted(args.dimensions):
-        vectors = _prepare_vectors(matrix, dimension)
+        vectors = _prepare_vectors(dataset_matrix, dimension)
         for query in queries:
             # Build query embedding and trim to current dimension
             full_query_vector = query_vectors[query.id]
