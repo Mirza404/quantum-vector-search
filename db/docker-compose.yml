@@ -22,15 +22,5 @@ services:
       retries: 5
       start_period: 5s
 
-  adminer:
-    image: adminer:latest
-    container_name: qvs-adminer
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-
 volumes:
   pgdata:
