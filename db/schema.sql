@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS vector;
+
 DROP TABLE IF EXISTS benchmark_results;
 
 CREATE TABLE benchmark_results (
@@ -18,3 +20,13 @@ CREATE TABLE benchmark_results (
     num_qubits   INTEGER,
     UNIQUE (query_id, engine_name, dimension)
 );
+
+DROP TABLE IF EXISTS image_vectors;
+
+CREATE TABLE image_vectors (
+    id          TEXT PRIMARY KEY,
+    embedding   vector(512),   -- CLIP ViT-B/32 output dimension
+    recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX ON image_vectors USING hnsw (embedding vector_cosine_ops);
