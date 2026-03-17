@@ -5,6 +5,7 @@
 --
 -- The TRUNCATE ensures a clean slate before inserting, so this file is safe to re-run.
 TRUNCATE TABLE benchmark_results RESTART IDENTITY;
+TRUNCATE TABLE image_vectors RESTART IDENTITY;
 
 --
 -- PostgreSQL database dump
