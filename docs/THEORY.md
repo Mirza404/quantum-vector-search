@@ -618,12 +618,15 @@ the first relevant result. It is most useful when users care primarily about the
 they see — search engines, question answering, recommendation. A system that always ranks the
 correct answer at position 1 gets MRR = 1.0; always at position 2 gets MRR = 0.5.
 
-**Q: Why not use a larger dataset?**
+**Q: How does dataset size affect the quantum engine's performance and resource cost?**
 A: The quantum engine runs one circuit per dataset image per query on a classical simulator.
 Simulation runtime scales exponentially with qubit count and linearly with shots × dataset size.
-A controlled, small dataset is necessary for reproducible experiments that complete in reasonable
-time. The goal is not to build a production search engine but to study the behaviour of quantum
-vs classical algorithms.
+A controlled, small initial dataset is therefore necessary for reproducible experiments that
+complete in reasonable time. As the dataset grows, the classical overhead of the simulator
+grows proportionally, while the qubit count (set by vector dimension, not dataset size) stays
+fixed. On real quantum hardware, larger datasets would increase the number of circuit executions
+but not the circuit complexity — making dataset size a scheduling concern rather than a
+fundamental quantum resource constraint.
 
 **Q: What is the Strategy Pattern and why is it used?**
 A: The Strategy Pattern encapsulates a family of interchangeable algorithms behind a common
