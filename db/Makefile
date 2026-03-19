@@ -1,4 +1,4 @@
-.PHONY: up down migrate seed dump reset rollback
+.PHONY: up down migrate seed dump reset rollback clean
 
 # Start the database container.
 up:
@@ -29,3 +29,7 @@ reset:
 # Roll back migrations above N.  Usage: make rollback N=2
 rollback:
 	@bash migrate.sh down $(N)
+
+# Truncate all data tables, leaving schema and migration history intact.
+clean:
+	@bash clean.sh

@@ -425,13 +425,19 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    dsn = os.getenv("QVS_BENCHMARK_DSN")
-    if not dsn:
-        raise SystemExit("QVS_BENCHMARK_DSN is not set. Copy backend/.env.example to backend/.env and fill it in.")
+    dsn = (
+        f"postgresql://{os.getenv('DB_USER', 'qvs')}:{os.getenv('DB_PASSWORD', 'qvs')}"
+        f"@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '6432')}"
+        f"/{os.getenv('DB_NAME', 'qvs_benchmarks')}"
+    )
 
     rows = _fetch_rows(dsn)
     if not rows:
-        raise SystemExit("No benchmark results found in the database.")
+        out_path = Path(args.out)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text("# Benchmark Report\n\n_No results yet. Run `python3 scripts/run_benchmarks.py` first._\n")
+        print(f"No results found — empty report written to {out_path}")
+        return
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)

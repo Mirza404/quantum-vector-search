@@ -43,6 +43,7 @@ All db commands run from the `db/` directory.
 | `make seed` | Reset DB to seed state |
 | `make rollback N=2` | Roll back migrations above N |
 | `make dump` | Dump all data to `seeds/` |
+| `make clean` | Truncate all data, keep schema and migrations |
 | `make reset` | Wipe volume and start fresh |
 
 To share results, run `make dump` from `db/` and commit `db/seeds/seed.sql`.
