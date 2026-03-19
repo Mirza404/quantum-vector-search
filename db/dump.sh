@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Dumps all table data into db/seeds/benchmark_results.sql.
+# Dumps all table data into db/seeds/seed.sql.
 # Commit the result so other contributors get your latest data on their next pull.
 # Usage: bash db/dump.sh
-#        make db-dump
+#        make dump
 
 set -euo pipefail
 
@@ -12,7 +12,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DB_CONTAINER="${DB_CONTAINER:-qvs-postgres}"
 DB_USER="${DB_USER:-qvs}"
 DB_NAME="${DB_NAME:-qvs_benchmarks}"
-OUT="$SCRIPT_DIR/seeds/benchmark_results.sql"
+OUT="$SCRIPT_DIR/seeds/seed.sql"
 
 # Build a comma-separated list of all data tables (everything except schema_migrations).
 TABLES=$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -A -c \
@@ -21,8 +21,8 @@ TABLES=$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -A -c \
      WHERE schemaname = 'public';")
 
 cat > "$OUT" <<HEADER
--- Source of truth for all table data. make db-seed resets the DB to this state.
--- Update by running: make db-dump
+-- Source of truth for all table data. make seed resets the DB to this state.
+-- Update by running: make dump
 
 TRUNCATE TABLE $TABLES RESTART IDENTITY;
 

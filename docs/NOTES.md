@@ -57,19 +57,19 @@ All benchmark results write directly to PostgreSQL. No CSV files.
 * `docker-compose.yml` — starts `pgvector/pgvector:pg16` + Adminer web UI (http://localhost:8080).
 * `migrations/up/` — numbered SQL files (`1_initial_schema.sql`, …) applied in order by `migrate.sh up`. Filenames are recorded in `schema_migrations` so each runs exactly once.
 * `migrations/down/` — paired rollback scripts with the same filenames. Run in reverse by `migrate.sh down [N]`.
-* `seeds/benchmark_results.sql` — source of truth for all table data. `make db-seed` resets the DB to this exact state. Updated by `make db-dump` and committed so teammates get the latest data on `git pull`.
+* `seeds/seed.sql` — source of truth for all table data. `make seed` resets the DB to this exact state. Updated by `make dump` and committed so teammates get the latest data on `git pull`.
 * `migrate.sh` — `up` applies pending migrations; `down [N]` rolls back everything above N.
 * `seed.sh` — smart seed: rolls back any migrations above the seed's recorded state, loads the seed, then migrates forward. Safe whether the DB is behind or ahead.
-* `dump.sh` — dumps all tables into `db/seeds/`; run via `make db-dump`.
+* `dump.sh` — dumps all tables into `db/seeds/`; run via `make dump`.
 
-**Contributor workflow (from project root):**
+**Contributor workflow (from `db/`):**
 ```bash
-make db-up        # start Postgres, wait for healthcheck
-make db-seed      # rolls back if ahead, loads seed, migrates forward
+make up        # start Postgres, wait for healthcheck
+make seed      # rolls back if ahead, loads seed, migrates forward
 ```
-To share new results: `make db-dump`, commit `db/seeds/benchmark_results.sql`.
+To share new results: `make dump` from `db/`, commit `db/seeds/seed.sql`.
 
-Adding a new migration: create paired `db/migrations/up/N_name.sql` and `db/migrations/down/N_name.sql`, then run `make db-migrate`.
+Adding a new migration: create paired `db/migrations/up/N_name.sql` and `db/migrations/down/N_name.sql`, then run `make migrate`.
 
 **`benchmark_results` table columns:**
 `query_id`, `engine_name`, `dimension`, `target_ids`, `top_ids`, `accuracy`, `state_prep_ms`, `search_ms`, `total_ms`, `parameters`, `dataset_size`, `circuit_depth`, `num_qubits`

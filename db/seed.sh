@@ -16,7 +16,7 @@ DB_CONTAINER="${DB_CONTAINER:-qvs-postgres}"
 DB_USER="${DB_USER:-qvs}"
 DB_NAME="${DB_NAME:-qvs_benchmarks}"
 
-SEED_FILE="$SCRIPT_DIR/seeds/benchmark_results.sql"
+SEED_FILE="$SCRIPT_DIR/seeds/seed.sql"
 
 # Find the highest migration number recorded in the seed's schema_migrations data.
 LAST_N=$(grep -oP "VALUES \('\K\d+(?=_[^']+\.sql')" "$SEED_FILE" | sort -n | tail -1 || true)

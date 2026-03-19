@@ -45,6 +45,6 @@ All db commands run from the `db/` directory.
 | `make dump` | Dump all data to `seeds/` |
 | `make reset` | Wipe volume and start fresh |
 
-To share results, run `make dump` from `db/` and commit `db/seeds/benchmark_results.sql`.
+To share results, run `make dump` from `db/` and commit `db/seeds/seed.sql`.
 
 See `backend/README.md` for package layout, config, and advanced usage.
