@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import os
 from pathlib import Path
+from typing import Iterable
 
 from .base import BaseBenchmarkStorage
 from .models import BenchmarkResult
@@ -112,6 +113,22 @@ class DatabaseStorage(BaseBenchmarkStorage):
         )
         with self._conn.cursor() as cursor:
             cursor.execute(sql, payload)
+
+    def upsert_image_vectors(self, rows: Iterable[tuple[str, list[float]]]) -> int:
+        """Upsert (id, embedding) pairs into image_vectors. Returns the number of rows written."""
+        sql = (
+            "INSERT INTO image_vectors (id, embedding, recorded_at) "
+            "VALUES (%s, %s::vector, NOW()) "
+            "ON CONFLICT (id) DO UPDATE "
+            "SET embedding = EXCLUDED.embedding, recorded_at = EXCLUDED.recorded_at"
+        )
+        formatted = [
+            (image_id, "[" + ", ".join(f"{v:.8f}" for v in vector) + "]")
+            for image_id, vector in rows
+        ]
+        with self._conn.cursor() as cursor:
+            cursor.executemany(sql, formatted)
+        return len(formatted)
 
     def close(self) -> None:
         self._conn.close()

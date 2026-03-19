@@ -1,27 +1,38 @@
 #!/usr/bin/env bash
-# Dumps benchmark_results from the running qvs-postgres container into data.sql.
+# Dumps all table data into db/seeds/benchmark_results.sql.
+# Commit the result so other contributors get your latest data on their next pull.
 # Usage: bash db/dump.sh
+#        make db-dump
 
 set -euo pipefail
 
+CONTAINER="qvs-postgres"
+DB_USER="qvs"
+DB_NAME="qvs_benchmarks"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OUT="$SCRIPT_DIR/data.sql"
+OUT="$SCRIPT_DIR/seeds/benchmark_results.sql"
 
-cat > "$OUT" <<'EOF'
--- Placeholder for benchmark_results data exports.
--- Replace this file with:
---   bash db/dump.sh
--- when you need to share the latest rows with the rest of the team.
---
--- The TRUNCATE ensures a clean slate before inserting, so this file is safe to re-run.
-TRUNCATE TABLE benchmark_results RESTART IDENTITY;
+# Build a comma-separated list of all data tables (everything except schema_migrations).
+TABLES=$(docker exec "$CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -A -c \
+    "SELECT string_agg(tablename, ', ' ORDER BY tablename)
+     FROM pg_tables
+     WHERE schemaname = 'public';")
 
-EOF
+cat > "$OUT" <<HEADER
+-- Source of truth for all table data. make db-seed resets the DB to this state.
+-- Update by running: make db-dump
 
-docker exec qvs-postgres pg_dump \
-  -U qvs -d qvs_benchmarks \
-  --data-only --table=benchmark_results \
-  --no-comments \
-  >> "$OUT"
+TRUNCATE TABLE $TABLES RESTART IDENTITY;
 
-echo "Dumped to $OUT"
+HEADER
+
+docker exec "$CONTAINER" pg_dump \
+    -U "$DB_USER" -d "$DB_NAME" \
+    --data-only \
+    --inserts \
+    --on-conflict-do-nothing \
+    --no-comments \
+    >> "$OUT"
+
+echo "Dumped all tables → $OUT"
+echo "Commit this file to share your results with the team."

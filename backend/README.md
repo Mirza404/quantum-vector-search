@@ -1,50 +1,36 @@
-# Backend README
+# Backend
 
-Python benchmarking harness that exercises classical and quantum-inspired search engines against a tiny sample dataset. Everything runs locally; a PostgreSQL container stores the benchmark rows so teammates can share results.
+Benchmarking harness for classical and quantum-inspired search engines. For setup and running, see the root `README.md`.
 
-## 1. Prerequisites
-- Docker + Docker Compose v2
-- Python 3.12+
-- `pip` for dependency management
+## Package structure
 
-## 2. Spin Up PostgreSQL
-```bash
-cd db
-docker compose up -d
-docker exec -i qvs-postgres psql -U qvs -d qvs_benchmarks < db/schema.sql
-docker exec -i qvs-postgres psql -U qvs -d qvs_benchmarks < db/data.sql  # optional seed
-```
-The container starts bare — tables are not created automatically. `schema.sql` drops and recreates `benchmark_results`; `data.sql` seeds it from a prior export. The DSN defaults to `postgresql://qvs:qvs@localhost:6432/qvs_benchmarks`.
-
-## 3. Install Dependencies & Configure Env
-```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e . --extra-index-url https://download.pytorch.org/whl/cpu
-cp .env.example .env  # sets QVS_BENCHMARK_DSN
-```
-`QVS_BENCHMARK_DSN` is read automatically by `DatabaseStorage`; override it if you run PostgreSQL elsewhere.
-
-## 4. Configure & Run Benchmarks
-1. Edit `backend/config/benchmarks.yaml` to toggle engines, dimensions, and query IDs. Comment out entries you do not want for the next run.
-2. Run the harness from the backend root (it patches `sys.path` automatically):
-   ```bash
-   python3 scripts/run_benchmarks.py
-   ```
-Results are written to the database. To export them as a Markdown report:
-```bash
-python3 scripts/generate_report.py
-```
-This writes `backend/docs/benchmark_report.md` with quality KPIs (weighted accuracy, Recall@K, MRR), quantum circuit complexity metrics, and per-query breakdowns.
-
-## 5. Package Structure
 ```
 src/qvs/
-├── benchmark/   # benchmark dataclasses + storage strategies
-├── engines/     # SearchEngineStrategy base + mock/vector/quantum engines
-├── pipeline/    # Embedding interfaces, CLIP wrapper, deterministic mock
-└── repository/  # Dataset abstractions (LocalCSV loader today)
+├── benchmark/   # dataclasses, storage strategies, DatabaseStorage
+├── engines/     # SearchEngineStrategy base + all four engine implementations
+├── pipeline/    # EmbeddingGenerator interface, CLIPEmbeddingModel, mock
+└── repository/  # DataLoader interface, LocalCSVDataLoader
 ```
 
-Future phases will introduce a FastAPI API and a React dashboard that consumes benchmark history.
+## Configuration
+
+`config/benchmarks.yaml` controls each benchmark run. Comment out entries to skip without changing code.
+
+```yaml
+engines:       # vector_mock_cosine | faiss_flat_l2 | quantum_mock_sampler | qiskit_swap_test
+dimensions:    # truncated from CLIP's 512-dim output
+queries:       # IDs from data/sample_dataset/ground_truth.json
+top_k: 3
+shots: 2048
+layers: 2
+```
+
+CLI flags override the YAML: `--top-k`, `--shots`, `--layers`, `--dimensions`, `--clip-model`, `--device`, `--batch-size`.
+
+## Database
+
+`DatabaseStorage` reads `QVS_BENCHMARK_DSN` from the environment (bootstrapped from `.env`). To override:
+
+```bash
+QVS_BENCHMARK_DSN=postgresql://user:pass@host:5432/db python3 scripts/run_benchmarks.py
+```

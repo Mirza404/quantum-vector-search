@@ -13,8 +13,6 @@ services:
       - "6432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./schema.sql:/sql/schema.sql:ro
-      - ./data.sql:/sql/data.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s

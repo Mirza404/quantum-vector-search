@@ -229,6 +229,8 @@ def main() -> None:
         query.id: query_matrix[idx].astype(np.float32).tolist() for idx, query in enumerate(queries)
     }
     storage = DatabaseStorage()
+    upserted = storage.upsert_image_vectors(zip(dataset_ids, dataset_matrix.tolist()))
+    print(f"[index] upserted {upserted} image vectors into image_vectors")
     engine_names = selection.engines
 
     for dimension in sorted(dimensions):

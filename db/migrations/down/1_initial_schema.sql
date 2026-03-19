@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS image_vectors;
+DROP TABLE IF EXISTS benchmark_results;
+DROP EXTENSION IF EXISTS vector;

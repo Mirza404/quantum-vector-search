@@ -1,63 +1,46 @@
-# Quantum Vector Search (Prototype)
+# Quantum Vector Search
 
-Hybrid research sandbox that compares classical vector search with emerging quantum-inspired engines. The code lives entirely in this repo: a Python benchmarking backend (`backend/`) today, plus a React dashboard that will consume the benchmark API in a future phase.
-
-## Project Areas
-- `backend/` – benchmarking harness with four search engines (vector mock, FAISS, quantum mock, Qiskit swap-test), sample dataset, and a report generator. See `backend/README.md` for the full walkthrough.
-- React dashboard (coming soon) – will visualize the database of benchmark runs once the API layer is built.
+Compares classical and quantum-inspired vector search engines for cross-modal similarity search (text to image). Uses CLIP embeddings and benchmarks four engines against the same dataset. React dashboard planned for a future phase.
 
 ## Quick Start
-1. **Start the database**
-   ```bash
-   cd db
-   docker compose up -d
-   ```
-   This only starts a bare Postgres instance — no tables or data are created automatically.
 
-2. **Init tables**
+**Prerequisites:** Docker + Compose v2, Python 3.12+
+
+1. **Database**
    ```bash
-   docker exec -i qvs-postgres psql -U qvs -d qvs_benchmarks < db/schema.sql
+   make db-up
+   make db-seed
    ```
 
-3. **Seed data**
-   ```bash
-   docker exec -i qvs-postgres psql -U qvs -d qvs_benchmarks < db/data.sql
-   ```
-
-4. **View the database (optional)**
-   Adminer starts alongside Postgres. Open **http://localhost:8080** and log in with:
-   - System: `PostgreSQL`, Server: `postgres`, Username: `qvs`, Password: `qvs`, Database: `qvs_benchmarks`
-
-5. **Install backend dependencies**
+2. **Backend**
    ```bash
    cd backend
-   python3 -m venv .venv
-   source .venv/bin/activate
+   python3 -m venv .venv && source .venv/bin/activate
    pip install -e . --extra-index-url https://download.pytorch.org/whl/cpu
-   cp .env.example .env  # contains QVS_BENCHMARK_DSN
+   cp .env.example .env
    ```
 
-6. **Run benchmarks (configuration-driven)**
+3. **Run benchmarks**
    ```bash
-   cd backend
-   python3 backend/scripts/run_benchmarks.py
+   python3 scripts/run_benchmarks.py
    ```
-   The harness reads `backend/config/benchmarks.yaml` to decide which engines, dimensions, and queries to execute and writes all results to PostgreSQL.
 
-### Generating a benchmark report
+4. **Generate report**
+   ```bash
+   python3 scripts/generate_report.py
+   ```
 
-To export all results from the DB into a Markdown report at `docs/benchmark_report.md`:
-```bash
-python3 backend/scripts/generate_report.py
-```
-The report is written to `backend/docs/benchmark_report.md` and includes an accuracy/speed summary per engine, a breakdown by dimension, and a head-to-head comparison table across all queries.
+## Database
 
-### Sharing benchmark data with the team
+| Command | What it does |
+|---|---|
+| `make db-up` | Start Postgres |
+| `make db-migrate` | Apply pending migrations |
+| `make db-seed` | Reset DB to seed state |
+| `make db-rollback N=2` | Roll back migrations above N |
+| `make db-dump` | Dump all data to `db/seeds/` |
+| `make db-reset` | Wipe volume and start fresh |
 
-To export your local results into `db/data.sql` so teammates can seed from them:
-```bash
-bash db/dump.sh
-```
-This uses `pg_dump` inside the running container — no local Postgres tools needed.
+To share results, run `make db-dump` and commit `db/seeds/benchmark_results.sql`.
 
-Need deeper context, package layout, or tuning instructions? Continue in `backend/README.md`.
+See `backend/README.md` for package layout, config, and advanced usage.
