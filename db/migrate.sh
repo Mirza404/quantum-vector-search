@@ -6,17 +6,19 @@
 
 set -euo pipefail
 
-CONTAINER="qvs-postgres"
-DB_USER="qvs"
-DB_NAME="qvs_benchmarks"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+[ -f "$SCRIPT_DIR/.env" ] && { set -a; source "$SCRIPT_DIR/.env"; set +a; }
+
+DB_CONTAINER="${DB_CONTAINER:-qvs-postgres}"
+DB_USER="${DB_USER:-qvs}"
+DB_NAME="${DB_NAME:-qvs_benchmarks}"
 UP_DIR="$SCRIPT_DIR/migrations/up"
 DOWN_DIR="$SCRIPT_DIR/migrations/down"
 
 COMMAND="${1:-up}"
 
 psql_exec() {
-    docker exec -i "$CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" "$@"
+    docker exec -i "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" "$@"
 }
 
 bootstrap() {

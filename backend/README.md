@@ -29,8 +29,4 @@ CLI flags override the YAML: `--top-k`, `--shots`, `--layers`, `--dimensions`, `
 
 ## Database
 
-`DatabaseStorage` reads `QVS_BENCHMARK_DSN` from the environment (bootstrapped from `.env`). To override:
-
-```bash
-QVS_BENCHMARK_DSN=postgresql://user:pass@host:5432/db python3 scripts/run_benchmarks.py
-```
+Connection is configured via `backend/.env` (copy from `.env.example`). `DatabaseStorage` reads `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` automatically on import.

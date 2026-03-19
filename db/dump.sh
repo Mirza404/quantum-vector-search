@@ -6,14 +6,16 @@
 
 set -euo pipefail
 
-CONTAINER="qvs-postgres"
-DB_USER="qvs"
-DB_NAME="qvs_benchmarks"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+[ -f "$SCRIPT_DIR/.env" ] && { set -a; source "$SCRIPT_DIR/.env"; set +a; }
+
+DB_CONTAINER="${DB_CONTAINER:-qvs-postgres}"
+DB_USER="${DB_USER:-qvs}"
+DB_NAME="${DB_NAME:-qvs_benchmarks}"
 OUT="$SCRIPT_DIR/seeds/benchmark_results.sql"
 
 # Build a comma-separated list of all data tables (everything except schema_migrations).
-TABLES=$(docker exec "$CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -A -c \
+TABLES=$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -A -c \
     "SELECT string_agg(tablename, ', ' ORDER BY tablename)
      FROM pg_tables
      WHERE schemaname = 'public';")
@@ -26,7 +28,7 @@ TRUNCATE TABLE $TABLES RESTART IDENTITY;
 
 HEADER
 
-docker exec "$CONTAINER" pg_dump \
+docker exec "$DB_CONTAINER" pg_dump \
     -U "$DB_USER" -d "$DB_NAME" \
     --data-only \
     --inserts \

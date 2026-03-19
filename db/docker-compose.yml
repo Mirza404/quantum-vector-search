@@ -3,14 +3,14 @@ version: "3.9"
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: qvs-postgres
+    container_name: ${DB_CONTAINER:-qvs-postgres}
     restart: unless-stopped
     environment:
-      POSTGRES_DB: qvs_benchmarks
-      POSTGRES_USER: qvs
-      POSTGRES_PASSWORD: qvs
+      POSTGRES_DB: ${DB_NAME:-qvs_benchmarks}
+      POSTGRES_USER: ${DB_USER:-qvs}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-qvs}
     ports:
-      - "6432:5432"
+      - "${DB_PORT:-6432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

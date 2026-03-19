@@ -19,7 +19,6 @@ from qvs.repository import LocalCSVDataLoader
 
 DEFAULT_DATASET_DIR = BACKEND_ROOT / "data" / "sample_dataset"
 DEFAULT_METADATA_FILENAME = "metadata.csv"
-DEFAULT_DSN_ENV = "QVS_BENCHMARK_DSN"
 DB_BATCH_SIZE = 200
 
 
@@ -36,10 +35,9 @@ def _load_env_file(path: Path) -> None:
 
 
 def _bootstrap_env() -> None:
-    candidates = [BACKEND_ROOT / ".env", BACKEND_ROOT.parent / ".env"]
-    for path in candidates:
-        if path.exists():
-            _load_env_file(path)
+    env_path = BACKEND_ROOT / ".env"
+    if env_path.exists():
+        _load_env_file(env_path)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -50,8 +48,7 @@ def _parse_args() -> argparse.Namespace:
         default=DEFAULT_METADATA_FILENAME,
         help="Metadata CSV filename inside the dataset directory",
     )
-    parser.add_argument("--dsn", default=None, help="PostgreSQL DSN. Overrides env var if set")
-    parser.add_argument("--dsn-env", default=DEFAULT_DSN_ENV, help="Environment variable fallback for the DSN")
+    parser.add_argument("--dsn", default=None, help="PostgreSQL DSN override (overrides individual DB_* env vars)")
     parser.add_argument("--clip-model", default="ViT-B/32", help="CLIP model name")
     parser.add_argument("--device", default=None, help="Torch device for CLIP")
     parser.add_argument("--batch-size", type=int, default=32, help="CLIP batch size for image encoding")
@@ -76,13 +73,15 @@ def _resolve_dataset_dir(path: Path) -> Path:
     return (BACKEND_ROOT / path).resolve()
 
 
-def _resolve_dsn(explicit: str | None, env_var: str) -> str:
+def _resolve_dsn(explicit: str | None) -> str:
     if explicit:
         return explicit
-    dsn = os.getenv(env_var)
-    if dsn:
-        return dsn
-    raise SystemExit(f"Database DSN not provided. Pass --dsn or set the {env_var} environment variable.")
+    host = os.getenv("DB_HOST", "localhost")
+    port = os.getenv("DB_PORT", "6432")
+    name = os.getenv("DB_NAME", "qvs_benchmarks")
+    user = os.getenv("DB_USER", "qvs")
+    password = os.getenv("DB_PASSWORD", "qvs")
+    return f"postgresql://{user}:{password}@{host}:{port}/{name}"
 
 
 def _vector_literal(vector: Sequence[float]) -> str:
@@ -148,7 +147,7 @@ def main() -> None:
     matrix = matrix.astype(np.float32, copy=False)
     print(f"Embeddings dimension: {matrix.shape[1]}")
 
-    dsn = _resolve_dsn(args.dsn, args.dsn_env)
+    dsn = _resolve_dsn(args.dsn)
     import psycopg
 
     with psycopg.connect(dsn) as conn:

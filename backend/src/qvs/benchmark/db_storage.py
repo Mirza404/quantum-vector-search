@@ -22,17 +22,9 @@ def _load_env_file(path: Path) -> None:
 
 
 def _bootstrap_env() -> None:
-    base_path = Path(__file__).resolve()
-    candidates = []
-    for depth in (3, 4):  # backend/, then repo root fallback
-        try:
-            candidate = base_path.parents[depth] / ".env"
-        except IndexError:
-            continue
-        if candidate.exists():
-            candidates.append(candidate)
-    for path in candidates:
-        _load_env_file(path)
+    env_path = Path(__file__).resolve().parents[3] / ".env"  # backend/.env
+    if env_path.exists():
+        _load_env_file(env_path)
 
 
 _bootstrap_env()
@@ -41,15 +33,19 @@ _bootstrap_env()
 class DatabaseStorage(BaseBenchmarkStorage):
     """Persist benchmark results inside PostgreSQL."""
 
-    def __init__(self, *, dsn: str | None = None, env_var: str = "QVS_BENCHMARK_DSN") -> None:
-        self._dsn = dsn or os.getenv(env_var)
-        if not self._dsn:
-            raise RuntimeError(
-                f"DatabaseStorage requires a PostgreSQL DSN. Set the {env_var} environment variable."
-            )
+    def __init__(self, *, dsn: str | None = None) -> None:
         psycopg_mod, json_wrapper = self._load_psycopg()
         self._json_wrapper = json_wrapper
-        self._conn = psycopg_mod.connect(self._dsn)
+        if dsn:
+            self._conn = psycopg_mod.connect(dsn)
+        else:
+            self._conn = psycopg_mod.connect(
+                host=os.getenv("DB_HOST", "localhost"),
+                port=int(os.getenv("DB_PORT", "6432")),
+                dbname=os.getenv("DB_NAME", "qvs_benchmarks"),
+                user=os.getenv("DB_USER", "qvs"),
+                password=os.getenv("DB_PASSWORD", "qvs"),
+            )
         self._conn.autocommit = True
 
     @staticmethod
