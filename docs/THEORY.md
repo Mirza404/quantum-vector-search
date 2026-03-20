@@ -155,10 +155,12 @@ returns the true nearest neighbours. For small datasets (hundreds to thousands o
 it is extremely fast.
 
 The engine stores all vectors as a float32 matrix in memory. On `search()` it calls
-`index.search(query, top_k)` which returns distances and positional indices in one C++ call.
+`index.search(query, top_k)` which returns distances and positional indices in a single call.
+The project code is Python — FAISS is used as a Python library (`import faiss`); the C++ is
+an internal implementation detail of the library itself, not something the project code touches.
 
-Why FAISS over pure NumPy? FAISS uses vectorised CPU instructions (AVX2, SSE4), multithreading,
-and is written in C++. For larger datasets it also offers approximate indices (IVF, HNSW).
+Why FAISS over pure NumPy? FAISS uses vectorised CPU instructions (AVX2, SSE4) and
+multithreading under the hood. For larger datasets it also offers approximate indices (IVF, HNSW).
 
 ### 5.3 HNSW (in pgvector — not in the search engines, but in vector storage)
 
@@ -203,11 +205,11 @@ Quantum gates are unitary matrices that transform qubit states. Common gates:
 
 | Gate | Notation | Effect |
 |---|---|---|
-| Hadamard | H | |0⟩ → (|0⟩ + |1⟩)/√2 — creates superposition |
-| Pauli-X | X | |0⟩ ↔ |1⟩ — classical NOT |
-| CNOT | CX | Flips target qubit if control is |1⟩ |
-| Toffoli / CCNOT | CCX | Flips target if both controls are |1⟩ |
-| CSWAP (Fredkin) | — | Swaps two target qubits if control is |1⟩ |
+| Hadamard | H | \|0⟩ → (\|0⟩ + \|1⟩)/√2 — creates superposition |
+| Pauli-X | X | \|0⟩ ↔ \|1⟩ — classical NOT |
+| CNOT | CX | Flips target qubit if control is \|1⟩ |
+| Toffoli / CCNOT | CCX | Flips target if both controls are \|1⟩ |
+| CSWAP (Fredkin) | — | Swaps two target qubits if control is \|1⟩ |
 
 All gates are **reversible** (unitary), which is a fundamental constraint of quantum mechanics.
 
@@ -576,11 +578,11 @@ On top of that, the engine runs one full circuit per dataset image per query. Fo
 dataset that is 100 circuit executions per query, each with 2048 shots.
 
 **Q: What is FAISS and why is IndexFlatL2 used here?**
-A: FAISS (Facebook AI Similarity Search) is a library for dense vector similarity search.
-`IndexFlatL2` is its exact brute-force L2 index, implemented in C++ with SIMD/BLAS
-optimisations. It always finds the true nearest neighbours. For our small dataset there is
-no need for approximate indices. FAISS is used to demonstrate a production-grade classical
-baseline beyond the pure-NumPy vector mock.
+A: FAISS (Facebook AI Similarity Search) is a Python library for dense vector similarity search
+whose internals use highly optimised SIMD/BLAS routines. `IndexFlatL2` is its exact brute-force
+L2 index — it always finds the true nearest neighbours. For our small dataset there is no need
+for approximate indices. FAISS is used to demonstrate a production-grade classical baseline
+beyond the pure-NumPy brute-force cosine engine.
 
 **Q: Is NDCG the same as weighted accuracy?**
 A: The project implements a simplified version. True NDCG uses logarithmic discounting
