@@ -26,7 +26,6 @@ import argparse
 import os
 import sys
 from collections import defaultdict
-from datetime import timezone
 from pathlib import Path
 
 BACKEND_ROOT = Path(__file__).resolve().parent.parent
@@ -118,10 +117,6 @@ def _section_overview(rows: list[dict]) -> str:
     engines = sorted({r["engine_name"] for r in rows})
     dimensions = sorted({r["dimension"] for r in rows})
     queries = sorted({r["query_id"] for r in rows})
-    timestamps = [r["recorded_at"] for r in rows]
-    earliest = min(timestamps).astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    latest = max(timestamps).astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-
     top_k_vals = sorted({_get_top_k(r) for r in rows} - {0})
     lines = [
         "## Overview\n",
@@ -132,14 +127,12 @@ def _section_overview(rows: list[dict]) -> str:
         f"| Dimensions | {', '.join(str(d) for d in dimensions)} |",
         f"| top_k values | {', '.join(str(k) for k in top_k_vals)} |",
         f"| Queries | {', '.join(f'`{q}`' for q in queries)} |",
-        f"| Earliest run | {earliest} |",
-        f"| Latest run | {latest} |",
     ]
     return "\n".join(lines)
 
 
 def _section_winner(rows: list[dict]) -> str:
-    """Top-line summary: which engine won on each quality KPI."""
+    """Top-line summary: quality KPIs for each engine side by side, with winner."""
     by_engine: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
     for r in rows:
         e = r["engine_name"]
@@ -148,22 +141,22 @@ def _section_winner(rows: list[dict]) -> str:
         by_engine[e]["recall"].append(_recall(targets, top))
         by_engine[e]["mrr"].append(_mrr(targets, top))
 
-    def _winner(metric: str) -> str:
-        scores = {e: _avg(d[metric]) for e, d in by_engine.items()}
-        best = max(scores.values())
-        winners = [e for e, s in scores.items() if s == best]
-        if len(winners) == len(scores):
-            return f"Tie ({_pct(best) if metric != 'mrr' else _fmt(best, 3)})"
-        return f"`{'`, `'.join(sorted(winners))}` ({_pct(best) if metric != 'mrr' else _fmt(best, 3)})"
+    engines = sorted(by_engine)
 
-    lines = [
-        "## Results Summary\n",
-        "| KPI | Winner |",
-        "|---|---|",
-        f"| Recall@K | {_winner('recall')} |",
-        f"| MRR | {_winner('mrr')} |",
+    def _best(metric: str) -> str:
+        scores = {e: _avg(by_engine[e][metric]) for e in engines}
+        best_val = max(scores.values())
+        winners = [e for e, s in scores.items() if s == best_val]
+        if len(winners) == len(engines):
+            return "Tie"
+        return ", ".join(f"`{e}`" for e in sorted(winners))
+
+    headers = ["KPI"] + [f"`{e}`" for e in engines] + ["Best"]
+    table_rows = [
+        ["Recall@K"] + [_pct(_avg(by_engine[e]["recall"])) for e in engines] + [_best("recall")],
+        ["MRR"]      + [_fmt(_avg(by_engine[e]["mrr"]), 3) for e in engines] + [_best("mrr")],
     ]
-    return "\n".join(lines)
+    return "## Results Summary\n\n" + _md_table(headers, table_rows)
 
 
 def _section_kpi_summary(rows: list[dict]) -> str:

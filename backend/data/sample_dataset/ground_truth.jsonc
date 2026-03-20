@@ -8,22 +8,30 @@
 [
   {
     "id": "query_car",
-    "text": "a red sports car parked on a street",
-    "target_ids": ["car_01"]
+    "text": "dark gray Tesla car on white background",
+    "target_ids": [
+      "car_01"
+    ]
   },
   {
     "id": "query_planet",
-    "text": "earth photographed from space",
-    "target_ids": ["planet_02"]
+    "text": "solar system planets composite",
+    "target_ids": [
+      "planet_02"
+    ]
   },
   {
     "id": "query_forest",
-    "text": "foggy evergreen forest trail",
-    "target_ids": ["forest_03"]
+    "text": "sunlight shining through forest trees",
+    "target_ids": [
+      "forest_03"
+    ]
   },
   {
     "id": "query_robot",
-    "text": "friendly humanoid robot waving",
-    "target_ids": ["robot_04"]
+    "text": "ASIMO humanoid robot standing",
+    "target_ids": [
+      "robot_04"
+    ]
   }
 ]
