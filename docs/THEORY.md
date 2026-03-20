@@ -402,50 +402,73 @@ What is meaningful to compare:
 
 ## 11. Evaluation Metrics
 
+### How retrieval works
+
+Each query has a `target_ids` list — one or more images that are the correct answers. The
+benchmark harness always asks each engine to rank **all** images in the dataset from most to
+least similar. Metrics are then computed over the top `top_k` results from that full ranking.
+
+`top_k` is set in `benchmarks.yaml`. Two rules:
+1. `top_k` must be **≥ the number of targets in any single query** — otherwise Recall@K can
+   never reach 1.0 no matter how good the engine is. The harness enforces this with a hard
+   error at startup.
+2. `top_k` should be **small relative to dataset size** — e.g. 10 out of 1000 images. If
+   `top_k` is close to the total number of images, the benchmark is too easy and results are
+   not meaningful.
+
+**Should you try multiple `top_k` values?** Yes — just like dimensions, varying `top_k` shows
+how each engine degrades as you ask for fewer results. A good engine keeps high accuracy at
+`top_k=3`; a weaker one needs `top_k=10` to find the same targets. Add a `top_k_values` list
+to the config when the dataset is large enough to make it meaningful.
+
 ### 11.1 Weighted Accuracy (NDCG-lite)
 
-Each query in the ground truth has a `target_ids` list — one or more images that are correct
-answers for that query. The current dataset has one target per query, but the data model and
-all metrics support multiple targets (e.g., a "car" query could legitimately match several car
-images). The weighted accuracy scores based on the highest-ranked target found:
+Rewards finding a correct answer **near the top** of the result list. Only the highest-ranked
+correct answer counts:
 
-| Rank | Weight |
+| Rank | Score |
 |---|---|
 | 1 | 1.00 |
 | 2 | 0.66 |
 | 3 | 0.33 |
-| Not found | 0.00 |
+| Not in top K | 0.00 |
 
-This is a simplified **NDCG** (Normalised Discounted Cumulative Gain), which is the standard
-information retrieval metric for ranked result quality. It rewards finding the correct item
-higher in the list.
+Example: a query has 3 correct images. The engine returns them at ranks 2, 5, and 8. Score =
+0.66 (only the best rank, which is 2, counts).
+
+This is a simplified **NDCG** (Normalised Discounted Cumulative Gain) — the standard metric
+for judging ranking quality in information retrieval.
 
 ### 11.2 Recall@K
 
 ```
-Recall@K = (number of relevant items found in top K) / (total relevant items for that query)
+Recall@K = (correct images found in top K) / (total correct images for that query)
 ```
 
-Answers the question: "out of all images that should match this query, how many did the engine
-actually return in its top K results?"
+Asks: "out of all images that should match this query, how many did the engine actually surface
+in its top K results?"
 
-- A query with 3 correct images where the engine finds 2 of them scores 2/3 ≈ 0.67.
-- A query with 1 correct image where the engine finds it scores 1/1 = 1.0.
-- If none of the correct images appear in the top K, the score is 0.
+- Query has 4 correct images, engine finds 3 of them in top K → score = 3/4 = 0.75
+- Query has 1 correct image, engine finds it → score = 1/1 = 1.0
+- Engine finds none → score = 0.0
 
-The final Recall@K is averaged over all queries.
+Final Recall@K is averaged over all queries.
 
 ### 11.3 Mean Reciprocal Rank (MRR)
 
 ```
-MRR = (1/|Q|) · Σ_q  1/rank(q)
+MRR = average of (1 / rank of first correct result) across all queries
 ```
 
-Where `rank(q)` is the position of the first relevant result for query q (the first hit among
-all `target_ids`). If the first match is at rank 1: contributes 1.0. At rank 2: 0.5. At rank 3: 0.33.
-Not found: contributes 0.
+Asks: "on average, how far down the list do you have to scroll to hit the first correct result?"
 
-MRR is particularly useful when you care primarily about the first relevant result.
+- Correct image at rank 1 → contributes 1.0
+- Correct image at rank 2 → contributes 0.5
+- Correct image at rank 3 → contributes 0.33
+- Not found in top K → contributes 0.0
+
+MRR is the most user-focused metric — it directly measures how quickly a user would find a
+relevant result.
 
 ### 11.4 Why cross-engine speed comparison is excluded
 

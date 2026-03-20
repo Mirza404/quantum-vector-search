@@ -200,6 +200,13 @@ def main() -> None:
     queries = load_benchmark_queries(ground_truth_path)
     queries = _select_queries(selection.queries, queries)
 
+    max_targets = max(len(q.target_ids) for q in queries)
+    if top_k < max_targets:
+        raise SystemExit(
+            f"top_k={top_k} is less than the maximum number of targets in any query ({max_targets}). "
+            f"Recall@K can never reach 1.0 — set top_k >= {max_targets} in benchmarks.yaml."
+        )
+
     storage = DatabaseStorage()
     stored_vectors = storage.load_image_vectors()
     if not stored_vectors:
@@ -259,7 +266,7 @@ def main() -> None:
                 engine.build_index(vectors=vectors, ids=dataset_ids)
                 prep_ms = (perf_counter() - prep_start) * 1000
 
-                search_kwargs = {"query_vector": query_vector, "top_k": top_k}
+                search_kwargs = {"query_vector": query_vector, "top_k": len(dataset_ids)}
                 if "quantum" in engine.name:
                     search_kwargs.update({"shots": shots, "layers": layers})
 
@@ -268,7 +275,8 @@ def main() -> None:
                 search_ms = (perf_counter() - search_start) * 1000
                 total_ms = prep_ms + search_ms
 
-                accuracy = _accuracy_score(query.target_ids, result.ids)
+                eval_ids = result.ids[:top_k]
+                accuracy = _accuracy_score(query.target_ids, eval_ids)
                 parameters = {
                     "dimension": dimension,
                     "top_k": top_k,
@@ -283,7 +291,7 @@ def main() -> None:
                         engine_name=engine.name,
                         dimension=dimension,
                         target_ids=query.target_ids,
-                        top_ids=result.ids,
+                        top_ids=eval_ids,
                         accuracy=accuracy,
                         state_prep_ms=prep_ms if "quantum" in engine.name else 0.0,
                         search_ms=search_ms,
