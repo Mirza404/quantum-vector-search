@@ -61,16 +61,19 @@ class DatabaseStorage(BaseBenchmarkStorage):
             ) from exc
         return psycopg, psycopg_json.Json
 
-    def has_record(self, key: tuple[str, str, int]) -> bool:
-        query_id, engine_name, dimension = key
+    def has_record(self, key: tuple[str, str, int, int, int | None, int | None]) -> bool:
+        query_id, engine_name, dimension, top_k, shots, layers = key
         sql = """
             SELECT 1
             FROM benchmark_results
             WHERE query_id = %s AND engine_name = %s AND dimension = %s
+              AND top_k = %s AND shots = %s AND layers = %s
             LIMIT 1
         """
         with self._conn.cursor() as cursor:
-            cursor.execute(sql, (query_id, engine_name, dimension))
+            cursor.execute(sql, (query_id, engine_name, dimension, top_k,
+                                 shots if shots is not None else -1,
+                                 layers if layers is not None else -1))
             return cursor.fetchone() is not None
 
     def append(self, result: BenchmarkResult) -> None:
@@ -80,6 +83,9 @@ class DatabaseStorage(BaseBenchmarkStorage):
                 query_id,
                 engine_name,
                 dimension,
+                top_k,
+                shots,
+                layers,
                 target_ids,
                 top_ids,
                 accuracy,
@@ -90,14 +96,28 @@ class DatabaseStorage(BaseBenchmarkStorage):
                 dataset_size,
                 circuit_depth,
                 num_qubits
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (query_id, engine_name, dimension) DO NOTHING
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT ON CONSTRAINT uq_run_key DO UPDATE SET
+                recorded_at   = EXCLUDED.recorded_at,
+                target_ids    = EXCLUDED.target_ids,
+                top_ids       = EXCLUDED.top_ids,
+                accuracy      = EXCLUDED.accuracy,
+                state_prep_ms = EXCLUDED.state_prep_ms,
+                search_ms     = EXCLUDED.search_ms,
+                total_ms      = EXCLUDED.total_ms,
+                parameters    = EXCLUDED.parameters,
+                dataset_size  = EXCLUDED.dataset_size,
+                circuit_depth = EXCLUDED.circuit_depth,
+                num_qubits    = EXCLUDED.num_qubits
         """
         payload = (
             result.timestamp,
             result.query_id,
             result.engine_name,
             result.dimension,
+            result.top_k,
+            result.shots if result.shots is not None else -1,
+            result.layers if result.layers is not None else -1,
             self._json_wrapper(result.target_ids),
             self._json_wrapper(result.top_ids),
             result.accuracy,

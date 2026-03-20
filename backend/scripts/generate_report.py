@@ -71,8 +71,14 @@ def _avg(values: list[float]) -> float:
 
 
 def _recall(target_ids: list[str], top_ids: list[str]) -> float:
-    """1.0 if any target appears anywhere in top_ids, else 0.0."""
-    return 1.0 if any(t in top_ids for t in target_ids) else 0.0
+    """Fraction of target_ids found in top_ids."""
+    if not target_ids:
+        return 0.0
+    return sum(1 for t in target_ids if t in top_ids) / len(target_ids)
+
+
+def _get_top_k(row: dict) -> int:
+    return (row.get("parameters") or {}).get("top_k", 0)
 
 
 def _mrr(target_ids: list[str], top_ids: list[str]) -> float:
@@ -117,6 +123,7 @@ def _section_overview(rows: list[dict]) -> str:
     earliest = min(timestamps).astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     latest = max(timestamps).astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
+    top_k_vals = sorted({_get_top_k(r) for r in rows} - {0})
     lines = [
         "## Overview\n",
         "| Metric | Value |",
@@ -124,6 +131,7 @@ def _section_overview(rows: list[dict]) -> str:
         f"| Total runs | {len(rows)} |",
         f"| Engines | {', '.join(f'`{e}`' for e in engines)} |",
         f"| Dimensions | {', '.join(str(d) for d in dimensions)} |",
+        f"| top_k values | {', '.join(str(k) for k in top_k_vals)} |",
         f"| Queries | {', '.join(f'`{q}`' for q in queries)} |",
         f"| Earliest run | {earliest} |",
         f"| Latest run | {latest} |",
@@ -225,6 +233,42 @@ def _section_quality_by_dimension(rows: list[dict]) -> str:
 
     note = "> Quality metrics only. Speed is excluded from cross-engine comparisons — see per-engine scaling below.\n"
     return "## Quality by Dimension\n\n" + note + "\n" + _md_table(headers, table_rows)
+
+
+def _section_quality_by_top_k(rows: list[dict]) -> str:
+    """Shows how quality metrics change as top_k varies — the core scaling experiment."""
+    top_k_vals = sorted({_get_top_k(r) for r in rows} - {0})
+    if len(top_k_vals) < 2:
+        return ""
+
+    data: dict[tuple[str, int], dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    for r in rows:
+        key = (r["engine_name"], _get_top_k(r))
+        targets = r["target_ids"] or []
+        top = r["top_ids"] or []
+        data[key]["accuracy"].append(r["accuracy"])
+        data[key]["recall"].append(_recall(targets, top))
+        data[key]["mrr"].append(_mrr(targets, top))
+
+    engines = sorted({r["engine_name"] for r in rows})
+    headers = ["Engine", "top_k", "Weighted Accuracy", "Recall@K", "MRR"]
+    table_rows = []
+    for engine in engines:
+        for k in top_k_vals:
+            key = (engine, k)
+            if key not in data:
+                continue
+            d = data[key]
+            table_rows.append([
+                f"`{engine}`",
+                str(k),
+                _pct(_avg(d["accuracy"])),
+                _pct(_avg(d["recall"])),
+                _fmt(_avg(d["mrr"]), 3),
+            ])
+
+    note = "> A good engine scores high even at small top_k. Accuracy dropping sharply as top_k decreases means the engine struggles to rank correct results near the top.\n"
+    return "## Quality by top_k\n\n" + note + "\n" + _md_table(headers, table_rows)
 
 
 def _section_circuit_complexity(rows: list[dict]) -> str:
@@ -348,12 +392,13 @@ def _section_head_to_head(rows: list[dict]) -> str:
     if len(engines) < 2:
         return ""
 
-    index = {(r["query_id"], r["engine_name"], r["dimension"]): r for r in rows}
+    index = {(r["query_id"], r["engine_name"], r["dimension"], _get_top_k(r)): r for r in rows}
     queries = sorted({r["query_id"] for r in rows})
     dimensions = sorted({r["dimension"] for r in rows})
+    top_k_vals = sorted({_get_top_k(r) for r in rows} - {0})
 
     headers = (
-        ["Query", "Dim"]
+        ["Query", "Dim", "top_k"]
         + [f"`{e}` Accuracy" for e in engines]
         + [f"`{e}` Recall@K" for e in engines]
         + [f"`{e}` MRR" for e in engines]
@@ -361,21 +406,22 @@ def _section_head_to_head(rows: list[dict]) -> str:
     table_rows = []
     for query in queries:
         for dim in dimensions:
-            row_cells = [f"`{query}`", str(dim)]
-            for engine in engines:
-                r = index.get((query, engine, dim))
-                row_cells.append(_pct(r["accuracy"]) if r else "—")
-            for engine in engines:
-                r = index.get((query, engine, dim))
-                targets = (r["target_ids"] or []) if r else []
-                top = (r["top_ids"] or []) if r else []
-                row_cells.append(_pct(_recall(targets, top)) if r else "—")
-            for engine in engines:
-                r = index.get((query, engine, dim))
-                targets = (r["target_ids"] or []) if r else []
-                top = (r["top_ids"] or []) if r else []
-                row_cells.append(_fmt(_mrr(targets, top), 3) if r else "—")
-            table_rows.append(row_cells)
+            for k in top_k_vals:
+                row_cells = [f"`{query}`", str(dim), str(k)]
+                for engine in engines:
+                    r = index.get((query, engine, dim, k))
+                    row_cells.append(_pct(r["accuracy"]) if r else "—")
+                for engine in engines:
+                    r = index.get((query, engine, dim, k))
+                    targets = (r["target_ids"] or []) if r else []
+                    top = (r["top_ids"] or []) if r else []
+                    row_cells.append(_pct(_recall(targets, top)) if r else "—")
+                for engine in engines:
+                    r = index.get((query, engine, dim, k))
+                    targets = (r["target_ids"] or []) if r else []
+                    top = (r["top_ids"] or []) if r else []
+                    row_cells.append(_fmt(_mrr(targets, top), 3) if r else "—")
+                table_rows.append(row_cells)
 
     return "## Head-to-Head Quality Comparison\n\n" + _md_table(headers, table_rows)
 
@@ -384,28 +430,31 @@ def _section_per_query(rows: list[dict]) -> str:
     queries = sorted({r["query_id"] for r in rows})
     engines = sorted({r["engine_name"] for r in rows})
     dimensions = sorted({r["dimension"] for r in rows})
-    index = {(r["query_id"], r["engine_name"], r["dimension"]): r for r in rows}
+    index = {(r["query_id"], r["engine_name"], r["dimension"], _get_top_k(r)): r for r in rows}
+    top_k_vals = sorted({_get_top_k(r) for r in rows} - {0})
 
     sections = ["## Per-Query Detail\n"]
     for query in queries:
         sections.append(f"### `{query}`\n")
-        headers = ["Engine", "Dim", "Weighted Acc", "Recall@K", "MRR", "Top Results"]
+        headers = ["Engine", "Dim", "top_k", "Weighted Acc", "Recall@K", "MRR", "Top Results"]
         table_rows = []
         for engine in engines:
             for dim in dimensions:
-                r = index.get((query, engine, dim))
-                if r is None:
-                    continue
-                targets = r["target_ids"] or []
-                top = r["top_ids"] or []
-                table_rows.append([
-                    f"`{engine}`",
-                    str(dim),
-                    _pct(r["accuracy"]),
-                    _pct(_recall(targets, top)),
-                    _fmt(_mrr(targets, top), 3),
-                    ", ".join(f"`{x}`" for x in top),
-                ])
+                for k in top_k_vals:
+                    r = index.get((query, engine, dim, k))
+                    if r is None:
+                        continue
+                    targets = r["target_ids"] or []
+                    top = r["top_ids"] or []
+                    table_rows.append([
+                        f"`{engine}`",
+                        str(dim),
+                        str(k),
+                        _pct(r["accuracy"]),
+                        _pct(_recall(targets, top)),
+                        _fmt(_mrr(targets, top), 3),
+                        ", ".join(f"`{x}`" for x in top),
+                    ])
         sections.append(_md_table(headers, table_rows))
         sections.append("")
 
@@ -452,6 +501,8 @@ def main() -> None:
         _section_kpi_summary(rows),
         "",
         _section_quality_by_dimension(rows),
+        "",
+        _section_quality_by_top_k(rows),
         "",
         _section_head_to_head(rows),
         "",

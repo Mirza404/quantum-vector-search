@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS benchmark_results (
     dataset_size  INTEGER          NOT NULL DEFAULT 0,
     circuit_depth INTEGER,
     num_qubits    INTEGER,
-    UNIQUE (query_id, engine_name, dimension)
+    CONSTRAINT uq_run_key UNIQUE (query_id, engine_name, dimension)
 );
 
 CREATE TABLE IF NOT EXISTS image_vectors (

@@ -408,18 +408,19 @@ Each query has a `target_ids` list — one or more images that are the correct a
 benchmark harness always asks each engine to rank **all** images in the dataset from most to
 least similar. Metrics are then computed over the top `top_k` results from that full ranking.
 
-`top_k` is set in `benchmarks.yaml`. Two rules:
-1. `top_k` must be **≥ the number of targets in any single query** — otherwise Recall@K can
-   never reach 1.0 no matter how good the engine is. The harness enforces this with a hard
-   error at startup.
-2. `top_k` should be **small relative to dataset size** — e.g. 10 out of 1000 images. If
-   `top_k` is close to the total number of images, the benchmark is too easy and results are
-   not meaningful.
+`top_k_values` is a list set in `benchmarks.yaml`. The harness runs every query at each value
+and stores separate results, so you can see how accuracy changes as the result list gets shorter
+or longer. Two rules apply to every value in the list:
 
-**Should you try multiple `top_k` values?** Yes — just like dimensions, varying `top_k` shows
-how each engine degrades as you ask for fewer results. A good engine keeps high accuracy at
-`top_k=3`; a weaker one needs `top_k=10` to find the same targets. Add a `top_k_values` list
-to the config when the dataset is large enough to make it meaningful.
+1. Each `top_k` must be **≥ the number of targets in any single query** — otherwise Recall@K
+   can never reach 1.0 no matter how good the engine is. The harness enforces this with a hard
+   error at startup.
+2. Each `top_k` should be **small relative to dataset size** — e.g. 10 out of 1000 images.
+   If `top_k` is close to the total number of images the benchmark is too easy and the results
+   are not meaningful.
+
+A good engine scores high even at the smallest `top_k`. An engine that needs a large `top_k`
+to find the same targets is ranking correct answers too far down the list.
 
 ### 11.1 Weighted Accuracy (NDCG-lite)
 
@@ -548,6 +549,32 @@ academic project.
 any value for one-off experiments. This means:
 - Adding a new dimension or query requires only a YAML edit, not code changes.
 - Reproducibility: the YAML file can be committed and the exact run conditions are documented.
+
+### 13.5 Live Search vs. Benchmarking
+
+**Benchmark harness** retrieves the full ranked list internally, then slices to each `top_k`
+for metrics. A query with empty `target_ids` is a valid negative test — it verifies the engine
+does not rank unrelated images as relevant. The correct expected score is 0 on all metrics.
+
+**Live API** returns only top K results to the frontend — sending all ranked images on every
+search would be impractical. Each result includes a similarity score so the frontend can warn
+the user when even the best match scores poorly (the engine always returns *something*, so
+without scores there is no way to tell the results are irrelevant).
+
+### 13.6 Benchmark Result Storage and Run Keys
+
+Each row in `benchmark_results` represents one unique combination of
+`(query_id, engine_name, dimension, top_k, shots, layers)` — the *run key*.
+Classical engines store `shots = -1, layers = -1` (a sentinel meaning "not applicable").
+
+**Re-running the same configuration** overwrites the existing row with fresh timings and
+scores (`ON CONFLICT ... DO UPDATE`). There is no silent skipping — every run produces
+up-to-date data.
+
+**Adding a new value** (e.g. a second entry in `top_k_values` in `benchmarks.yaml`) appends
+new rows for the new combinations without touching existing ones. Running overnight with many
+values in `top_k_values`, `shots_values`, and `layers_values` is safe — each combination is
+stored independently and re-runnable.
 
 ---
 

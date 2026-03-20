@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from time import perf_counter
 from typing import Callable, List
@@ -28,13 +28,13 @@ class BenchmarkSelection:
     engines: List[str]
     dimensions: List[int]
     queries: List[str]
-    top_k: int = 3
-    shots: int = 2048
-    layers: int = 2
+    top_k_values: List[int] = field(default_factory=lambda: [3])
+    shots_values: List[int] = field(default_factory=lambda: [2048])
+    layers_values: List[int] = field(default_factory=lambda: [2])
 
 
-LIST_KEYS = {"engines", "dimensions", "queries"}
-SCALAR_KEYS = {"top_k", "shots", "layers"}
+LIST_KEYS = {"engines", "dimensions", "queries", "top_k_values", "shots_values", "layers_values"}
+SCALAR_KEYS: set[str] = set()
 CONFIG_KEYS = LIST_KEYS | SCALAR_KEYS
 
 
@@ -125,26 +125,22 @@ def _load_selection_config(path: Path) -> BenchmarkSelection:
     if not lists["queries"]:
         raise SystemExit(f"No queries listed in {path}.")
 
-    try:
-        dimensions = [int(entry) for entry in lists["dimensions"]]
-    except ValueError as exc:
-        raise SystemExit(f"All dimension entries in {path} must be integers.") from exc
-
-    def _int_scalar(key: str, default: int) -> int:
-        if key not in scalars:
-            return default
+    def _parse_int_list(key: str) -> List[int]:
         try:
-            return int(scalars[key])
-        except ValueError:
-            raise SystemExit(f"'{key}' in {path} must be an integer, got: {scalars[key]!r}")
+            values = [int(entry) for entry in lists[key]]
+        except ValueError as exc:
+            raise SystemExit(f"All {key} entries in {path} must be integers.") from exc
+        if not values:
+            raise SystemExit(f"No {key} listed in {path}.")
+        return values
 
     return BenchmarkSelection(
         engines=lists["engines"],
-        dimensions=dimensions,
+        dimensions=_parse_int_list("dimensions"),
         queries=lists["queries"],
-        top_k=_int_scalar("top_k", 3),
-        shots=_int_scalar("shots", 2048),
-        layers=_int_scalar("layers", 2),
+        top_k_values=_parse_int_list("top_k_values"),
+        shots_values=_parse_int_list("shots_values"),
+        layers_values=_parse_int_list("layers_values"),
     )
 
 
@@ -170,9 +166,9 @@ def main() -> None:
         default=None,
         help="Override the dimensions from the YAML config (space-separated list)",
     )
-    parser.add_argument("--top-k", type=int, default=None, help="Override top_k from benchmarks.yaml")
-    parser.add_argument("--shots", type=int, default=None, help="Override shots from benchmarks.yaml")
-    parser.add_argument("--layers", type=int, default=None, help="Override layers from benchmarks.yaml")
+    parser.add_argument("--top-k-values", nargs="+", type=int, default=None, help="Override top_k_values from benchmarks.yaml (space-separated list)")
+    parser.add_argument("--shots-values", nargs="+", type=int, default=None, help="Override shots_values from benchmarks.yaml (space-separated list)")
+    parser.add_argument("--layers-values", nargs="+", type=int, default=None, help="Override layers_values from benchmarks.yaml (space-separated list)")
     parser.add_argument("--quantum-seed", type=int, default=42, help="Seed for quantum noise rng")
     parser.add_argument("--clip-model", default="ViT-B/32", help="CLIP model name for query embeddings")
     parser.add_argument("--device", default=None, help="Torch device override passed to CLIP")
@@ -186,9 +182,9 @@ def main() -> None:
     config_path = _resolve_config_path(args.config)
     selection = _load_selection_config(config_path)
     dimensions = args.dimensions or selection.dimensions
-    top_k = args.top_k if args.top_k is not None else selection.top_k
-    shots = args.shots if args.shots is not None else selection.shots
-    layers = args.layers if args.layers is not None else selection.layers
+    top_k_values = args.top_k_values or selection.top_k_values
+    shots_values = args.shots_values or selection.shots_values
+    layers_values = args.layers_values or selection.layers_values
 
     dataset_dir = Path(args.dataset_dir).resolve()
     ground_truth_path = (
@@ -201,10 +197,11 @@ def main() -> None:
     queries = _select_queries(selection.queries, queries)
 
     max_targets = max(len(q.target_ids) for q in queries)
-    if top_k < max_targets:
+    invalid_top_k = [k for k in top_k_values if k < max_targets]
+    if invalid_top_k:
         raise SystemExit(
-            f"top_k={top_k} is less than the maximum number of targets in any query ({max_targets}). "
-            f"Recall@K can never reach 1.0 — set top_k >= {max_targets} in benchmarks.yaml."
+            f"top_k_values {invalid_top_k} are less than the maximum number of targets in any query ({max_targets}). "
+            f"All top_k_values must be >= {max_targets} — update top_k_values in benchmarks.yaml."
         )
 
     storage = DatabaseStorage()
@@ -257,7 +254,6 @@ def main() -> None:
             )
         vectors = _prepare_vectors(dataset_matrix, dimension)
         for query in queries:
-            # Build query embedding and trim to current dimension
             full_query_vector = query_vectors[query.id]
             query_vector = full_query_vector[:dimension]
             for engine_name in engine_names:
@@ -266,45 +262,54 @@ def main() -> None:
                 engine.build_index(vectors=vectors, ids=dataset_ids)
                 prep_ms = (perf_counter() - prep_start) * 1000
 
-                search_kwargs = {"query_vector": query_vector, "top_k": len(dataset_ids)}
-                if "quantum" in engine.name:
-                    search_kwargs.update({"shots": shots, "layers": layers})
+                is_quantum = "quantum" in engine.name
+                shot_iter = shots_values if is_quantum else [None]
+                layer_iter = layers_values if is_quantum else [None]
 
-                search_start = perf_counter()
-                result = engine.search(**search_kwargs)
-                search_ms = (perf_counter() - search_start) * 1000
-                total_ms = prep_ms + search_ms
+                for shots in shot_iter:
+                    for layers in layer_iter:
+                        search_kwargs: dict = {"query_vector": query_vector, "top_k": len(dataset_ids)}
+                        if is_quantum:
+                            search_kwargs.update({"shots": shots, "layers": layers})
 
-                eval_ids = result.ids[:top_k]
-                accuracy = _accuracy_score(query.target_ids, eval_ids)
-                parameters = {
-                    "dimension": dimension,
-                    "top_k": top_k,
-                }
-                if "quantum" in engine.name:
-                    parameters.update({"shots": shots, "layers": layers})
+                        search_start = perf_counter()
+                        result = engine.search(**search_kwargs)
+                        search_ms = (perf_counter() - search_start) * 1000
+                        total_ms = prep_ms + search_ms
 
-                meta = result.meta or {}
-                storage.append(
-                    BenchmarkResult(
-                        query_id=query.id,
-                        engine_name=engine.name,
-                        dimension=dimension,
-                        target_ids=query.target_ids,
-                        top_ids=eval_ids,
-                        accuracy=accuracy,
-                        state_prep_ms=prep_ms if "quantum" in engine.name else 0.0,
-                        search_ms=search_ms,
-                        total_ms=total_ms,
-                        parameters=parameters,
-                        dataset_size=len(dataset_ids),
-                        circuit_depth=meta.get("circuit_depth"),
-                        num_qubits=meta.get("num_qubits"),
-                    )
-                )
-                print(
-                    f"[{engine.name}] query={query.id} dim={dimension} accuracy={accuracy:.2f} total_ms={total_ms:.2f}"
-                )
+                        meta = result.meta or {}
+                        for top_k in top_k_values:
+                            eval_ids = result.ids[:top_k]
+                            accuracy = _accuracy_score(query.target_ids, eval_ids)
+                            parameters: dict = {"dimension": dimension, "top_k": top_k}
+                            if is_quantum:
+                                parameters.update({"shots": shots, "layers": layers})
+
+                            storage.append(
+                                BenchmarkResult(
+                                    query_id=query.id,
+                                    engine_name=engine.name,
+                                    dimension=dimension,
+                                    target_ids=query.target_ids,
+                                    top_ids=eval_ids,
+                                    accuracy=accuracy,
+                                    state_prep_ms=prep_ms if is_quantum else 0.0,
+                                    search_ms=search_ms,
+                                    total_ms=total_ms,
+                                    top_k=top_k,
+                                    shots=shots,
+                                    layers=layers,
+                                    parameters=parameters,
+                                    dataset_size=len(dataset_ids),
+                                    circuit_depth=meta.get("circuit_depth"),
+                                    num_qubits=meta.get("num_qubits"),
+                                )
+                            )
+                            print(
+                                f"[{engine.name}] query={query.id} dim={dimension} "
+                                f"top_k={top_k} shots={shots} layers={layers} "
+                                f"accuracy={accuracy:.2f} total_ms={total_ms:.2f}"
+                            )
 
 
 if __name__ == "__main__":

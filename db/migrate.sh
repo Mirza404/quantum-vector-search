@@ -32,7 +32,7 @@ bootstrap() {
 
 cmd_up() {
     bootstrap
-    while IFS= read -r file; do
+    while IFS= read -r file <&3; do
         filename="$(basename "$file")"
         applied=$(psql_exec -t -A -c \
             "SELECT COUNT(*) FROM schema_migrations WHERE filename = '$filename';")
@@ -44,7 +44,7 @@ cmd_up() {
         else
             echo "  skip  $filename"
         fi
-    done < <(ls "$UP_DIR"/*.sql 2>/dev/null | sort -V)
+    done 3< <(find "$UP_DIR" -maxdepth 1 -name "*.sql" | sort -V)
     echo "Up complete."
 }
 
@@ -52,7 +52,7 @@ cmd_down() {
     local target="${1:-0}"
     bootstrap
     # Iterate in reverse order, roll back anything above the target number.
-    while IFS= read -r file; do
+    while IFS= read -r file <&3; do
         filename="$(basename "$file")"
         number=$(echo "$filename" | grep -oP '^\d+')
         if [ "$number" -gt "$target" ]; then
@@ -69,7 +69,7 @@ cmd_down() {
                 echo "  ✓ done"
             fi
         fi
-    done < <(ls "$UP_DIR"/*.sql 2>/dev/null | sort -Vr)
+    done 3< <(find "$UP_DIR" -maxdepth 1 -name "*.sql" | sort -Vr)
     echo "Down complete."
 }
 
