@@ -8,8 +8,7 @@ Usage (from repo root):
 KPIs
 ----
 Cross-engine comparisons focus solely on result quality:
-  - Weighted accuracy  : positional score (1.0 / 0.66 / 0.33) — NDCG-lite
-  - Recall@K           : was any target present anywhere in top-K?
+  - Recall@K           : fraction of correct targets found in the top-K results
   - MRR                : 1 / rank of the first relevant result
 
 Speed (ms) is reported *per engine* only to show how each engine scales with
@@ -18,7 +17,7 @@ the quantum engine runs on a classical simulator, so its timing reflects
 circuit-simulation overhead rather than real quantum hardware latency.
 
 Quantum-specific KPI:
-  - Shots-to-accuracy  : accuracy achieved at each shots value, showing the
+  - Shots-to-quality   : Recall@K and MRR at each shots value, showing the
                          minimum measurement budget needed to reach a target.
 """
 from __future__ import annotations
@@ -68,21 +67,6 @@ def _fetch_rows(dsn: str) -> list[dict]:
 
 def _avg(values: list[float]) -> float:
     return sum(values) / len(values) if values else 0.0
-
-
-def _accuracy_score(target_ids: list[str], top_ids: list[str]) -> float:
-    weights = [1.0, 0.66, 0.33]
-    best_idx: int | None = None
-    for target in target_ids:
-        try:
-            idx = top_ids.index(target)
-        except ValueError:
-            continue
-        if best_idx is None or idx < best_idx:
-            best_idx = idx
-    if best_idx is None or best_idx >= len(weights):
-        return 0.0
-    return weights[best_idx]
 
 
 def _recall(target_ids: list[str], top_ids: list[str]) -> float:
@@ -161,7 +145,6 @@ def _section_winner(rows: list[dict]) -> str:
         e = r["engine_name"]
         targets = r["target_ids"] or []
         top = r["top_ids"] or []
-        by_engine[e]["accuracy"].append(_accuracy_score(r["target_ids"] or [], r["top_ids"] or []))
         by_engine[e]["recall"].append(_recall(targets, top))
         by_engine[e]["mrr"].append(_mrr(targets, top))
 
@@ -177,7 +160,6 @@ def _section_winner(rows: list[dict]) -> str:
         "## Results Summary\n",
         "| KPI | Winner |",
         "|---|---|",
-        f"| Weighted Accuracy | {_winner('accuracy')} |",
         f"| Recall@K | {_winner('recall')} |",
         f"| MRR | {_winner('mrr')} |",
     ]
@@ -185,33 +167,30 @@ def _section_winner(rows: list[dict]) -> str:
 
 
 def _section_kpi_summary(rows: list[dict]) -> str:
-    """Cross-engine quality KPIs: weighted accuracy, Recall@K, MRR."""
+    """Cross-engine quality KPIs: Recall@K and MRR."""
     by_engine: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
     for r in rows:
         e = r["engine_name"]
         targets = r["target_ids"] or []
         top = r["top_ids"] or []
-        by_engine[e]["accuracy"].append(_accuracy_score(r["target_ids"] or [], r["top_ids"] or []))
         by_engine[e]["recall"].append(_recall(targets, top))
         by_engine[e]["mrr"].append(_mrr(targets, top))
 
-    headers = ["Engine", "Avg Weighted Accuracy", "Recall@K", "MRR", "Runs"]
+    headers = ["Engine", "Recall@K", "MRR", "Runs"]
     table_rows = []
     for engine in sorted(by_engine):
         d = by_engine[engine]
         table_rows.append([
             f"`{engine}`",
-            _pct(_avg(d["accuracy"])),
             _pct(_avg(d["recall"])),
             _fmt(_avg(d["mrr"]), 3),
-            str(len(d["accuracy"])),
+            str(len(d["recall"])),
         ])
 
     note = (
         "> **Metrics**\n"
-        "> - **Weighted Accuracy** — positional score: 1.0 (rank 1) / 0.66 (rank 2) / 0.33 (rank 3). NDCG-lite.\n"
-        "> - **Recall@K** — did the relevant item appear anywhere in the top-K results?\n"
-        "> - **MRR** — Mean Reciprocal Rank. Higher = relevant result ranked closer to position 1.\n"
+        "> - **Recall@K** — fraction of correct targets found anywhere in the top-K results.\n"
+        "> - **MRR** — Mean Reciprocal Rank. Higher = first correct result ranked closer to position 1.\n"
     )
     return "## Quality KPIs by Engine\n\n" + note + "\n" + _md_table(headers, table_rows)
 
@@ -223,14 +202,13 @@ def _section_quality_by_dimension(rows: list[dict]) -> str:
         key = (r["engine_name"], r["dimension"])
         targets = r["target_ids"] or []
         top = r["top_ids"] or []
-        data[key]["accuracy"].append(_accuracy_score(r["target_ids"] or [], r["top_ids"] or []))
         data[key]["recall"].append(_recall(targets, top))
         data[key]["mrr"].append(_mrr(targets, top))
 
     engines = sorted({r["engine_name"] for r in rows})
     dimensions = sorted({r["dimension"] for r in rows})
 
-    headers = ["Engine", "Dimension", "Weighted Accuracy", "Recall@K", "MRR"]
+    headers = ["Engine", "Dimension", "Recall@K", "MRR"]
     table_rows = []
     for engine in engines:
         for dim in dimensions:
@@ -241,7 +219,6 @@ def _section_quality_by_dimension(rows: list[dict]) -> str:
             table_rows.append([
                 f"`{engine}`",
                 str(dim),
-                _pct(_avg(d["accuracy"])),
                 _pct(_avg(d["recall"])),
                 _fmt(_avg(d["mrr"]), 3),
             ])
@@ -261,12 +238,11 @@ def _section_quality_by_top_k(rows: list[dict]) -> str:
         key = (r["engine_name"], _get_top_k(r))
         targets = r["target_ids"] or []
         top = r["top_ids"] or []
-        data[key]["accuracy"].append(_accuracy_score(r["target_ids"] or [], r["top_ids"] or []))
         data[key]["recall"].append(_recall(targets, top))
         data[key]["mrr"].append(_mrr(targets, top))
 
     engines = sorted({r["engine_name"] for r in rows})
-    headers = ["Engine", "top_k", "Weighted Accuracy", "Recall@K", "MRR"]
+    headers = ["Engine", "top_k", "Recall@K", "MRR"]
     table_rows = []
     for engine in engines:
         for k in top_k_vals:
@@ -277,12 +253,11 @@ def _section_quality_by_top_k(rows: list[dict]) -> str:
             table_rows.append([
                 f"`{engine}`",
                 str(k),
-                _pct(_avg(d["accuracy"])),
                 _pct(_avg(d["recall"])),
                 _fmt(_avg(d["mrr"]), 3),
             ])
 
-    note = "> A good engine scores high even at small top_k. Accuracy dropping sharply as top_k decreases means the engine struggles to rank correct results near the top.\n"
+    note = "> A good engine scores high even at small top_k. Quality dropping sharply as top_k decreases means the engine struggles to rank correct results near the top.\n"
     return "## Quality by top_k\n\n" + note + "\n" + _md_table(headers, table_rows)
 
 
@@ -360,8 +335,8 @@ def _section_speed_scaling(rows: list[dict]) -> str:
     return "## Speed Scaling by Dimension (per engine)\n\n" + note + "\n" + _md_table(headers, table_rows)
 
 
-def _section_shots_to_accuracy(rows: list[dict]) -> str:
-    """Quantum-specific KPI: accuracy achieved at each shots value."""
+def _section_shots_to_quality(rows: list[dict]) -> str:
+    """Quantum-specific KPI: quality at each shots value."""
     quantum_rows = [r for r in rows if r["state_prep_ms"] is not None and r["state_prep_ms"] > 0]
     if not quantum_rows:
         return ""
@@ -374,31 +349,29 @@ def _section_shots_to_accuracy(rows: list[dict]) -> str:
             continue
         targets = r["target_ids"] or []
         top = r["top_ids"] or []
-        by_shots[shots]["accuracy"].append(_accuracy_score(r["target_ids"] or [], r["top_ids"] or []))
         by_shots[shots]["recall"].append(_recall(targets, top))
         by_shots[shots]["mrr"].append(_mrr(targets, top))
 
     if not by_shots:
         return ""
 
-    headers = ["Shots", "Weighted Accuracy", "Recall@K", "MRR", "Runs"]
+    headers = ["Shots", "Recall@K", "MRR", "Runs"]
     table_rows = []
     for shots in sorted(by_shots):
         d = by_shots[shots]
         table_rows.append([
             str(shots),
-            _pct(_avg(d["accuracy"])),
             _pct(_avg(d["recall"])),
             _fmt(_avg(d["mrr"]), 3),
-            str(len(d["accuracy"])),
+            str(len(d["recall"])),
         ])
 
     note = (
         "> Shots = number of quantum circuit measurements per query.\n"
         "> On real hardware, fewer shots = lower cost. This table shows the minimum shots\n"
-        "> needed to reach acceptable accuracy.\n"
+        "> needed to reach acceptable quality.\n"
     )
-    return "## Quantum: Shots vs. Accuracy\n\n" + note + "\n" + _md_table(headers, table_rows)
+    return "## Quantum: Shots vs. Quality\n\n" + note + "\n" + _md_table(headers, table_rows)
 
 
 def _section_head_to_head(rows: list[dict]) -> str:
@@ -414,7 +387,6 @@ def _section_head_to_head(rows: list[dict]) -> str:
 
     headers = (
         ["Query", "Dim", "top_k"]
-        + [f"`{e}` Accuracy" for e in engines]
         + [f"`{e}` Recall@K" for e in engines]
         + [f"`{e}` MRR" for e in engines]
     )
@@ -423,9 +395,6 @@ def _section_head_to_head(rows: list[dict]) -> str:
         for dim in dimensions:
             for k in top_k_vals:
                 row_cells = [f"`{query}`", str(dim), str(k)]
-                for engine in engines:
-                    r = index.get((query, engine, dim, k))
-                    row_cells.append(_pct(_accuracy_score(r["target_ids"] or [], r["top_ids"] or [])) if r else "—")
                 for engine in engines:
                     r = index.get((query, engine, dim, k))
                     targets = (r["target_ids"] or []) if r else []
@@ -451,7 +420,7 @@ def _section_per_query(rows: list[dict]) -> str:
     sections = ["## Per-Query Detail\n"]
     for query in queries:
         sections.append(f"### `{query}`\n")
-        headers = ["Engine", "Dim", "top_k", "Weighted Acc", "Recall@K", "MRR", "Top Results"]
+        headers = ["Engine", "Dim", "top_k", "Recall@K", "MRR", "Top Results"]
         table_rows = []
         for engine in engines:
             for dim in dimensions:
@@ -465,7 +434,6 @@ def _section_per_query(rows: list[dict]) -> str:
                         f"`{engine}`",
                         str(dim),
                         str(k),
-                        _pct(_accuracy_score(r["target_ids"] or [], r["top_ids"] or [])),
                         _pct(_recall(targets, top)),
                         _fmt(_mrr(targets, top), 3),
                         ", ".join(f"`{x}`" for x in top),
@@ -521,7 +489,7 @@ def main() -> None:
         "",
         _section_head_to_head(rows),
         "",
-        _section_shots_to_accuracy(rows),
+        _section_shots_to_quality(rows),
         "",
         _section_circuit_complexity(rows),
         "",

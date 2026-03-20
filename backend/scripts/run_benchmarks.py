@@ -43,21 +43,6 @@ SCALAR_KEYS: set[str] = set()
 CONFIG_KEYS = LIST_KEYS | SCALAR_KEYS
 
 
-def _accuracy_score(target_ids: List[str], ranked_ids: List[str]) -> float:
-    weights = [1.0, 0.66, 0.33]
-    best_idx: int | None = None
-    for target in target_ids:
-        try:
-            idx = ranked_ids.index(target)
-        except ValueError:
-            continue
-        if best_idx is None or idx < best_idx:
-            best_idx = idx
-    if best_idx is None or best_idx >= len(weights):
-        return 0.0
-    return weights[best_idx]
-
-
 def _recall_at_k(target_ids: List[str], ranked_ids: List[str]) -> float:
     if not target_ids:
         return 0.0
@@ -301,7 +286,6 @@ def main() -> None:
                         meta = result.meta or {}
                         for top_k in top_k_values:
                             eval_ids = result.ids[:top_k]
-                            accuracy = _accuracy_score(query.target_ids, eval_ids)
                             recall = _recall_at_k(query.target_ids, eval_ids)
                             mrr = _mrr(query.target_ids, eval_ids)
                             parameters: dict = {"dimension": dimension, "top_k": top_k}
@@ -315,7 +299,6 @@ def main() -> None:
                                     dimension=dimension,
                                     target_ids=query.target_ids,
                                     top_ids=eval_ids,
-                                    accuracy=accuracy,
                                     recall_at_k=recall,
                                     mrr=mrr,
                                     state_prep_ms=prep_ms if is_quantum else 0.0,
@@ -333,7 +316,7 @@ def main() -> None:
                             print(
                                 f"[{engine.name}] query={query.id} dim={dimension} "
                                 f"top_k={top_k} shots={shots} layers={layers} "
-                                f"accuracy={accuracy:.2f} recall={recall:.2f} mrr={mrr:.3f} "
+                                f"recall={recall:.2f} mrr={mrr:.3f} "
                                 f"total_ms={total_ms:.2f}"
                             )
 

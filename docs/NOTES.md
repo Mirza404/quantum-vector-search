@@ -28,17 +28,17 @@ We plan to create a hybrid web application that performs cross-modal search usin
 
 ## System Architecture & Implementation Phases
 
-### Phase 1: The Repository Layer (Data Management) ✅
+### Phase 1: The Repository Layer (Data Management)
 Responsible for fetching the experimental dataset.
 * **Component:** `BaseDataLoader` interface with a `get_dataset()` method.
 * **Implementation:** `LocalCSVDataLoader` — reads local images and a CSV mapping text to image paths from `backend/data/sample_dataset/`.
 * **Rule:** No user uploads for the MVP. A stable, controlled baseline is required for reproducible empirical results.
 
-### Phase 2: The On-Demand Embedding Pipeline ✅
+### Phase 2: The On-Demand Embedding Pipeline
 CLIP-based pipeline converts cross-modal data (text/images) into a shared embedding space whenever a benchmark run starts. There is no preprocessing or cache — the harness loads the dataset, encodes images and text with `CLIPEmbeddingModel`, and reuses those vectors for the duration of the run.
 * **Implementations:** `CLIPEmbeddingModel` (real CLIP, ViT-B/32) and `MockCLIPEmbeddingGenerator` for lightweight tests. Both live behind the `EmbeddingGenerator` interface.
 
-### Phase 3: The Modular Search Engines ✅
+### Phase 3: The Modular Search Engines
 Four engines, all implementing `SearchEngineStrategy` with `build_index()` and `search()`:
 
 | Engine | Class | Type |
@@ -50,7 +50,7 @@ Four engines, all implementing `SearchEngineStrategy` with `build_index()` and `
 
 Active engines are controlled by `backend/config/benchmarks.yaml` — comment out entries to skip without code changes.
 
-### Phase 4: Database Benchmarking Storage ✅
+### Phase 4: Database Benchmarking Storage
 All benchmark results write directly to PostgreSQL. No CSV files.
 
 **Infrastructure (in `db/`, outside Python backend):**

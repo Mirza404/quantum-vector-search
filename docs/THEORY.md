@@ -431,11 +431,11 @@ On real quantum hardware:
   bottleneck, not the swap test itself.
 
 What is meaningful to compare:
-- **Accuracy** — does the quantum engine return the same top-K as the classical engines?
+- **Quality** (Recall@K, MRR) — does the quantum engine return the same top-K as the classical engines?
 - **Circuit depth** — how deep a circuit do we need per query? This predicts real-hardware
   feasibility.
 - **Qubit count** — how many qubits? This predicts hardware allocation cost.
-- **Shots vs. accuracy** — how many measurements are needed to match classical accuracy?
+- **Shots vs. quality** — how many measurements are needed to match classical Recall@K and MRR?
 - **Scaling behaviour** — how do these resource costs grow as dimension increases?
 
 ---
@@ -464,30 +464,13 @@ to find the same targets is ranking correct answers too far down the list.
 
 *In plain terms:* all three metrics below are asking the same basic question — "did the search
 engine find the right images?" — but with different definitions of what "find" means.
-**Weighted Accuracy** cares about whether the right image was near the top of the list.
 **Recall@K** cares about whether all the right images showed up anywhere in the top K.
-**MRR** cares about where the very first correct result landed. A perfect engine scores 1.0 on
-all three. An engine that never finds anything correct scores 0.0 on all three.
+**MRR** cares about where the very first correct result landed.
+Both handle queries with multiple correct targets. MRR only looks at the single highest-ranked correct result — it measures *where the best hit landed*, not how many hits there were. Recall@K is the metric that rewards finding more correct targets. For example, say a query has 3 correct images and `top_k=3`. Engine A returns all 3 correct images; engine B returns only 1. MRR scores both engines identically if that one correct image is in the same position — only Recall@K tells them apart (1.0 vs 0.33).
+Recall@K inherently depends on `top_k` — the K is part of its definition. MRR does not depend on it in general, but here both metrics are evaluated on the truncated top-K results, so both are affected by `top_k`.
+A perfect engine scores 1.0 on both. An engine that never finds anything correct scores 0.0 on both.
 
-### 11.1 Weighted Accuracy (NDCG-lite)
-
-Rewards finding a correct answer **near the top** of the result list. Only the highest-ranked
-correct answer counts:
-
-| Rank | Score |
-|---|---|
-| 1 | 1.00 |
-| 2 | 0.66 |
-| 3 | 0.33 |
-| Not in top K | 0.00 |
-
-Example: a query has 3 correct images. The engine returns them at ranks 2, 5, and 8. Score =
-0.66 (only the best rank, which is 2, counts).
-
-This is a simplified **NDCG** (Normalised Discounted Cumulative Gain) — the standard metric
-for judging ranking quality in information retrieval.
-
-### 11.2 Recall@K
+### 11.1 Recall@K
 
 ```
 Recall@K = (correct images found in top K) / (total correct images for that query)
@@ -502,7 +485,7 @@ in its top K results?"
 
 Final Recall@K is averaged over all queries.
 
-### 11.3 Mean Reciprocal Rank (MRR)
+### 11.2 Mean Reciprocal Rank (MRR)
 
 ```
 MRR = average of (1 / rank of first correct result) across all queries
@@ -518,7 +501,7 @@ Asks: "on average, how far down the list do you have to scroll to hit the first 
 MRR is the most user-focused metric — it directly measures how quickly a user would find a
 relevant result.
 
-### 11.4 Why cross-engine speed comparison is excluded
+### 11.3 Why cross-engine speed comparison is excluded
 
 See Section 10. Intra-engine speed comparison (e.g., dim=64 vs dim=128 for the same engine)
 is valid because the same type of computation is being compared at different scales.
@@ -732,17 +715,6 @@ vectors in a large list. `IndexFlatL2` is its simplest mode — compare the quer
 single vector and return the closest ones. No shortcuts, no approximations, always the correct
 answer. For our small dataset this is fine; at millions of images you would switch to an
 approximate index that trades a little accuracy for a lot of speed.
-
-**Q: Is NDCG the same as weighted accuracy?**
-A: The project implements a simplified version. True NDCG uses logarithmic discounting
-(1/log₂(rank+1)) and requires a relevance score per result. The weighted accuracy uses
-linear weights (1.0, 0.66, 0.33) and a single binary relevance (correct target or not).
-The spirit is the same: reward finding the right answer earlier in the list more heavily.
-
-*In plain terms:* both metrics give you more points for finding the right answer near the top
-of the list. NDCG is the official industry version with a more complex formula. Our weighted
-accuracy is a simpler approximation that is easier to explain and produces the same general
-signal. For a project of this scale the difference is not meaningful.
 
 **Q: What is MRR and when is it useful?**
 A: MRR (Mean Reciprocal Rank) averages 1/rank across queries, where rank is the position of
