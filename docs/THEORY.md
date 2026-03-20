@@ -277,7 +277,7 @@ quantum states. It is the core of the `QiskitSwapTestEngine`.
 
 ```
 ancilla:  |0⟩ ──H──●──H──M
-                    │
+                   │
 state ψ:  |ψ⟩ ─────X──────   (CSWAP targets)
 state φ:  |φ⟩ ─────X──────
 ```
@@ -374,9 +374,6 @@ can execute circuits of depth ~100 reliably; deeper circuits produce mostly nois
 
 ## 10. Why We Cannot Compare Speeds
 
-This is the most common misconception about the project, and almost certainly something a
-professor will ask about.
-
 **The short answer:** the quantum engine runs on a classical software simulator, so its runtime
 reflects classical simulation overhead, not quantum computation time. Comparing wall-clock times
 would be meaningless and misleading.
@@ -407,8 +404,10 @@ What is meaningful to compare:
 
 ### 11.1 Weighted Accuracy (NDCG-lite)
 
-For each query, the ground truth defines the single correct target image. The result list
-is ranked from 1 to top_k. The weighted accuracy assigns:
+Each query in the ground truth has a `target_ids` list — one or more images that are correct
+answers for that query. The current dataset has one target per query, but the data model and
+all metrics support multiple targets (e.g., a "car" query could legitimately match several car
+images). The weighted accuracy scores based on the highest-ranked target found:
 
 | Rank | Weight |
 |---|---|
@@ -424,11 +423,17 @@ higher in the list.
 ### 11.2 Recall@K
 
 ```
-Recall@K = (number of relevant items found in top K) / (total relevant items)
+Recall@K = (number of relevant items found in top K) / (total relevant items for that query)
 ```
 
-In this project there is one target per query, so Recall@K is binary: 1.0 if the target
-appears anywhere in the top K, 0.0 otherwise. Averaged over all queries.
+Answers the question: "out of all images that should match this query, how many did the engine
+actually return in its top K results?"
+
+- A query with 3 correct images where the engine finds 2 of them scores 2/3 ≈ 0.67.
+- A query with 1 correct image where the engine finds it scores 1/1 = 1.0.
+- If none of the correct images appear in the top K, the score is 0.
+
+The final Recall@K is averaged over all queries.
 
 ### 11.3 Mean Reciprocal Rank (MRR)
 
@@ -436,8 +441,8 @@ appears anywhere in the top K, 0.0 otherwise. Averaged over all queries.
 MRR = (1/|Q|) · Σ_q  1/rank(q)
 ```
 
-Where `rank(q)` is the position of the first relevant result for query q. If the correct
-image is at rank 1: contributes 1.0. At rank 2: contributes 0.5. At rank 3: contributes 0.33.
+Where `rank(q)` is the position of the first relevant result for query q (the first hit among
+all `target_ids`). If the first match is at rank 1: contributes 1.0. At rank 2: 0.5. At rank 3: 0.33.
 Not found: contributes 0.
 
 MRR is particularly useful when you care primarily about the first relevant result.
