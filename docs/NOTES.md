@@ -43,7 +43,7 @@ Four engines, all implementing `SearchEngineStrategy` with `build_index()` and `
 
 | Engine | Class | Type |
 |---|---|---|
-| `vector_mock_cosine` | `VectorMockEngine` | Deterministic cosine similarity, brute-force NumPy. Fast baseline. |
+| `brute_force_cosine` | `BruteForceCosineEngine` | Deterministic cosine similarity, brute-force NumPy. Fast baseline. |
 | `faiss_flat_l2` | `FaissFlatEngine` | Real FAISS `IndexFlatL2`. Production-grade classical search. |
 | `quantum_mock_sampler` | `QuantumMockEngine` | Cosine + configurable noise simulating quantum measurement error. No real circuits. |
 | `qiskit_swap_test` | `QiskitSwapTestEngine` | Real Qiskit circuit running a swap test on AerSimulator. |

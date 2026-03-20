@@ -126,7 +126,7 @@ quantum states — see Section 8.
 
 For CLIP embeddings, **cosine similarity** (or equivalently, dot product on unit vectors) is
 standard. The project uses:
-- `VectorMockEngine`: cosine similarity directly.
+- `BruteForceCosineEngine`: cosine similarity directly.
 - `FaissFlatEngine`: L2 distance (equivalent after normalisation).
 - `QiskitSwapTestEngine`: squared dot product via swap test.
 
@@ -134,7 +134,7 @@ standard. The project uses:
 
 ## 5. Classical Search Engines
 
-### 5.1 Brute-Force Cosine (VectorMockEngine)
+### 5.1 Brute-Force Cosine (BruteForceCosineEngine)
 
 The simplest possible approach:
 1. Normalise every stored vector to unit length.
@@ -489,7 +489,7 @@ behind a common interface, and the concrete algorithm is chosen at runtime.
 
 In this project:
 - `SearchEngineStrategy` is the interface (abstract base class with `build_index()` and `search()`).
-- `FaissFlatEngine`, `VectorMockEngine`, `QuantumMockEngine`, `QiskitSwapTestEngine` are the
+- `FaissFlatEngine`, `BruteForceCosineEngine`, `QuantumMockEngine`, `QiskitSwapTestEngine` are the
   concrete strategies.
 - The benchmark harness iterates over a list of strategy instances — it does not know or care
   which engine is running.

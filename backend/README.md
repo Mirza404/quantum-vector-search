@@ -17,7 +17,7 @@ src/qvs/
 `config/benchmarks.yaml` controls each benchmark run. Comment out entries to skip without changing code.
 
 ```yaml
-engines:       # vector_mock_cosine | faiss_flat_l2 | quantum_mock_sampler | qiskit_swap_test
+engines:       # brute_force_cosine | faiss_flat_l2 | quantum_mock_sampler | qiskit_swap_test
 dimensions:    # truncated from CLIP's 512-dim output
 queries:       # IDs from data/sample_dataset/ground_truth.json
 top_k: 3

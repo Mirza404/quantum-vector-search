@@ -7,7 +7,7 @@ import numpy as np
 from qvs.engines import SearchEngineStrategy, SearchResult
 
 
-class VectorMockEngine(SearchEngineStrategy):
+class BruteForceCosineEngine(SearchEngineStrategy):
     """Deterministic cosine-similarity search used for quick benchmarks."""
 
     def __init__(self) -> None:
@@ -16,11 +16,11 @@ class VectorMockEngine(SearchEngineStrategy):
 
     @property
     def name(self) -> str:
-        return "vector_mock_cosine"
+        return "brute_force_cosine"
 
     def build_index(self, *, vectors: List[List[float]], ids: List[str], **params: Any) -> None:
         if not vectors:
-            raise ValueError("vector_mock requires at least one vector")
+            raise ValueError("brute_force_cosine requires at least one vector")
         if len(vectors) != len(ids):
             raise ValueError("vectors and ids must have the same length")
         matrix = np.asarray(vectors, dtype=np.float32)

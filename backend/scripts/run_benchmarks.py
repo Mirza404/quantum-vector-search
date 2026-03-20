@@ -19,7 +19,7 @@ from qvs.benchmark import BenchmarkQuery, BenchmarkResult, DatabaseStorage, load
 from qvs.engines.faiss_flat import FaissFlatEngine
 from qvs.engines.qiskit_swaptest import QiskitSwapTestEngine
 from qvs.engines.quantum_mock import QuantumMockEngine
-from qvs.engines.vector_mock import VectorMockEngine
+from qvs.engines.brute_force_cosine import BruteForceCosineEngine
 from qvs.pipeline import CLIPEmbeddingModel
 
 
@@ -60,7 +60,7 @@ def _prepare_vectors(matrix: np.ndarray, dimension: int) -> List[List[float]]:
 
 def _engine_factories(seed: int | None, dimension: int) -> dict[str, Callable[[], object]]:
     return {
-        "vector_mock_cosine": lambda: VectorMockEngine(),
+        "brute_force_cosine": lambda: BruteForceCosineEngine(),
         "quantum_mock_sampler": lambda: QuantumMockEngine(seed=seed),
         "faiss_flat_l2": lambda: FaissFlatEngine(dimension=dimension),
         "qiskit_swap_test": lambda: QiskitSwapTestEngine(),

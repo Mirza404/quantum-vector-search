@@ -2,14 +2,14 @@
 # Comment out any entry to skip it without touching Python code.
 
 # Available engines:
-#   vector_mock_cosine  — deterministic cosine similarity (no index, brute-force). Fast baseline.
+#   brute_force_cosine  — deterministic cosine similarity (no index, brute-force). Fast baseline.
 #   faiss_flat_l2       — real FAISS IndexFlatL2 index. Production-grade classical search.
 #   quantum_mock_sampler — cosine similarity + configurable noise to simulate quantum measurement
 #                          error. Uses shots/layers below. No real quantum hardware.
 #   qiskit_swap_test    — real Qiskit circuit running a swap test on AerSimulator.
 #                         Measures vector similarity via quantum overlap. Slow on large datasets.
 engines:
-  - vector_mock_cosine
+  - brute_force_cosine
   - quantum_mock_sampler
   # - faiss_flat_l2
   # - qiskit_swap_test
