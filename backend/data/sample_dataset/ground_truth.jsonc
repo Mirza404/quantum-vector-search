@@ -1,3 +1,10 @@
+// Ground truth for benchmark queries.
+// Each entry defines a query and its correct target image(s).
+//
+// IMPORTANT: if you add targets to a query or add a new query with more targets,
+// update top_k_values in config/benchmarks.yaml — every top_k value must be
+// >= the largest number of target_ids in any single query. The harness enforces
+// this with a hard error at startup.
 [
   {
     "id": "query_car",

@@ -27,7 +27,7 @@ def main() -> None:
     clip_model = CLIPEmbeddingModel(model_name=CLIP_MODEL_NAME, batch_size=CLIP_BATCH_SIZE)
     vectors, dataset_dim = _generate_dataset_vectors(dataset, clip_model)
 
-    ground_truth_path = dataset_dir / "ground_truth.json"
+    ground_truth_path = dataset_dir / "ground_truth.jsonc"
     queries = load_benchmark_queries(ground_truth_path)
     demo_query = queries[0]
     query_vector = clip_model.encode_texts([demo_query.text])[0]

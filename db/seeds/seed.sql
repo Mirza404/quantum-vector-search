@@ -7,7 +7,7 @@ TRUNCATE TABLE benchmark_results, image_vectors, schema_migrations RESTART IDENT
 -- PostgreSQL database dump
 --
 
-\restrict GmLzx1ga10LwPRWdfqtM4S0DbtghD7WlqbDDNeMAydlaX8rd6rIhSPOBk83PXGP
+\restrict PhwEeeAtW1eP7vn9gNcRzsi6hoHODFeJXROsmtQYIsRHuZXxgDIfuH5UznRlKc3
 
 -- Dumped from database version 16.13 (Debian 16.13-1.pgdg12+1)
 -- Dumped by pg_dump version 16.13 (Debian 16.13-1.pgdg12+1)
@@ -27,14 +27,14 @@ SET row_security = off;
 -- Data for Name: benchmark_results; Type: TABLE DATA; Schema: public; Owner: qvs
 --
 
-INSERT INTO public.benchmark_results VALUES (7, '2026-03-20 17:13:03.863171+00', 'query_robot', 'brute_force_cosine', 64, '["robot_04"]', '["robot_04"]', 0, 0.029446000553434715, 0.061781000113114715, '{"top_k": 1, "dimension": 64}', 4, NULL, NULL, 1, -1, -1) ON CONFLICT DO NOTHING;
-INSERT INTO public.benchmark_results VALUES (8, '2026-03-20 17:13:03.863811+00', 'query_robot', 'quantum_mock_sampler', 64, '["robot_04"]', '["robot_04"]', 0.031841998861636966, 0.03478500002529472, 0.06662699888693169, '{"shots": 512, "top_k": 1, "layers": 1, "dimension": 64}', 4, 2, 2, 1, 512, 1) ON CONFLICT DO NOTHING;
-INSERT INTO public.benchmark_results VALUES (1, '2026-03-20 17:13:03.847137+00', 'query_car', 'brute_force_cosine', 64, '["car_01"]', '["car_01"]', 0, 0.15974499910953455, 0.31119399864110164, '{"top_k": 1, "dimension": 64}', 4, NULL, NULL, 1, -1, -1) ON CONFLICT DO NOTHING;
-INSERT INTO public.benchmark_results VALUES (2, '2026-03-20 17:13:03.8574+00', 'query_car', 'quantum_mock_sampler', 64, '["car_01"]', '["car_01"]', 0.1003460020001512, 0.10516800102777779, 0.205514003027929, '{"shots": 512, "top_k": 1, "layers": 1, "dimension": 64}', 4, 2, 2, 1, 512, 1) ON CONFLICT DO NOTHING;
-INSERT INTO public.benchmark_results VALUES (3, '2026-03-20 17:13:03.859112+00', 'query_planet', 'brute_force_cosine', 64, '["planet_02"]', '["planet_02"]', 0, 0.06092999683460221, 0.13883299470762722, '{"top_k": 1, "dimension": 64}', 4, NULL, NULL, 1, -1, -1) ON CONFLICT DO NOTHING;
-INSERT INTO public.benchmark_results VALUES (4, '2026-03-20 17:13:03.860416+00', 'query_planet', 'quantum_mock_sampler', 64, '["planet_02"]', '["planet_02"]', 0.0659320030536037, 0.06887899871799164, 0.13481100177159533, '{"shots": 512, "top_k": 1, "layers": 1, "dimension": 64}', 4, 2, 2, 1, 512, 1) ON CONFLICT DO NOTHING;
-INSERT INTO public.benchmark_results VALUES (5, '2026-03-20 17:13:03.861429+00', 'query_forest', 'brute_force_cosine', 64, '["forest_03"]', '["car_01"]', 0, 0.03803000072366558, 0.08398400314035825, '{"top_k": 1, "dimension": 64}', 4, NULL, NULL, 1, -1, -1) ON CONFLICT DO NOTHING;
-INSERT INTO public.benchmark_results VALUES (6, '2026-03-20 17:13:03.86237+00', 'query_forest', 'quantum_mock_sampler', 64, '["forest_03"]', '["car_01"]', 0.03586299862945452, 0.039925998862599954, 0.07578899749205448, '{"shots": 512, "top_k": 1, "layers": 1, "dimension": 64}', 4, 2, 2, 1, 512, 1) ON CONFLICT DO NOTHING;
+INSERT INTO public.benchmark_results VALUES (1, '2026-03-20 17:38:14.318951+00', 'query_car', 'brute_force_cosine', 64, '["car_01"]', '["car_01"]', 0, 0.10931699944194406, 0.22803399770054966, '{"top_k": 1, "dimension": 64}', 4, NULL, NULL, 1, -1, -1) ON CONFLICT DO NOTHING;
+INSERT INTO public.benchmark_results VALUES (2, '2026-03-20 17:38:14.328945+00', 'query_car', 'quantum_mock_sampler', 64, '["car_01"]', '["car_01"]', 0.0517959997523576, 0.06331700205919333, 0.11511300181155093, '{"shots": 512, "top_k": 1, "layers": 1, "dimension": 64}', 4, 2, 2, 1, 512, 1) ON CONFLICT DO NOTHING;
+INSERT INTO public.benchmark_results VALUES (3, '2026-03-20 17:38:14.329787+00', 'query_planet', 'brute_force_cosine', 64, '["planet_02"]', '["planet_02"]', 0, 0.04522299786913209, 0.08488999810651876, '{"top_k": 1, "dimension": 64}', 4, NULL, NULL, 1, -1, -1) ON CONFLICT DO NOTHING;
+INSERT INTO public.benchmark_results VALUES (4, '2026-03-20 17:38:14.330842+00', 'query_planet', 'quantum_mock_sampler', 64, '["planet_02"]', '["planet_02"]', 0.03898100112564862, 0.03991399717051536, 0.07889499829616398, '{"shots": 512, "top_k": 1, "layers": 1, "dimension": 64}', 4, 2, 2, 1, 512, 1) ON CONFLICT DO NOTHING;
+INSERT INTO public.benchmark_results VALUES (5, '2026-03-20 17:38:14.332031+00', 'query_forest', 'brute_force_cosine', 64, '["forest_03"]', '["car_01"]', 0, 0.03228599962312728, 0.06780699914088473, '{"top_k": 1, "dimension": 64}', 4, NULL, NULL, 1, -1, -1) ON CONFLICT DO NOTHING;
+INSERT INTO public.benchmark_results VALUES (6, '2026-03-20 17:38:14.33294+00', 'query_forest', 'quantum_mock_sampler', 64, '["forest_03"]', '["car_01"]', 0.03148799805785529, 0.03578500036383048, 0.06727299842168577, '{"shots": 512, "top_k": 1, "layers": 1, "dimension": 64}', 4, 2, 2, 1, 512, 1) ON CONFLICT DO NOTHING;
+INSERT INTO public.benchmark_results VALUES (7, '2026-03-20 17:38:14.333973+00', 'query_robot', 'brute_force_cosine', 64, '["robot_04"]', '["robot_04"]', 0, 0.026368998078396544, 0.05586399856838398, '{"top_k": 1, "dimension": 64}', 4, NULL, NULL, 1, -1, -1) ON CONFLICT DO NOTHING;
+INSERT INTO public.benchmark_results VALUES (8, '2026-03-20 17:38:14.334882+00', 'query_robot', 'quantum_mock_sampler', 64, '["robot_04"]', '["robot_04"]', 0.023862001398811117, 0.028772003133781254, 0.05263400453259237, '{"shots": 512, "top_k": 1, "layers": 1, "dimension": 64}', 4, 2, 2, 1, 512, 1) ON CONFLICT DO NOTHING;
 
 
 --
@@ -60,12 +60,12 @@ INSERT INTO public.schema_migrations VALUES ('3_drop_accuracy_column.sql', '2026
 -- Name: benchmark_results_id_seq; Type: SEQUENCE SET; Schema: public; Owner: qvs
 --
 
-SELECT pg_catalog.setval('public.benchmark_results_id_seq', 32, true);
+SELECT pg_catalog.setval('public.benchmark_results_id_seq', 40, true);
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict GmLzx1ga10LwPRWdfqtM4S0DbtghD7WlqbDDNeMAydlaX8rd6rIhSPOBk83PXGP
+\unrestrict PhwEeeAtW1eP7vn9gNcRzsi6hoHODFeJXROsmtQYIsRHuZXxgDIfuH5UznRlKc3
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import json
+import re
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
@@ -14,8 +15,13 @@ class BenchmarkQuery:
     target_ids: List[str]
 
 
+def _strip_jsonc_comments(text: str) -> str:
+    """Strip // line comments so JSONC files can be parsed by the standard json module."""
+    return re.sub(r"//[^\n]*", "", text)
+
+
 def load_benchmark_queries(path: Path) -> List[BenchmarkQuery]:
-    raw = json.loads(path.read_text())
+    raw = json.loads(_strip_jsonc_comments(path.read_text()))
     return [BenchmarkQuery(**entry) for entry in raw]
 
 

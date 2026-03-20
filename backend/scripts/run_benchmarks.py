@@ -162,7 +162,7 @@ def _select_queries(requested_ids: List[str], available_queries: List[BenchmarkQ
 def main() -> None:
     parser = argparse.ArgumentParser(description="Automated benchmarking harness")
     parser.add_argument("--dataset-dir", default="data/sample_dataset/images", help="Dataset directory")
-    parser.add_argument("--ground-truth", default=None, help="Ground-truth JSON (defaults to <dataset>/ground_truth.json)")
+    parser.add_argument("--ground-truth", default=None, help="Ground-truth JSONC (defaults to <dataset>/ground_truth.jsonc)")
     parser.add_argument("--config", default="config/benchmarks.yaml", help="Relative or absolute path to benchmark selection YAML")
     parser.add_argument(
         "--dimensions",
@@ -195,7 +195,7 @@ def main() -> None:
     ground_truth_path = (
         Path(args.ground_truth).resolve()
         if args.ground_truth
-        else (BACKEND_ROOT / "data" / "sample_dataset" / "ground_truth.json").resolve()
+        else (BACKEND_ROOT / "data" / "sample_dataset" / "ground_truth.jsonc").resolve()
     )
 
     queries = load_benchmark_queries(ground_truth_path)
@@ -221,7 +221,7 @@ def main() -> None:
     missing = all_target_ids - stored_vectors.keys()
     if missing:
         raise SystemExit(
-            f"The following image IDs are referenced in ground_truth.json but have no stored embedding: "
+            f"The following image IDs are referenced in ground_truth.jsonc but have no stored embedding: "
             f"{', '.join(sorted(missing))}. "
             "Run `python3 scripts/index_dataset.py` to encode all images."
         )
