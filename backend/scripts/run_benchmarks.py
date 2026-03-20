@@ -25,15 +25,20 @@ from qvs.pipeline import CLIPEmbeddingModel
 
 @dataclass(frozen=True)
 class BenchmarkSelection:
-    engines: List[str]
+    classical_engines: List[str]
+    quantum_engines: List[str]
     dimensions: List[int]
     queries: List[str]
     top_k_values: List[int] = field(default_factory=lambda: [3])
     shots_values: List[int] = field(default_factory=lambda: [2048])
     layers_values: List[int] = field(default_factory=lambda: [2])
 
+    @property
+    def engines(self) -> List[str]:
+        return self.classical_engines + self.quantum_engines
 
-LIST_KEYS = {"engines", "dimensions", "queries", "top_k_values", "shots_values", "layers_values"}
+
+LIST_KEYS = {"classical_engines", "quantum_engines", "dimensions", "queries", "top_k_values", "shots_values", "layers_values"}
 SCALAR_KEYS: set[str] = set()
 CONFIG_KEYS = LIST_KEYS | SCALAR_KEYS
 
@@ -132,7 +137,7 @@ def _load_selection_config(path: Path) -> BenchmarkSelection:
     missing = [key for key in LIST_KEYS if key not in lists]
     if missing:
         raise SystemExit(f"Missing sections in {path}: {', '.join(missing)}")
-    if not lists["engines"]:
+    if not lists["classical_engines"] and not lists["quantum_engines"]:
         raise SystemExit(f"No engines enabled in {path}.")
     if not lists["dimensions"]:
         raise SystemExit(f"No dimensions listed in {path}.")
@@ -149,7 +154,8 @@ def _load_selection_config(path: Path) -> BenchmarkSelection:
         return values
 
     return BenchmarkSelection(
-        engines=lists["engines"],
+        classical_engines=lists["classical_engines"],
+        quantum_engines=lists["quantum_engines"],
         dimensions=_parse_int_list("dimensions"),
         queries=lists["queries"],
         top_k_values=_parse_int_list("top_k_values"),
@@ -257,6 +263,7 @@ def main() -> None:
         query.id: query_matrix[idx].astype(np.float32).tolist() for idx, query in enumerate(queries)
     }
     engine_names = selection.engines
+    quantum_engine_names = set(selection.quantum_engines)
 
     for dimension in sorted(dimensions):
         engine_factories = _engine_factories(args.quantum_seed, dimension)
@@ -276,7 +283,7 @@ def main() -> None:
                 engine.build_index(vectors=vectors, ids=dataset_ids)
                 prep_ms = (perf_counter() - prep_start) * 1000
 
-                is_quantum = engine.name in {"quantum_mock_sampler", "qiskit_swap_test"}
+                is_quantum = engine.name in quantum_engine_names
                 shot_iter = shots_values if is_quantum else [None]
                 layer_iter = layers_values if is_quantum else [None]
 

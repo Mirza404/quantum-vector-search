@@ -1,17 +1,20 @@
 # Controls which (engine, dimension, query) combinations run during benchmarks.
 # Comment out any entry to skip it without touching Python code.
 
-# Available engines:
+# Classical engines — no shots/layers parameters.
 #   brute_force_cosine  — deterministic cosine similarity (no index, brute-force). Fast baseline.
 #   faiss_flat_l2       — real FAISS IndexFlatL2 index. Production-grade classical search.
+classical_engines:
+  - brute_force_cosine
+  # - faiss_flat_l2
+
+# Quantum engines — accept shots/layers parameters and populate circuit_depth/num_qubits fields.
 #   quantum_mock_sampler — cosine similarity + configurable noise to simulate quantum measurement
 #                          error. Uses shots/layers below. No real quantum hardware.
 #   qiskit_swap_test    — real Qiskit circuit running a swap test on AerSimulator.
 #                         Measures vector similarity via quantum overlap. Slow on large datasets.
-engines:
-  - brute_force_cosine
+quantum_engines:
   - quantum_mock_sampler
-  # - faiss_flat_l2
   # - qiskit_swap_test
 
 # Embedding dimensions to benchmark. Each engine is run once per dimension.
