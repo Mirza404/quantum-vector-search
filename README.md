@@ -22,12 +22,17 @@ Compares classical and quantum-inspired vector search engines for cross-modal si
    pip install -e . --extra-index-url https://download.pytorch.org/whl/cpu
    ```
 
-3. **Run benchmarks**
+3. **Index images** (one-time — encodes images with CLIP and stores vectors in Postgres)
+   ```bash
+   python3 scripts/index_dataset.py
+   ```
+
+4. **Run benchmarks**
    ```bash
    python3 scripts/run_benchmarks.py
    ```
 
-4. **Generate report**
+5. **Generate report**
    ```bash
    python3 scripts/generate_report.py
    ```
@@ -47,5 +52,9 @@ All db commands run from the `db/` directory.
 | `make reset` | Wipe volume and start fresh |
 
 To share results, run `make dump` from `db/` and commit `db/seeds/seed.sql`.
+
+## Adminer
+
+Open **http://localhost:8080** after `make up`. Use `postgres` as the server (Docker service name), credentials from `.env`.
 
 See `backend/README.md` for package layout, config, and advanced usage.

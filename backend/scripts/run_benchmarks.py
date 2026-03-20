@@ -21,7 +21,6 @@ from qvs.engines.qiskit_swaptest import QiskitSwapTestEngine
 from qvs.engines.quantum_mock import QuantumMockEngine
 from qvs.engines.vector_mock import VectorMockEngine
 from qvs.pipeline import CLIPEmbeddingModel
-from qvs.repository import LocalCSVDataLoader
 
 
 @dataclass(frozen=True)
@@ -67,10 +66,6 @@ def _engine_factories(seed: int | None, dimension: int) -> dict[str, Callable[[]
         "qiskit_swap_test": lambda: QiskitSwapTestEngine(),
     }
 
-
-def _encode_dataset_vectors(model: CLIPEmbeddingModel, image_paths: List[Path]) -> np.ndarray:
-    matrix = model.encode_images(image_paths)
-    return matrix.astype(np.float32, copy=False)
 
 
 def _resolve_config_path(raw_path: str) -> Path:
@@ -165,9 +160,8 @@ def _select_queries(requested_ids: List[str], available_queries: List[BenchmarkQ
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Automated benchmarking harness")
-    parser.add_argument("--dataset-dir", default="data/sample_dataset", help="Dataset directory")
+    parser.add_argument("--dataset-dir", default="data/sample_dataset/images", help="Dataset directory")
     parser.add_argument("--ground-truth", default=None, help="Ground-truth JSON (defaults to <dataset>/ground_truth.json)")
-    parser.add_argument("--metadata", default="metadata.csv", help="Dataset metadata filename")
     parser.add_argument("--config", default="config/benchmarks.yaml", help="Relative or absolute path to benchmark selection YAML")
     parser.add_argument(
         "--dimensions",
@@ -200,13 +194,37 @@ def main() -> None:
     ground_truth_path = (
         Path(args.ground_truth).resolve()
         if args.ground_truth
-        else (dataset_dir / "ground_truth.json").resolve()
+        else (BACKEND_ROOT / "data" / "sample_dataset" / "ground_truth.json").resolve()
     )
 
-    loader = LocalCSVDataLoader(dataset_dir=dataset_dir, metadata_filename=args.metadata)
-    dataset = loader.get_dataset()
     queries = load_benchmark_queries(ground_truth_path)
     queries = _select_queries(selection.queries, queries)
+
+    storage = DatabaseStorage()
+    stored_vectors = storage.load_image_vectors()
+    if not stored_vectors:
+        raise SystemExit(
+            "No image vectors found in the database. "
+            "Run `python3 scripts/index_dataset.py` first to encode and store image embeddings."
+        )
+
+    all_target_ids = {tid for query in queries for tid in query.target_ids}
+    missing = all_target_ids - stored_vectors.keys()
+    if missing:
+        raise SystemExit(
+            f"The following image IDs are referenced in ground_truth.json but have no stored embedding: "
+            f"{', '.join(sorted(missing))}. "
+            "Run `python3 scripts/index_dataset.py` to encode all images."
+        )
+
+    dataset_ids = list(stored_vectors.keys())
+    dataset_matrix = np.array([stored_vectors[id_] for id_ in dataset_ids], dtype=np.float32)
+    dataset_dim = dataset_matrix.shape[1]
+    max_requested = max(dimensions)
+    if max_requested > dataset_dim:
+        raise SystemExit(
+            f"Requested dimension ({max_requested}) exceeds dataset embedding dimension ({dataset_dim}). Reduce --dimensions."
+        )
 
     clip_model = CLIPEmbeddingModel(
         model_name=args.clip_model,
@@ -214,23 +232,12 @@ def main() -> None:
         batch_size=args.batch_size,
         normalize=not args.no_normalize,
     )
-    dataset_matrix = _encode_dataset_vectors(clip_model, [record.image_path for record in dataset.records])
-    dataset_dim = dataset_matrix.shape[1]
-    max_requested = max(dimensions)
-    if max_requested > dataset_dim:
-        raise SystemExit(
-            f"Requested dimension ({max_requested}) exceeds dataset embedding dimension ({dataset_dim}). Reduce --dimensions."
-        )
-    dataset_ids = dataset.ids()
     query_matrix = clip_model.encode_texts([query.text for query in queries])
     if query_matrix.shape[1] > dataset_dim:
         query_matrix = query_matrix[:, :dataset_dim]
     query_vectors = {
         query.id: query_matrix[idx].astype(np.float32).tolist() for idx, query in enumerate(queries)
     }
-    storage = DatabaseStorage()
-    upserted = storage.upsert_image_vectors(zip(dataset_ids, dataset_matrix.tolist()))
-    print(f"[index] upserted {upserted} image vectors into image_vectors")
     engine_names = selection.engines
 
     for dimension in sorted(dimensions):

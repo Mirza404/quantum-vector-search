@@ -8,10 +8,9 @@ from typing import Iterable, List, Sequence
 
 @dataclass(frozen=True)
 class DatasetRecord:
-    """Single multimodal item (text + image reference)."""
+    """Single image item in the dataset."""
 
     id: str
-    text: str
     image_path: Path
 
 
@@ -23,9 +22,6 @@ class Dataset:
 
     def ids(self) -> List[str]:
         return [record.id for record in self.records]
-
-    def texts(self) -> List[str]:
-        return [record.text for record in self.records]
 
 
 class BaseDataLoader(ABC):

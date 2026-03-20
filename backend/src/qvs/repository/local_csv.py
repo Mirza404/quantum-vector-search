@@ -1,47 +1,30 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import csv
 from pathlib import Path
 from typing import Iterator
 
 from .base import BaseDataLoader, Dataset, DatasetRecord
 
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
+
 
 @dataclass
-class LocalCSVDataLoader(BaseDataLoader):
-    """Load dataset metadata from a local CSV file."""
+class DirectoryDataLoader(BaseDataLoader):
+    """Discover images from a directory. Uses the filename stem as the record ID."""
 
     dataset_dir: Path
-    metadata_filename: str = "metadata.csv"
-
-    def _metadata_path(self) -> Path:
-        path = self.dataset_dir / self.metadata_filename
-        if not path.exists():
-            raise FileNotFoundError(f"metadata file not found: {path}")
-        return path
 
     def get_dataset(self) -> Dataset:
-        records = list(self._iter_rows())
+        records = list(self._iter_images())
         if not records:
-            raise ValueError(f"dataset at {self.dataset_dir} is empty")
+            raise ValueError(f"No images found in {self.dataset_dir}")
         return Dataset(records=records)
 
     def describe_source(self) -> str:
-        return f"LocalCSVDataLoader<{self._metadata_path()}>"
+        return f"DirectoryDataLoader<{self.dataset_dir}>"
 
-    def _iter_rows(self) -> Iterator[DatasetRecord]:
-        metadata_path = self._metadata_path()
-        with metadata_path.open(newline="", encoding="utf-8") as handle:
-            reader = csv.DictReader(handle)
-            required = {"id", "text", "image_path"}
-            missing = required - set(reader.fieldnames or [])
-            if missing:
-                raise ValueError(f"metadata missing columns: {sorted(missing)}")
-            for row in reader:
-                image_path = (self.dataset_dir / row["image_path"]).resolve()
-                yield DatasetRecord(
-                    id=row["id"].strip(),
-                    text=row["text"].strip(),
-                    image_path=image_path,
-                )
+    def _iter_images(self) -> Iterator[DatasetRecord]:
+        for path in sorted(self.dataset_dir.iterdir()):
+            if path.suffix.lower() in IMAGE_EXTENSIONS:
+                yield DatasetRecord(id=path.stem, image_path=path.resolve())

@@ -15,10 +15,9 @@ if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
 from qvs.pipeline import CLIPEmbeddingModel
-from qvs.repository import LocalCSVDataLoader
+from qvs.repository import DirectoryDataLoader
 
-DEFAULT_DATASET_DIR = BACKEND_ROOT / "data" / "sample_dataset"
-DEFAULT_METADATA_FILENAME = "metadata.csv"
+DEFAULT_DATASET_DIR = BACKEND_ROOT / "data" / "sample_dataset" / "images"
 DB_BATCH_SIZE = 200
 
 
@@ -43,11 +42,6 @@ def _bootstrap_env() -> None:
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Encode dataset images with CLIP and store them in Postgres")
     parser.add_argument("--dataset-dir", type=Path, default=DEFAULT_DATASET_DIR, help="Path to dataset directory")
-    parser.add_argument(
-        "--metadata",
-        default=DEFAULT_METADATA_FILENAME,
-        help="Metadata CSV filename inside the dataset directory",
-    )
     parser.add_argument("--dsn", default=None, help="PostgreSQL DSN override (overrides individual DB_* env vars)")
     parser.add_argument("--clip-model", default="ViT-B/32", help="CLIP model name")
     parser.add_argument("--device", default=None, help="Torch device for CLIP")
@@ -127,7 +121,7 @@ def main() -> None:
     _bootstrap_env()
     args = _parse_args()
     dataset_dir = _resolve_dataset_dir(args.dataset_dir)
-    loader = LocalCSVDataLoader(dataset_dir=dataset_dir, metadata_filename=args.metadata)
+    loader = DirectoryDataLoader(dataset_dir=dataset_dir)
     dataset = loader.get_dataset()
     records = list(dataset.records)
     if args.limit is not None:
@@ -150,10 +144,20 @@ def main() -> None:
     dsn = _resolve_dsn(args.dsn)
     import psycopg
 
+    record_ids = [record.id for record in records]
     with psycopg.connect(dsn) as conn:
         conn.autocommit = True
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT id FROM image_vectors WHERE id = ANY(%s)", (record_ids,)
+            )
+            existing_ids = {row[0] for row in cursor.fetchall()}
         total = _upsert_embeddings(conn, records, matrix, args.db_batch_size)
-    print(f"Upserted {total} embeddings into image_vectors.")
+    new_ids = [id_ for id_ in record_ids if id_ not in existing_ids]
+    updated_ids = [id_ for id_ in record_ids if id_ in existing_ids]
+    print(f"Indexed {total} embeddings ({len(new_ids)} new, {len(updated_ids)} updated).")
+    if updated_ids:
+        print(f"  [warning] re-encoded existing images: {', '.join(updated_ids)}")
 
 
 if __name__ == "__main__":

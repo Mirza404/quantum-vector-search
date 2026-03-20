@@ -1,8 +1,5 @@
 # Theory Guide: Quantum-Enhanced Multi-Modal Vector Search
 
-This document covers every concept a professor might ask about. Read it alongside `NOTES.md`
-(implementation details). Together they give you full coverage of the project.
-
 ## 1. The Problem: Cross-Modal Similarity Search
 
 **Cross-modal search** means searching one type of data (e.g., text) and getting results in a

@@ -47,6 +47,8 @@ class DatabaseStorage(BaseBenchmarkStorage):
                 password=os.getenv("DB_PASSWORD", "qvs"),
             )
         self._conn.autocommit = True
+        from pgvector.psycopg import register_vector
+        register_vector(self._conn)
 
     @staticmethod
     def _load_psycopg():
@@ -125,6 +127,13 @@ class DatabaseStorage(BaseBenchmarkStorage):
         with self._conn.cursor() as cursor:
             cursor.executemany(sql, formatted)
         return len(formatted)
+
+    def load_image_vectors(self) -> dict[str, list[float]]:
+        """Load all rows from image_vectors. Returns {id: vector}."""
+        sql = "SELECT id, embedding FROM image_vectors"
+        with self._conn.cursor() as cursor:
+            cursor.execute(sql)
+            return {row[0]: row[1].tolist() for row in cursor.fetchall()}
 
     def close(self) -> None:
         self._conn.close()
