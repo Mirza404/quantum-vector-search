@@ -54,7 +54,7 @@ def _fetch_rows(dsn: str) -> list[dict]:
                 SELECT
                     id, recorded_at, query_id, engine_name, dimension,
                     target_ids, top_ids,
-                    accuracy, state_prep_ms, search_ms, total_ms,
+                    state_prep_ms, search_ms, total_ms,
                     parameters, dataset_size, circuit_depth, num_qubits
                 FROM benchmark_results
                 ORDER BY engine_name, dimension, query_id
@@ -68,6 +68,21 @@ def _fetch_rows(dsn: str) -> list[dict]:
 
 def _avg(values: list[float]) -> float:
     return sum(values) / len(values) if values else 0.0
+
+
+def _accuracy_score(target_ids: list[str], top_ids: list[str]) -> float:
+    weights = [1.0, 0.66, 0.33]
+    best_idx: int | None = None
+    for target in target_ids:
+        try:
+            idx = top_ids.index(target)
+        except ValueError:
+            continue
+        if best_idx is None or idx < best_idx:
+            best_idx = idx
+    if best_idx is None or best_idx >= len(weights):
+        return 0.0
+    return weights[best_idx]
 
 
 def _recall(target_ids: list[str], top_ids: list[str]) -> float:
@@ -146,7 +161,7 @@ def _section_winner(rows: list[dict]) -> str:
         e = r["engine_name"]
         targets = r["target_ids"] or []
         top = r["top_ids"] or []
-        by_engine[e]["accuracy"].append(r["accuracy"])
+        by_engine[e]["accuracy"].append(_accuracy_score(r["target_ids"] or [], r["top_ids"] or []))
         by_engine[e]["recall"].append(_recall(targets, top))
         by_engine[e]["mrr"].append(_mrr(targets, top))
 
@@ -176,7 +191,7 @@ def _section_kpi_summary(rows: list[dict]) -> str:
         e = r["engine_name"]
         targets = r["target_ids"] or []
         top = r["top_ids"] or []
-        by_engine[e]["accuracy"].append(r["accuracy"])
+        by_engine[e]["accuracy"].append(_accuracy_score(r["target_ids"] or [], r["top_ids"] or []))
         by_engine[e]["recall"].append(_recall(targets, top))
         by_engine[e]["mrr"].append(_mrr(targets, top))
 
@@ -208,7 +223,7 @@ def _section_quality_by_dimension(rows: list[dict]) -> str:
         key = (r["engine_name"], r["dimension"])
         targets = r["target_ids"] or []
         top = r["top_ids"] or []
-        data[key]["accuracy"].append(r["accuracy"])
+        data[key]["accuracy"].append(_accuracy_score(r["target_ids"] or [], r["top_ids"] or []))
         data[key]["recall"].append(_recall(targets, top))
         data[key]["mrr"].append(_mrr(targets, top))
 
@@ -246,7 +261,7 @@ def _section_quality_by_top_k(rows: list[dict]) -> str:
         key = (r["engine_name"], _get_top_k(r))
         targets = r["target_ids"] or []
         top = r["top_ids"] or []
-        data[key]["accuracy"].append(r["accuracy"])
+        data[key]["accuracy"].append(_accuracy_score(r["target_ids"] or [], r["top_ids"] or []))
         data[key]["recall"].append(_recall(targets, top))
         data[key]["mrr"].append(_mrr(targets, top))
 
@@ -359,7 +374,7 @@ def _section_shots_to_accuracy(rows: list[dict]) -> str:
             continue
         targets = r["target_ids"] or []
         top = r["top_ids"] or []
-        by_shots[shots]["accuracy"].append(r["accuracy"])
+        by_shots[shots]["accuracy"].append(_accuracy_score(r["target_ids"] or [], r["top_ids"] or []))
         by_shots[shots]["recall"].append(_recall(targets, top))
         by_shots[shots]["mrr"].append(_mrr(targets, top))
 
@@ -410,7 +425,7 @@ def _section_head_to_head(rows: list[dict]) -> str:
                 row_cells = [f"`{query}`", str(dim), str(k)]
                 for engine in engines:
                     r = index.get((query, engine, dim, k))
-                    row_cells.append(_pct(r["accuracy"]) if r else "—")
+                    row_cells.append(_pct(_accuracy_score(r["target_ids"] or [], r["top_ids"] or [])) if r else "—")
                 for engine in engines:
                     r = index.get((query, engine, dim, k))
                     targets = (r["target_ids"] or []) if r else []
@@ -450,7 +465,7 @@ def _section_per_query(rows: list[dict]) -> str:
                         f"`{engine}`",
                         str(dim),
                         str(k),
-                        _pct(r["accuracy"]),
+                        _pct(_accuracy_score(r["target_ids"] or [], r["top_ids"] or [])),
                         _pct(_recall(targets, top)),
                         _fmt(_mrr(targets, top), 3),
                         ", ".join(f"`{x}`" for x in top),

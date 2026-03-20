@@ -88,7 +88,6 @@ class DatabaseStorage(BaseBenchmarkStorage):
                 layers,
                 target_ids,
                 top_ids,
-                accuracy,
                 state_prep_ms,
                 search_ms,
                 total_ms,
@@ -96,12 +95,11 @@ class DatabaseStorage(BaseBenchmarkStorage):
                 dataset_size,
                 circuit_depth,
                 num_qubits
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT ON CONSTRAINT uq_run_key DO UPDATE SET
                 recorded_at   = EXCLUDED.recorded_at,
                 target_ids    = EXCLUDED.target_ids,
                 top_ids       = EXCLUDED.top_ids,
-                accuracy      = EXCLUDED.accuracy,
                 state_prep_ms = EXCLUDED.state_prep_ms,
                 search_ms     = EXCLUDED.search_ms,
                 total_ms      = EXCLUDED.total_ms,
@@ -120,7 +118,6 @@ class DatabaseStorage(BaseBenchmarkStorage):
             result.layers if result.layers is not None else -1,
             self._json_wrapper(result.target_ids),
             self._json_wrapper(result.top_ids),
-            result.accuracy,
             result.state_prep_ms,
             result.search_ms,
             result.total_ms,

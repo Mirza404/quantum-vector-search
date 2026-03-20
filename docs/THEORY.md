@@ -250,7 +250,47 @@ For a classical vector **v** = (v₁, v₂, …, v_n) with ‖**v**‖ = 1 and n
 The vector's components become the amplitudes of a k-qubit quantum state. This requires only
 **log₂(n) qubits** to represent n values — an exponential compression.
 
-### In this project
+### Why use amplitude encoding?
+
+Quantum gates operate on qubits, not on classical arrays. Before any quantum algorithm can
+compute similarity between two vectors, those vectors must exist as quantum states. Amplitude
+encoding is the method used to translate classical data into a form a quantum circuit can
+process. It is chosen for three reasons:
+
+**Qubit efficiency.** It is the most compact encoding available. An alternative called basis
+encoding stores one component per qubit, meaning a single 64-dimensional vector would require
+64 qubits. Amplitude encoding reduces that to just 6 qubits by storing all 64 numbers as the
+probability amplitudes of a quantum superposition. This is the exponential compression that
+makes quantum approaches to high-dimensional vector search tractable in terms of qubit count.
+
+**Enables quantum inner product computation.** Once two vectors are encoded as quantum states,
+the swap test (Section 8) can estimate how similar they are using quantum interference — a
+process that has no direct classical circuit equivalent. Amplitude encoding is the necessary
+first step that makes the swap test possible.
+
+**Gateway to quantum parallelism.** If state preparation could be done efficiently, you could
+load the entire database into a single quantum register simultaneously. A quantum search
+algorithm could then find the closest vector in O(√N) operations rather than O(N). Amplitude
+encoding is the prerequisite for that potential advantage. This project benchmarks step one —
+the hardware and algorithms for the rest are still an open research problem (see Section 14 on
+qRAM).
+
+### How amplitude encoding is used in this project
+
+The `QiskitSwapTestEngine` performs amplitude encoding every time it compares two vectors.
+It takes the query vector and each database vector, L2-normalises them so all components form
+a valid probability distribution (they must sum to 1 in squared magnitude), then loads them
+into quantum registers using Qiskit's state initialisation instruction. For a 64-dimensional
+vector this packs 64 floating-point numbers into 6 qubits. The swap test circuit is then run
+on those two quantum registers to estimate their similarity.
+
+The `QuantumMockEngine` does not perform amplitude encoding — it computes similarity
+classically and adds noise afterwards to imitate quantum measurement statistics. Its qubit
+count metric models a different hypothetical quantum approach (encoding the entire database
+into superposition at once, Grover-style) rather than the per-pair swap test. This is
+explained more in Section 9.
+
+### In this project — qubit counts
 
 - The project truncates CLIP vectors to `dim` (64 or 128) dimensions.
 - Vectors are padded to the next power of two (64 → 64 = 2^6, 128 = 2^7).
@@ -422,6 +462,13 @@ or longer. Two rules apply to every value in the list:
 A good engine scores high even at the smallest `top_k`. An engine that needs a large `top_k`
 to find the same targets is ranking correct answers too far down the list.
 
+*In plain terms:* all three metrics below are asking the same basic question — "did the search
+engine find the right images?" — but with different definitions of what "find" means.
+**Weighted Accuracy** cares about whether the right image was near the top of the list.
+**Recall@K** cares about whether all the right images showed up anywhere in the top K.
+**MRR** cares about where the very first correct result landed. A perfect engine scores 1.0 on
+all three. An engine that never finds anything correct scores 0.0 on all three.
+
 ### 11.1 Weighted Accuracy (NDCG-lite)
 
 Rewards finding a correct answer **near the top** of the result list. Only the highest-ranked
@@ -528,29 +575,14 @@ In this project:
 This means adding a new search engine requires only implementing the interface. Nothing else
 changes. The same pattern is applied to `EmbeddingGenerator` and `BaseDataLoader`.
 
-### 13.2 API-First Design
-
-The backend logic (embedding, search, benchmarking) is designed to be called via a REST API
-(FastAPI), not coupled to any frontend. This means:
-- The React dashboard can be changed or replaced without touching the backend.
-- The same endpoints can be called from a CLI, a notebook, or a mobile app.
-- Each component can be tested independently.
-
-### 13.3 Modular Monolith
-
-Everything lives in one git repository, but in strictly separated folders:
-`backend/`, `db/`, `frontend/` (planned). There is no microservices overhead, but the internal
-boundaries are enforced by the interface/strategy pattern. This is appropriate for an MVP and
-academic project.
-
-### 13.4 Configuration-Driven Benchmarking
+### 13.2 Configuration-Driven Benchmarking
 
 `benchmarks.yaml` defines which engines, dimensions, and queries to run. CLI flags can override
 any value for one-off experiments. This means:
 - Adding a new dimension or query requires only a YAML edit, not code changes.
 - Reproducibility: the YAML file can be committed and the exact run conditions are documented.
 
-### 13.5 Live Search vs. Benchmarking
+### 13.4 Live Search vs. Benchmarking
 
 **Benchmark harness** retrieves the full ranked list internally, then slices to each `top_k`
 for metrics. A query with empty `target_ids` is a valid negative test — it verifies the engine
@@ -561,7 +593,7 @@ search would be impractical. Each result includes a similarity score so the fron
 the user when even the best match scores poorly (the engine always returns *something*, so
 without scores there is no way to tell the results are irrelevant).
 
-### 13.6 Benchmark Result Storage and Run Keys
+### 13.5 Benchmark Result Storage and Run Keys
 
 Each row in `benchmark_results` represents one unique combination of
 `(query_id, engine_name, dimension, top_k, shots, layers)` — the *run key*.
@@ -587,11 +619,21 @@ is less certain and depends on efficient state preparation, which is an open pro
 whether quantum approaches can achieve comparable *accuracy* to classical ones, and characterise
 the quantum resource cost, to determine whether they are practically relevant at small scale.
 
+*In plain terms:* classical computers are already very good at searching images. This project
+asks: can a quantum computer do the same job just as well? We are not claiming quantum is better
+— we are measuring whether it is even competitive at small scale, and what it would cost in
+quantum resources to get there.
+
 **Q: What does CLIP actually learn?**
 A: CLIP learns a joint embedding function through contrastive training on 400M image-caption
 pairs. The loss pushes matched (image, text) pairs to be nearby in embedding space and unmatched
 pairs to be far apart. The result is a universal visual-semantic encoder that generalises to
 unseen domains without fine-tuning.
+
+*In plain terms:* CLIP is trained to know that the word "dog" and a photo of a dog belong
+together. It learns this by looking at 400 million images paired with their captions. After
+training, you can type a description and CLIP will find matching images — even for things it
+has never explicitly seen — because it has learned a shared language for images and text.
 
 **Q: What is the swap test and why does it measure similarity?**
 A: The swap test is a quantum circuit that estimates |⟨ψ|φ⟩|² — the squared inner product of
@@ -599,12 +641,34 @@ two quantum states. When states encode L2-normalised vectors as amplitudes, this
 squared cosine similarity. The circuit works by using a controlled-SWAP gate and two Hadamard
 gates around an ancilla qubit. The measurement statistics of the ancilla encode the overlap.
 
-**Q: What is amplitude encoding and what is its limitation?**
-A: Amplitude encoding represents a classical n-dimensional unit vector as the amplitudes of a
-log₂(n)-qubit quantum state, requiring exponentially fewer qubits. The limitation is state
-preparation: loading an arbitrary classical vector into a quantum register requires O(n) gates
-in the worst case, which removes the qubit-count advantage when the bottleneck shifts to gate
-count.
+*In plain terms:* the swap test is a quantum trick for checking how similar two vectors are.
+You encode both vectors into quantum states, run a small circuit that involves swapping them
+(hence the name), and measure one special qubit. The probability of getting a particular
+measurement outcome tells you how similar the two vectors were — the more similar, the more
+predictable the result.
+
+**Q: What is amplitude encoding, why do we use it, and what is its limitation?**
+A: Amplitude encoding is how classical vectors are loaded into a quantum computer. Quantum gates
+can only operate on qubits — not on classical arrays — so any quantum algorithm for similarity
+search must first translate vectors into quantum states. Amplitude encoding is the standard
+method: a normalised n-dimensional vector is stored as the amplitudes of a log₂(n)-qubit
+quantum state. This gives two concrete benefits: (1) it requires exponentially fewer qubits
+than naive encodings — a 64-dimensional vector needs only 6 qubits instead of 64; (2) once
+two vectors are encoded as quantum states, the swap test can estimate their inner product using
+quantum interference, which is the core quantum operation in this project. The limitation is
+state preparation: loading an arbitrary classical vector into a quantum register requires O(n)
+gates in the worst case, which removes the qubit-count advantage when the bottleneck shifts
+to gate count. This is an open research problem in quantum machine learning.
+
+*In plain terms:* imagine you have a list of 64 numbers describing an image. To run a quantum
+similarity calculation on it, you first need to "pour" those 64 numbers into the quantum
+computer. Amplitude encoding is the way you do that pouring — it squeezes all 64 numbers into
+just 6 qubits instead of 64, because each qubit can exist in a superposition that simultaneously
+encodes multiple values. That compression is the benefit: fewer qubits means the hardware
+requirements are manageable. The catch is that the pouring process itself is slow — it takes
+as many steps as just comparing the vectors classically. It is like packing a suitcase very
+efficiently, but the packing itself takes as long as the whole trip. The hope for the future is
+a technology called qRAM that would make the packing instant — but that does not exist yet.
 
 **Q: Why does more shots lead to higher accuracy in the quantum engine?**
 A: Measuring a quantum circuit once gives a single bit. Estimating P(ancilla=0) requires
@@ -613,11 +677,23 @@ few shots (e.g., 64) the noise in the similarity estimate is large enough to scr
 ranking. With 2048 shots the noise is small enough (~2%) that rankings match the classical
 result on most queries.
 
+*In plain terms:* quantum measurement is random — you run the same circuit twice and can get
+different results. To get a reliable similarity score you have to run it many times and
+average. It is like flipping a coin to estimate if it is fair: flip it 10 times and you might
+get 8 heads by chance; flip it 2000 times and the average settles close to the true value.
+More shots = more flips = more reliable answer.
+
 **Q: What is circuit depth and why does it matter?**
 A: Circuit depth is the number of sequential gate layers (gates operating on the same qubit
 cannot be parallelised). On real quantum hardware, qubits decohere (lose their quantum state)
 over time due to environmental noise. Deeper circuits run longer and suffer more decoherence
 errors. Circuit depth is therefore a proxy for hardware feasibility on near-term NISQ devices.
+
+*In plain terms:* qubits are fragile — they lose their quantum state quickly due to interference
+from the environment. Circuit depth is how many steps the computation takes. A shallow circuit
+finishes before the qubits fall apart; a deep circuit runs long enough that errors accumulate
+and the result becomes unreliable. It is like trying to carry a melting ice cream cone — the
+longer you walk, the less ice cream you end up with.
 
 **Q: What is the difference between the quantum mock engine and the real Qiskit engine?**
 A: The `QuantumMockEngine` computes exact cosine similarity and then adds synthetic Gaussian
@@ -626,11 +702,23 @@ noise to simulate shot-based statistical error. It does not run any quantum circ
 classical software simulation of a quantum computer. The mock is useful for fast iteration and
 studying the noise model; the Qiskit engine demonstrates a real quantum algorithm.
 
+*In plain terms:* the mock engine cheats slightly — it computes the right answer the classical
+way and then adds random noise to imitate what a quantum measurement would look like. It is
+fast and useful for testing. The Qiskit engine actually builds and runs quantum circuits, just
+on a software simulator instead of real hardware. The mock is "quantum-inspired"; the Qiskit
+engine is the real algorithm running on a virtual chip.
+
 **Q: Why is the Qiskit engine slow in this project?**
 A: It runs on AerSimulator, a classical software simulator. Simulating k qubits requires 2^k
 complex numbers. For a 128-dim vector we need 15 qubits → 32,768 complex amplitudes per state.
 On top of that, the engine runs one full circuit per dataset image per query. For a 100-image
 dataset that is 100 circuit executions per query, each with 2048 shots.
+
+*In plain terms:* a real quantum chip with 15 qubits processes all 32,768 possible states at
+the same time — that is the whole point of quantum computing. A regular CPU has to work through
+them one by one. Add in the fact that you run each circuit 2048 times, for every image in the
+dataset, and you end up with a huge amount of work for a laptop that is fundamentally not built
+for this job.
 
 **Q: What is FAISS and why is IndexFlatL2 used here?**
 A: FAISS (Facebook AI Similarity Search) is a Python library for dense vector similarity search
@@ -639,17 +727,33 @@ L2 index — it always finds the true nearest neighbours. For our small dataset 
 for approximate indices. FAISS is used to demonstrate a production-grade classical baseline
 beyond the pure-NumPy brute-force cosine engine.
 
+*In plain terms:* FAISS is Facebook's highly optimised library for finding the most similar
+vectors in a large list. `IndexFlatL2` is its simplest mode — compare the query against every
+single vector and return the closest ones. No shortcuts, no approximations, always the correct
+answer. For our small dataset this is fine; at millions of images you would switch to an
+approximate index that trades a little accuracy for a lot of speed.
+
 **Q: Is NDCG the same as weighted accuracy?**
 A: The project implements a simplified version. True NDCG uses logarithmic discounting
 (1/log₂(rank+1)) and requires a relevance score per result. The weighted accuracy uses
 linear weights (1.0, 0.66, 0.33) and a single binary relevance (correct target or not).
 The spirit is the same: reward finding the right answer earlier in the list more heavily.
 
+*In plain terms:* both metrics give you more points for finding the right answer near the top
+of the list. NDCG is the official industry version with a more complex formula. Our weighted
+accuracy is a simpler approximation that is easier to explain and produces the same general
+signal. For a project of this scale the difference is not meaningful.
+
 **Q: What is MRR and when is it useful?**
 A: MRR (Mean Reciprocal Rank) averages 1/rank across queries, where rank is the position of
 the first relevant result. It is most useful when users care primarily about the first result
 they see — search engines, question answering, recommendation. A system that always ranks the
 correct answer at position 1 gets MRR = 1.0; always at position 2 gets MRR = 0.5.
+
+*In plain terms:* MRR asks "how far down the list does a user have to scroll before hitting
+the first correct result?" If the right image is always the very first result, MRR = 1.0. If
+it is always second, MRR = 0.5. It is the most practical metric for a real search interface
+where users typically stop looking after the first few results.
 
 **Q: How does dataset size affect the quantum engine's performance and resource cost?**
 A: The quantum engine runs one circuit per dataset image per query on a classical simulator.
@@ -661,12 +765,60 @@ fixed. On real quantum hardware, larger datasets would increase the number of ci
 but not the circuit complexity — making dataset size a scheduling concern rather than a
 fundamental quantum resource constraint.
 
+*In plain terms:* imagine you have 4 images and 1 query. The quantum engine compares the query
+against each image one at a time using a small circuit, repeating each comparison 512 times
+(shots) to get a stable answer. With 4 images that is 4 × 512 = 2048 circuit runs — each of
+which requires the laptop to simulate quantum behaviour from scratch. With 400 images it becomes
+204 800 runs. The circuit itself never gets more complicated as you add images — it is always
+the same small circuit comparing one pair of vectors. The slowness comes purely from the
+simulator having to fake quantum physics thousands of times, not from the quantum algorithm
+itself being fundamentally harder.
+
 **Q: What is the Strategy Pattern and why is it used?**
 A: The Strategy Pattern encapsulates a family of interchangeable algorithms behind a common
 interface. The benchmark harness calls `engine.build_index()` and `engine.search()` without
 knowing the concrete implementation. This makes it trivial to add new engines, swap out the
 embedding model, or change the data source — each dimension of variation is isolated behind
 its own abstract interface.
+
+*In plain terms:* all four search engines have the same interface — the same function names,
+same inputs, same outputs. The benchmark harness does not know or care which engine it is
+talking to. Adding a fifth engine requires no changes to the harness at all. It is like a
+power strip with standard sockets — any device with the right plug just works.
+
+**Q: Are the simulator results actually meaningful, or is the simulator just faking it?**
+A: The Qiskit AerSimulator is mathematically exact — it computes the full quantum state vector
+and produces measurement statistics identical to what a perfect, noiseless quantum chip would
+produce. This makes it **more accurate but slower** than real hardware: accuracy is higher
+because there is no physical noise; speed is lower because a regular CPU has to simulate
+quantum behaviour step by step. Real quantum hardware executes circuits much faster but
+introduces noise — gate errors, decoherence, crosstalk — that degrades accuracy below the
+simulator baseline, with the degradation growing as circuit depth increases. The simulator
+therefore represents the best-case ceiling for the algorithm's accuracy. The quantum mock
+engine adds configurable artificial noise to explore what happens as you move away from that
+ceiling toward realistic hardware conditions.
+
+*In plain terms:* the simulator gives you the right answer slowly; real quantum hardware gives
+you a noisier answer quickly. For this project the simulator is ideal — we care about whether
+the algorithm works correctly, not about raw execution speed on hardware that does not yet
+exist at scale.
+
+**Q: Should we test on a real quantum computer? IBM offers free credits.**
+A: Yes, and it would strengthen the project. IBM Quantum (quantum.ibm.com) provides free
+access to real quantum hardware. The circuits used here are small — a handful of qubits for
+low-dimensional vectors — so jobs fit within the free tier. The interesting result would be
+the gap between simulator accuracy and real-hardware accuracy: real hardware noise would push
+scores down, and the gap would grow with circuit depth (more layers = more noise). Showing
+that gap empirically would directly validate why circuit depth is tracked as a KPI and give
+concrete evidence for the conclusion that hardware limitations, not the algorithm, are the
+current bottleneck. The practical downside is queue time — free IBM jobs can wait minutes to
+hours depending on demand.
+
+*In plain terms:* the simulator is the ideal version of a quantum computer — no mistakes, just
+slow. Running the same experiment on a real IBM chip would show how much accuracy you lose to
+hardware imperfection today. That comparison — "here is what the algorithm can do in theory,
+here is what it actually does on today's hardware" — would be the strongest possible conclusion
+for the project.
 
 **Q: What theoretical quantum advantage exists for similarity search?**
 A: Grover's algorithm offers a quadratic speedup (O(√N) vs O(N)) for unstructured search.
@@ -676,3 +828,46 @@ assume efficient quantum random access memory (qRAM), which does not yet exist a
 hardware. For near-term NISQ devices, the swap test provides no asymptotic speedup over
 classical cosine similarity — the value is in studying the resource requirements and accuracy
 characteristics for when better hardware becomes available.
+
+**How Grover's algorithm achieves the √N speedup:**
+Classical unstructured search checks items one at a time until it finds the answer — O(N) in
+the worst case. Grover's algorithm works in three repeating steps:
+
+1. **Superposition** — load all N candidates into a quantum register simultaneously. Every
+   candidate starts with equal probability amplitude (1/√N).
+2. **Oracle** — apply a quantum operation that marks the correct answer by flipping its
+   phase (making its amplitude negative). The oracle does not tell you which item is correct;
+   it is defined as "the operation that recognises a match". All N candidates are checked
+   simultaneously because they are all in superposition.
+3. **Amplitude amplification (Grover diffusion)** — reflect all amplitudes around their
+   average. Because the marked item has a negative amplitude, this reflection makes it larger
+   relative to the others. Each iteration roughly doubles the gap.
+
+After approximately π/4 × √N iterations, the marked item has near-100% probability amplitude.
+A single measurement then returns it. Total cost: O(√N) oracle calls instead of O(N).
+
+**Why this does not directly apply to this project:**
+The oracle for similarity search would need to ask "which of these N image vectors is closest
+to my query?" — but answering that question requires computing similarity for every image,
+which brings you back to O(N). To get the Grover speedup you need quantum random access memory
+(qRAM) that can load all N vectors into superposition in O(log N) steps. qRAM is theoretically
+described but has never been built at practical scale.
+
+The swap test used in this project measures the similarity between exactly two vectors. It does
+not search — it just computes one similarity value. To search through N images the engine calls
+it N times, giving O(N) total. The quantum part is only the similarity computation, not the
+search itself.
+
+*In plain terms:* imagine you are looking for a specific face in a crowd of 1 million people.
+Classically you check one person at a time — up to 1 million checks. Grover's algorithm puts
+all 1 million people into a quantum superposition, then runs a trick that gradually makes the
+correct person "glow brighter" in probability while everyone else fades. After about 1000
+rounds of this trick, the glowing person is almost certainly the right one. That is where the
+√1,000,000 = 1000 number comes from.
+
+The reason this project cannot use Grover's speedup is that you need a way to load all 1
+million image vectors into the quantum computer at once (qRAM), and that technology does not
+exist yet. Instead this project runs the swap test one image at a time — 1 million separate
+quantum comparisons — so there is no speedup over just doing it classically. The value of the
+project is demonstrating that the quantum similarity computation itself works correctly and
+measuring what it costs, so we are ready when the missing piece (qRAM) eventually arrives.

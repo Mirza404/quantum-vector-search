@@ -53,6 +53,20 @@ def _accuracy_score(target_ids: List[str], ranked_ids: List[str]) -> float:
     return weights[best_idx]
 
 
+def _recall_at_k(target_ids: List[str], ranked_ids: List[str]) -> float:
+    if not target_ids:
+        return 0.0
+    return sum(1 for t in target_ids if t in ranked_ids) / len(target_ids)
+
+
+def _mrr(target_ids: List[str], ranked_ids: List[str]) -> float:
+    target_set = set(target_ids)
+    for rank, item in enumerate(ranked_ids, start=1):
+        if item in target_set:
+            return 1.0 / rank
+    return 0.0
+
+
 def _prepare_vectors(matrix: np.ndarray, dimension: int) -> List[List[float]]:
     truncated = matrix[:, :dimension]
     return truncated.tolist()
@@ -262,7 +276,7 @@ def main() -> None:
                 engine.build_index(vectors=vectors, ids=dataset_ids)
                 prep_ms = (perf_counter() - prep_start) * 1000
 
-                is_quantum = "quantum" in engine.name
+                is_quantum = engine.name in {"quantum_mock_sampler", "qiskit_swap_test"}
                 shot_iter = shots_values if is_quantum else [None]
                 layer_iter = layers_values if is_quantum else [None]
 
@@ -281,6 +295,8 @@ def main() -> None:
                         for top_k in top_k_values:
                             eval_ids = result.ids[:top_k]
                             accuracy = _accuracy_score(query.target_ids, eval_ids)
+                            recall = _recall_at_k(query.target_ids, eval_ids)
+                            mrr = _mrr(query.target_ids, eval_ids)
                             parameters: dict = {"dimension": dimension, "top_k": top_k}
                             if is_quantum:
                                 parameters.update({"shots": shots, "layers": layers})
@@ -293,6 +309,8 @@ def main() -> None:
                                     target_ids=query.target_ids,
                                     top_ids=eval_ids,
                                     accuracy=accuracy,
+                                    recall_at_k=recall,
+                                    mrr=mrr,
                                     state_prep_ms=prep_ms if is_quantum else 0.0,
                                     search_ms=search_ms,
                                     total_ms=total_ms,
@@ -308,7 +326,8 @@ def main() -> None:
                             print(
                                 f"[{engine.name}] query={query.id} dim={dimension} "
                                 f"top_k={top_k} shots={shots} layers={layers} "
-                                f"accuracy={accuracy:.2f} total_ms={total_ms:.2f}"
+                                f"accuracy={accuracy:.2f} recall={recall:.2f} mrr={mrr:.3f} "
+                                f"total_ms={total_ms:.2f}"
                             )
 
 

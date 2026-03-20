@@ -17,15 +17,15 @@ src/qvs/
 `config/benchmarks.yaml` controls each benchmark run. Comment out entries to skip without changing code.
 
 ```yaml
-engines:       # brute_force_cosine | faiss_flat_l2 | quantum_mock_sampler | qiskit_swap_test
-dimensions:    # truncated from CLIP's 512-dim output
-queries:       # IDs from data/sample_dataset/ground_truth.json
-top_k: 3
-shots: 2048
-layers: 2
+engines:          # brute_force_cosine | faiss_flat_l2 | quantum_mock_sampler | qiskit_swap_test
+dimensions:       # truncated from CLIP's 512-dim output
+queries:          # IDs from data/sample_dataset/ground_truth.json
+top_k_values:     # list — each value produces a separate row in benchmark_results
+shots_values:     # list — quantum engines only
+layers_values:    # list — quantum engines only
 ```
 
-CLI flags override the YAML: `--top-k`, `--shots`, `--layers`, `--dimensions`, `--clip-model`, `--device`, `--batch-size`.
+CLI flags override the YAML: `--top-k-values`, `--shots-values`, `--layers-values`, `--dimensions`, `--clip-model`, `--device`, `--batch-size`.
 
 ## Database
 

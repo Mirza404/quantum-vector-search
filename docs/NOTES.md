@@ -72,7 +72,9 @@ To share new results: `make dump` from `db/`, commit `db/seeds/seed.sql`.
 Adding a new migration: create paired `db/migrations/up/N_name.sql` and `db/migrations/down/N_name.sql`, then run `make migrate`.
 
 **`benchmark_results` table columns:**
-`query_id`, `engine_name`, `dimension`, `target_ids`, `top_ids`, `accuracy`, `state_prep_ms`, `search_ms`, `total_ms`, `parameters`, `dataset_size`, `circuit_depth`, `num_qubits`
+`query_id`, `engine_name`, `dimension`, `top_k`, `shots`, `layers`, `target_ids`, `top_ids`, `accuracy`, `state_prep_ms`, `search_ms`, `total_ms`, `parameters`, `dataset_size`, `circuit_depth`, `num_qubits`
+
+Each unique `(query_id, engine_name, dimension, top_k, shots, layers)` is one row (the *run key*). Classical engines store `shots = -1, layers = -1`. Re-running the same combination overwrites the row; a new combination appends a new row.
 
 **`image_vectors` table:** Stores persistent CLIP embeddings for all dataset images.
 `id` (TEXT PRIMARY KEY), `embedding` (vector(512) — CLIP ViT-B/32 output), `recorded_at`
@@ -83,7 +85,7 @@ Indexed with HNSW cosine ops (`vector_cosine_ops`) for nearest-neighbour search.
 ### Phase 5: API & React Dashboard (in progress)
 * **Backend (FastAPI):** `GET /search?q=<text>` encodes the query with CLIP, runs a cosine nearest-neighbour query against `image_vectors`, and returns the top-K image IDs. `GET /api/benchmarks` retrieves historical results from the DB.
 * **Frontend (React):** Text search bar returning matching images side-by-side. Benchmark dashboard charting accuracy vs. dimensions, circuit complexity, shots-to-accuracy.
-* **Vector storage (implemented):** CLIP embeddings for all dataset images are stored persistently in `image_vectors` via the **pgvector** extension (a drop-in replacement for the standard Postgres image — same DSN, same Docker Compose file). Embeddings are upserted automatically on every benchmark run — no separate step required. What remains is the FastAPI search endpoint and wiring the React search box to it.
+* **Vector storage (implemented):** CLIP embeddings for all dataset images are stored persistently in `image_vectors` via the **pgvector** extension (a drop-in replacement for the standard Postgres image — same DSN, same Docker Compose file). Run `python3 scripts/index_dataset.py` once to encode and store embeddings; re-run it to update them. `run_benchmarks.py` reads from the stored vectors — it will fail with a clear error if the table is empty. What remains is the FastAPI search endpoint and wiring the React search box to it.
 
 ---
 
@@ -91,9 +93,9 @@ Indexed with HNSW cosine ops (`vector_cosine_ops`) for nearest-neighbour search.
 
 `backend/config/benchmarks.yaml` controls every benchmark run:
 * **List sections:** `engines`, `dimensions`, `queries` — comment out entries to skip.
-* **Scalar values:** `top_k` (results per query), `shots` (quantum measurement count), `layers` (variational circuit depth).
+* **List sections:** `top_k_values`, `shots_values`, `layers_values` — each value produces a separate row in `benchmark_results`.
 
-CLI flags (`--top-k`, `--shots`, `--layers`) override the YAML values for one-off runs.
+CLI flags (`--top-k-values`, `--shots-values`, `--layers-values`) override the YAML values for one-off runs.
 
 Run from the backend root:
 ```bash

@@ -27,6 +27,8 @@ class BenchmarkResult:
     target_ids: List[str]
     top_ids: List[str]
     accuracy: float
+    recall_at_k: float
+    mrr: float
     state_prep_ms: float | None
     search_ms: float
     total_ms: float
@@ -51,6 +53,8 @@ class BenchmarkResult:
             "target_ids": json.dumps(self.target_ids),
             "top_ids": json.dumps(self.top_ids),
             "accuracy": f"{self.accuracy:.4f}",
+            "recall_at_k": f"{self.recall_at_k:.4f}",
+            "mrr": f"{self.mrr:.4f}",
             "state_prep_ms": f"{self.state_prep_ms:.4f}" if self.state_prep_ms is not None else "",
             "search_ms": f"{self.search_ms:.4f}",
             "total_ms": f"{self.total_ms:.4f}",
