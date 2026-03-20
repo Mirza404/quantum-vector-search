@@ -3,27 +3,6 @@
 This document covers every concept a professor might ask about. Read it alongside `NOTES.md`
 (implementation details). Together they give you full coverage of the project.
 
----
-
-## Table of Contents
-
-1. [The Problem: Cross-Modal Similarity Search](#1-the-problem-cross-modal-similarity-search)
-2. [Embeddings and Vector Spaces](#2-embeddings-and-vector-spaces)
-3. [CLIP: The Embedding Model](#3-clip-the-embedding-model)
-4. [Similarity Metrics](#4-similarity-metrics)
-5. [Classical Search Engines](#5-classical-search-engines)
-6. [Quantum Computing Fundamentals](#6-quantum-computing-fundamentals)
-7. [Amplitude Encoding](#7-amplitude-encoding)
-8. [The Swap Test](#8-the-swap-test)
-9. [Quantum Noise and Shots](#9-quantum-noise-and-shots)
-10. [Why We Cannot Compare Speeds](#10-why-we-cannot-compare-speeds)
-11. [Evaluation Metrics](#11-evaluation-metrics)
-12. [Vector Storage with pgvector](#12-vector-storage-with-pgvector)
-13. [Software Design Decisions](#13-software-design-decisions)
-14. [Likely Professor Questions and Answers](#14-likely-professor-questions-and-answers)
-
----
-
 ## 1. The Problem: Cross-Modal Similarity Search
 
 **Cross-modal search** means searching one type of data (e.g., text) and getting results in a
