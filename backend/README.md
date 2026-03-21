@@ -14,7 +14,7 @@ src/qvs/
 
 ## Dataset
 
-Run the import script once to download 20 Flickr30k images as WebP and generate `data/ground_truth.jsonc`:
+The number of images to import is set in `config/dataset.yaml` (`num_images`). Run the import script once to download images as WebP and generate `data/ground_truth.jsonc`:
 
 ```bash
 python3 scripts/import_dataset.py
@@ -28,19 +28,13 @@ python3 scripts/index_dataset.py
 
 ## Configuration
 
-`config/benchmarks.yaml` controls each benchmark run. Comment out entries to skip without changing code.
+`config/benchmarks.yaml` — comment out entries to skip without changing code. Each key is explained inline in that file.
 
-```yaml
-engines:          # brute_force_cosine | faiss_flat_l2 | quantum_mock_sampler | qiskit_swap_test
-dimensions:       # truncated from CLIP's 512-dim output
-shots_values:     # list — quantum engines only
-layers_values:    # list — quantum engines only
-# queries:        # optional — omit to run all queries from ground_truth.jsonc
-```
+`config/dataset.yaml` — set `num_images` to control how many Flickr30k images `import_dataset.py` pulls.
 
-MRR is computed over the full ranking — no top_k cutoff. The harness always retrieves all dataset images and ranks them; MRR is the reciprocal of the correct image's true position.
+CLI flags override `benchmarks.yaml` for one-off runs: `--shots-values`, `--layers-values`, `--dimensions`, `--clip-model`, `--device`, `--batch-size`.
 
-CLI flags override the YAML: `--shots-values`, `--layers-values`, `--dimensions`, `--clip-model`, `--device`, `--batch-size`.
+MRR is computed over the full ranking — no top_k cutoff. The harness retrieves all dataset images and measures the true rank of the correct result.
 
 ## Database
 

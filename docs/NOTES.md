@@ -92,7 +92,7 @@ Indexed with HNSW cosine ops (`vector_cosine_ops`) for nearest-neighbour search.
 ## Configuration-Driven Benchmarking
 
 `backend/config/benchmarks.yaml` controls every benchmark run:
-* **List sections:** `engines`, `dimensions` — comment out entries to skip.
+* **List sections:** `classical_engines`, `quantum_engines`, `dimensions` — comment out entries to skip.
 * **List sections:** `shots_values`, `layers_values` — each value produces a separate row in `benchmark_results`.
 
 MRR is computed over the full ranking (all dataset images). No top_k cutoff — the harness retrieves all images and measures the true rank of the correct result.
@@ -115,11 +115,15 @@ Cross-engine comparisons use **quality metrics only**. Cross-engine speed compar
 |---|---|
 | MRR | Mean Reciprocal Rank — 1 / rank of the first correct result, averaged over all queries. |
 
+**Winner determination (`generate_report.py`):** The "best" engine is whichever has the highest average MRR across *all* rows (no per-dimension weighting, no speed tiebreaker). If two or more engines share the same max MRR, the result is labelled "Tie".
+
 **Quantum-specific KPIs:**
-| Metric | Description |
-|---|---|
-| Circuit depth | Sequential gate layers — proxy for decoherence risk on real hardware. |
-| Num qubits | Qubits required — proxy for hardware allocation cost. |
-| Shots vs. accuracy | Minimum measurement budget to reach acceptable accuracy. |
+| Metric | Description | Thesis argument |
+|---|---|---|
+| Circuit depth | Sequential gate layers — proxy for decoherence risk on real hardware. | Even if MRR is competitive, deeper circuits are more likely to fail before finishing on near-term hardware. |
+| Num qubits | Qubits required — proxy for hardware allocation cost. | Gives a concrete claim about when real-hardware deployment becomes possible given current QPU qubit counts. |
+| Shots vs. accuracy | Minimum measurement budget to reach acceptable accuracy. | On real hardware every shot costs money/time; establishes the minimum viable budget to reach a target MRR. |
+
+Together these three answer the follow-up to MRR: *"At what resource cost?"* MRR tells you who wins on accuracy; circuit depth + qubits tell you what that costs on real hardware; shots vs. accuracy tells you how many measurements are needed before quality is acceptable.
 
 **Speed (per-engine only):** Valid to compare dim=64 vs dim=128 *within* the same engine to observe scaling. Not valid across engines.

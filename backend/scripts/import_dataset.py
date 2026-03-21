@@ -12,11 +12,15 @@ import json
 import shutil
 from pathlib import Path
 
+import yaml
+
 BACKEND_ROOT = Path(__file__).resolve().parent.parent
 IMAGES_DIR = BACKEND_ROOT / "data" / "images"
 GROUND_TRUTH_PATH = BACKEND_ROOT / "data" / "ground_truth.jsonc"
 DATASET_NAME = "nlphuji/flickr30k"
-NUM_IMAGES = 20
+
+_dataset_cfg = yaml.safe_load((BACKEND_ROOT / "config" / "dataset.yaml").read_text())
+NUM_IMAGES: int = _dataset_cfg["num_images"]
 
 
 def main() -> None:

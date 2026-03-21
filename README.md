@@ -39,19 +39,9 @@ Compares classical and quantum-inspired vector search engines for cross-modal si
 
 ## Database
 
-All db commands run from the `db/` directory.
+All db commands run from the `db/` directory — see `db/Makefile` for the full list.
 
-| Command | What it does |
-|---|---|
-| `make up` | Start Postgres |
-| `make migrate` | Apply pending migrations |
-| `make seed` | Reset DB to seed state |
-| `make rollback N=2` | Roll back migrations above N |
-| `make dump` | Dump all data to `seeds/` |
-| `make clean` | Truncate all data, keep schema and migrations |
-| `make reset` | Wipe volume and start fresh |
-
-To share results, run `make dump` from `db/` and commit `db/seeds/seed.sql`.
+To share results: `make dump` from `db/`, then commit `db/seeds/seed.sql`.
 
 ## Adminer
 
