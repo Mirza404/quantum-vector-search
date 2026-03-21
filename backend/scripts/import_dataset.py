@@ -47,7 +47,9 @@ def main() -> None:
     ground_truth: list[dict] = []
 
     for row in rows:
-        img_id = str(row["img_id"])
+        # Use filename stem (e.g. "1000092795" from "1000092795.jpg") as the stable ID.
+        # img_id in streaming mode returns sequential integers, not the Flickr image ID.
+        img_id = Path(row["filename"]).stem
         image = row["image"]  # PIL Image
         captions: list[str] = row["caption"]
 

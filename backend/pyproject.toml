@@ -17,7 +17,7 @@ dependencies = [
     "clip @ git+https://github.com/openai/CLIP.git",
     "psycopg[binary]==3.3.3",
     "pgvector>=0.4.2",
-    "datasets>=2.0",
+    "datasets>=2.0,<3.0",
 ]
 
 [tool.uv.sources]

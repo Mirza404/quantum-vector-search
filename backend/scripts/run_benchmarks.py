@@ -15,7 +15,7 @@ SRC_PATH = BACKEND_ROOT / "src"
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
-from qvs.benchmark import BenchmarkQuery, BenchmarkResult, DatabaseStorage, load_benchmark_queries
+from qvs.benchmark import BenchmarkResult, DatabaseStorage, load_benchmark_queries
 from qvs.engines.faiss_flat import FaissFlatEngine
 from qvs.engines.qiskit_swaptest import QiskitSwapTestEngine
 from qvs.engines.quantum_mock import QuantumMockEngine
@@ -28,7 +28,6 @@ class BenchmarkSelection:
     classical_engines: List[str]
     quantum_engines: List[str]
     dimensions: List[int]
-    queries: List[str]
     shots_values: List[int] = field(default_factory=lambda: [2048])
     layers_values: List[int] = field(default_factory=lambda: [2])
 
@@ -37,7 +36,7 @@ class BenchmarkSelection:
         return self.classical_engines + self.quantum_engines
 
 
-LIST_KEYS = {"classical_engines", "quantum_engines", "dimensions", "queries", "shots_values", "layers_values"}
+LIST_KEYS = {"classical_engines", "quantum_engines", "dimensions", "shots_values", "layers_values"}
 SCALAR_KEYS: set[str] = set()
 CONFIG_KEYS = LIST_KEYS | SCALAR_KEYS
 
@@ -119,8 +118,6 @@ def _load_selection_config(path: Path) -> BenchmarkSelection:
         raise SystemExit(f"No engines enabled in {path}.")
     if not lists["dimensions"]:
         raise SystemExit(f"No dimensions listed in {path}.")
-    if not lists["queries"]:
-        raise SystemExit(f"No queries listed in {path}.")
 
     def _parse_int_list(key: str) -> List[int]:
         try:
@@ -135,20 +132,9 @@ def _load_selection_config(path: Path) -> BenchmarkSelection:
         classical_engines=lists["classical_engines"],
         quantum_engines=lists["quantum_engines"],
         dimensions=_parse_int_list("dimensions"),
-        queries=lists["queries"],
         shots_values=_parse_int_list("shots_values"),
         layers_values=_parse_int_list("layers_values"),
     )
-
-
-def _select_queries(requested_ids: List[str], available_queries: List[BenchmarkQuery]) -> List[BenchmarkQuery]:
-    if not requested_ids:
-        raise SystemExit("No query ids specified in the benchmark config.")
-    lookup = {query.id: query for query in available_queries}
-    missing = [query_id for query_id in requested_ids if query_id not in lookup]
-    if missing:
-        raise SystemExit(f"Unknown query ids in benchmark config: {', '.join(missing)}")
-    return [lookup[query_id] for query_id in requested_ids]
 
 
 def main() -> None:
@@ -189,7 +175,6 @@ def main() -> None:
     )
 
     queries = load_benchmark_queries(ground_truth_path)
-    queries = _select_queries(selection.queries, queries)
 
     storage = DatabaseStorage()
     stored_vectors = storage.load_image_vectors()

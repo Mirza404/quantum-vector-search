@@ -23,14 +23,6 @@ dimensions:
   - 64
   # - 128
 
-# Query IDs — must match ids in data/ground_truth.jsonc.
-# Run python3 scripts/import_dataset.py to regenerate ground_truth.jsonc,
-# then update these IDs with the printed query IDs.
-queries:
-  - query_1000092795
-  - query_1000268201
-  - query_1000344755
-
 # Number of quantum circuit measurement shots per query.
 # More shots = more accurate results but higher cost on real hardware.
 # Only used by quantum_mock_sampler and qiskit_swap_test.
