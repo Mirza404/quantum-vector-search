@@ -549,7 +549,7 @@ without scores there is no way to tell the results are irrelevant).
 ### 13.5 Benchmark Result Storage and Run Keys
 
 Each row in `benchmark_results` represents one unique combination of
-`(query_id, engine_name, dimension, top_k, shots, layers)` — the *run key*.
+`(query_id, engine_name, dimension, shots, layers)` — the *run key*.
 Classical engines store `shots = -1, layers = -1` (a sentinel meaning "not applicable").
 
 **Re-running the same configuration** overwrites the existing row with fresh timings and

@@ -72,9 +72,9 @@ To share new results: `make dump` from `db/`, commit `db/seeds/seed.sql`.
 Adding a new migration: create paired `db/migrations/up/N_name.sql` and `db/migrations/down/N_name.sql`, then run `make migrate`.
 
 **`benchmark_results` table columns:**
-`query_id`, `engine_name`, `dimension`, `top_k`, `shots`, `layers`, `target_ids`, `top_ids`, `state_prep_ms`, `search_ms`, `total_ms`, `parameters`, `dataset_size`, `circuit_depth`, `num_qubits`
+`query_id`, `engine_name`, `dimension`, `shots`, `layers`, `target_ids`, `top_ids`, `state_prep_ms`, `search_ms`, `total_ms`, `parameters`, `dataset_size`, `circuit_depth`, `num_qubits`
 
-Each unique `(query_id, engine_name, dimension, top_k, shots, layers)` is one row (the *run key*). Classical engines store `shots = -1, layers = -1`. Re-running the same combination overwrites the row; a new combination appends a new row.
+Each unique `(query_id, engine_name, dimension, shots, layers)` is one row (the *run key*). Classical engines store `shots = -1, layers = -1`. Re-running the same combination overwrites the row; a new combination appends a new row.
 
 **`image_vectors` table:** Stores persistent CLIP embeddings for all dataset images.
 `id` (TEXT PRIMARY KEY), `embedding` (vector(512) — CLIP ViT-B/32 output), `recorded_at`
@@ -92,7 +92,7 @@ Indexed with HNSW cosine ops (`vector_cosine_ops`) for nearest-neighbour search.
 ## Configuration-Driven Benchmarking
 
 `backend/config/benchmarks.yaml` controls every benchmark run:
-* **List sections:** `engines`, `dimensions`, `queries` — comment out entries to skip.
+* **List sections:** `engines`, `dimensions` — comment out entries to skip.
 * **List sections:** `shots_values`, `layers_values` — each value produces a separate row in `benchmark_results`.
 
 MRR is computed over the full ranking (all dataset images). No top_k cutoff — the harness retrieves all images and measures the true rank of the correct result.
