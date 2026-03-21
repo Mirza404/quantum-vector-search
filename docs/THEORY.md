@@ -431,11 +431,11 @@ On real quantum hardware:
   bottleneck, not the swap test itself.
 
 What is meaningful to compare:
-- **Quality** (Recall@K, MRR) — does the quantum engine return the same top-K as the classical engines?
+- **Quality** (MRR) — does the quantum engine rank the correct image near the top, same as classical engines?
 - **Circuit depth** — how deep a circuit do we need per query? This predicts real-hardware
   feasibility.
 - **Qubit count** — how many qubits? This predicts hardware allocation cost.
-- **Shots vs. quality** — how many measurements are needed to match classical Recall@K and MRR?
+- **Shots vs. quality** — how many measurements are needed to match classical MRR?
 - **Scaling behaviour** — how do these resource costs grow as dimension increases?
 
 ---
@@ -444,48 +444,19 @@ What is meaningful to compare:
 
 ### How retrieval works
 
-Each query has a `target_ids` list — one or more images that are the correct answers. The
-benchmark harness always asks each engine to rank **all** images in the dataset from most to
-least similar. Metrics are then computed over the top `top_k` results from that full ranking.
+Each query maps to exactly one correct image. The target image ID is derived from the query ID
+at runtime by stripping the `"query_"` prefix — no separate `target_ids` field is stored in
+`ground_truth.jsonc`. For example, query `"query_1000092795"` targets image `"1000092795"`.
 
-`top_k_values` is a list set in `benchmarks.yaml`. The harness runs every query at each value
-and stores separate results, so you can see how accuracy changes as the result list gets shorter
-or longer. Two rules apply to every value in the list:
+The harness always retrieves the **full ranking** — every image in the dataset is ranked from
+most to least similar. MRR is then computed over that complete list, giving the true reciprocal
+rank of the correct image. There is no top_k cutoff in benchmarking: if the correct image is
+at position 15 out of 20, MRR = 1/15, not 0.
 
-1. Each `top_k` must be **≥ the number of targets in any single query** — otherwise Recall@K
-   can never reach 1.0 no matter how good the engine is. The harness enforces this with a hard
-   error at startup.
-2. Each `top_k` should be **small relative to dataset size** — e.g. 10 out of 1000 images.
-   If `top_k` is close to the total number of images the benchmark is too easy and the results
-   are not meaningful.
+`top_k` belongs on the API side as a pagination parameter (`GET /search?q=...&limit=10`) —
+it controls how many results to return to the frontend, not how quality is measured.
 
-A good engine scores high even at the smallest `top_k`. An engine that needs a large `top_k`
-to find the same targets is ranking correct answers too far down the list.
-
-*In plain terms:* all three metrics below are asking the same basic question — "did the search
-engine find the right images?" — but with different definitions of what "find" means.
-**Recall@K** cares about whether all the right images showed up anywhere in the top K.
-**MRR** cares about where the very first correct result landed.
-Both handle queries with multiple correct targets. MRR only looks at the single highest-ranked correct result — it measures *where the best hit landed*, not how many hits there were. Recall@K is the metric that rewards finding more correct targets. For example, say a query has 3 correct images and `top_k=3`. Engine A returns all 3 correct images; engine B returns only 1. MRR scores both engines identically if that one correct image is in the same position — only Recall@K tells them apart (1.0 vs 0.33).
-Recall@K inherently depends on `top_k` — the K is part of its definition. MRR does not depend on it in general, but here both metrics are evaluated on the truncated top-K results, so both are affected by `top_k`.
-A perfect engine scores 1.0 on both. An engine that never finds anything correct scores 0.0 on both.
-
-### 11.1 Recall@K
-
-```
-Recall@K = (correct images found in top K) / (total correct images for that query)
-```
-
-Asks: "out of all images that should match this query, how many did the engine actually surface
-in its top K results?"
-
-- Query has 4 correct images, engine finds 3 of them in top K → score = 3/4 = 0.75
-- Query has 1 correct image, engine finds it → score = 1/1 = 1.0
-- Engine finds none → score = 0.0
-
-Final Recall@K is averaged over all queries.
-
-### 11.2 Mean Reciprocal Rank (MRR)
+### 11.1 Mean Reciprocal Rank (MRR)
 
 ```
 MRR = average of (1 / rank of first correct result) across all queries
@@ -499,9 +470,10 @@ Asks: "on average, how far down the list do you have to scroll to hit the first 
 - Not found in top K → contributes 0.0
 
 MRR is the most user-focused metric — it directly measures how quickly a user would find a
-relevant result.
+relevant result. With one correct image per query, MRR is unambiguous: it is always the
+reciprocal rank of that single image, averaged over all queries.
 
-### 11.3 Why cross-engine speed comparison is excluded
+### 11.2 Why cross-engine speed comparison is excluded
 
 See Section 10. Intra-engine speed comparison (e.g., dim=64 vs dim=128 for the same engine)
 is valid because the same type of computation is being compared at different scales.
@@ -567,9 +539,7 @@ any value for one-off experiments. This means:
 
 ### 13.4 Live Search vs. Benchmarking
 
-**Benchmark harness** retrieves the full ranked list internally, then slices to each `top_k`
-for metrics. A query with empty `target_ids` is a valid negative test — it verifies the engine
-does not rank unrelated images as relevant. The correct expected score is 0 on all metrics.
+**Benchmark harness** retrieves the full ranked list and computes MRR over every image. No cutoff — the correct image's true rank is always captured.
 
 **Live API** returns only top K results to the frontend — sending all ranked images on every
 search would be impractical. Each result includes a similarity score so the frontend can warn
@@ -586,10 +556,9 @@ Classical engines store `shots = -1, layers = -1` (a sentinel meaning "not appli
 scores (`ON CONFLICT ... DO UPDATE`). There is no silent skipping — every run produces
 up-to-date data.
 
-**Adding a new value** (e.g. a second entry in `top_k_values` in `benchmarks.yaml`) appends
-new rows for the new combinations without touching existing ones. Running overnight with many
-values in `top_k_values`, `shots_values`, and `layers_values` is safe — each combination is
-stored independently and re-runnable.
+**Adding a new shots or layers value** appends new rows for the new combinations without
+touching existing ones. Running overnight with many values in `shots_values` and `layers_values`
+is safe — each combination is stored independently and re-runnable.
 
 ---
 

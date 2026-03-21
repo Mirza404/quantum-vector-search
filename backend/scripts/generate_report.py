@@ -8,7 +8,6 @@ Usage (from repo root):
 KPIs
 ----
 Cross-engine comparisons focus solely on result quality:
-  - Recall@K           : fraction of correct targets found in the top-K results
   - MRR                : 1 / rank of the first relevant result
 
 Speed (ms) is reported *per engine* only to show how each engine scales with
@@ -17,8 +16,8 @@ the quantum engine runs on a classical simulator, so its timing reflects
 circuit-simulation overhead rather than real quantum hardware latency.
 
 Quantum-specific KPI:
-  - Shots-to-quality   : Recall@K and MRR at each shots value, showing the
-                         minimum measurement budget needed to reach a target.
+  - Shots-to-quality   : MRR at each shots value, showing the minimum
+                         measurement budget needed to reach a target.
 """
 from __future__ import annotations
 
@@ -68,17 +67,6 @@ def _avg(values: list[float]) -> float:
     return sum(values) / len(values) if values else 0.0
 
 
-def _recall(target_ids: list[str], top_ids: list[str]) -> float:
-    """Fraction of target_ids found in top_ids."""
-    if not target_ids:
-        return 0.0
-    return sum(1 for t in target_ids if t in top_ids) / len(target_ids)
-
-
-def _get_top_k(row: dict) -> int:
-    return (row.get("parameters") or {}).get("top_k", 0)
-
-
 def _mrr(target_ids: list[str], top_ids: list[str]) -> float:
     """Reciprocal rank of the first relevant result (1-indexed). 0 if not found."""
     for rank, item in enumerate(top_ids, start=1):
@@ -117,7 +105,6 @@ def _section_overview(rows: list[dict]) -> str:
     engines = sorted({r["engine_name"] for r in rows})
     dimensions = sorted({r["dimension"] for r in rows})
     queries = sorted({r["query_id"] for r in rows})
-    top_k_vals = sorted({_get_top_k(r) for r in rows} - {0})
     lines = [
         "## Overview\n",
         "| Metric | Value |",
@@ -125,133 +112,86 @@ def _section_overview(rows: list[dict]) -> str:
         f"| Total runs | {len(rows)} |",
         f"| Engines | {', '.join(f'`{e}`' for e in engines)} |",
         f"| Dimensions | {', '.join(str(d) for d in dimensions)} |",
-        f"| top_k values | {', '.join(str(k) for k in top_k_vals)} |",
         f"| Queries | {', '.join(f'`{q}`' for q in queries)} |",
     ]
     return "\n".join(lines)
 
 
 def _section_winner(rows: list[dict]) -> str:
-    """Top-line summary: quality KPIs for each engine side by side, with winner."""
-    by_engine: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    """Top-line summary: MRR for each engine side by side, with winner."""
+    by_engine: dict[str, list[float]] = defaultdict(list)
     for r in rows:
         e = r["engine_name"]
         targets = r["target_ids"] or []
         top = r["top_ids"] or []
-        by_engine[e]["recall"].append(_recall(targets, top))
-        by_engine[e]["mrr"].append(_mrr(targets, top))
+        by_engine[e].append(_mrr(targets, top))
 
     engines = sorted(by_engine)
-
-    def _best(metric: str) -> str:
-        scores = {e: _avg(by_engine[e][metric]) for e in engines}
-        best_val = max(scores.values())
-        winners = [e for e, s in scores.items() if s == best_val]
-        if len(winners) == len(engines):
-            return "Tie"
-        return ", ".join(f"`{e}`" for e in sorted(winners))
+    scores = {e: _avg(by_engine[e]) for e in engines}
+    best_val = max(scores.values())
+    winners = [e for e, s in scores.items() if s == best_val]
+    best_label = "Tie" if len(winners) == len(engines) else ", ".join(f"`{e}`" for e in sorted(winners))
 
     headers = ["KPI"] + [f"`{e}`" for e in engines] + ["Best"]
     table_rows = [
-        ["Recall@K"] + [_pct(_avg(by_engine[e]["recall"])) for e in engines] + [_best("recall")],
-        ["MRR"]      + [_fmt(_avg(by_engine[e]["mrr"]), 3) for e in engines] + [_best("mrr")],
+        ["MRR"] + [_fmt(scores[e], 3) for e in engines] + [best_label],
     ]
     return "## Results Summary\n\n" + _md_table(headers, table_rows)
 
 
 def _section_kpi_summary(rows: list[dict]) -> str:
-    """Cross-engine quality KPIs: Recall@K and MRR."""
-    by_engine: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    """Cross-engine quality KPI: MRR."""
+    by_engine: dict[str, list[float]] = defaultdict(list)
     for r in rows:
         e = r["engine_name"]
         targets = r["target_ids"] or []
         top = r["top_ids"] or []
-        by_engine[e]["recall"].append(_recall(targets, top))
-        by_engine[e]["mrr"].append(_mrr(targets, top))
+        by_engine[e].append(_mrr(targets, top))
 
-    headers = ["Engine", "Recall@K", "MRR", "Runs"]
+    headers = ["Engine", "MRR", "Runs"]
     table_rows = []
     for engine in sorted(by_engine):
-        d = by_engine[engine]
+        mrr_vals = by_engine[engine]
         table_rows.append([
             f"`{engine}`",
-            _pct(_avg(d["recall"])),
-            _fmt(_avg(d["mrr"]), 3),
-            str(len(d["recall"])),
+            _fmt(_avg(mrr_vals), 3),
+            str(len(mrr_vals)),
         ])
 
     note = (
-        "> **Metrics**\n"
-        "> - **Recall@K** — fraction of correct targets found anywhere in the top-K results.\n"
-        "> - **MRR** — Mean Reciprocal Rank. Higher = first correct result ranked closer to position 1.\n"
+        "> **MRR** (Mean Reciprocal Rank) — 1 / rank of the first correct result, averaged over all queries.\n"
+        "> Higher = the correct image appears closer to position 1.\n"
     )
     return "## Quality KPIs by Engine\n\n" + note + "\n" + _md_table(headers, table_rows)
 
 
 def _section_quality_by_dimension(rows: list[dict]) -> str:
-    """Per-engine quality metrics broken down by dimension."""
-    data: dict[tuple[str, int], dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    """MRR broken down by engine and dimension."""
+    data: dict[tuple[str, int], list[float]] = defaultdict(list)
     for r in rows:
         key = (r["engine_name"], r["dimension"])
         targets = r["target_ids"] or []
         top = r["top_ids"] or []
-        data[key]["recall"].append(_recall(targets, top))
-        data[key]["mrr"].append(_mrr(targets, top))
+        data[key].append(_mrr(targets, top))
 
     engines = sorted({r["engine_name"] for r in rows})
     dimensions = sorted({r["dimension"] for r in rows})
 
-    headers = ["Engine", "Dimension", "Recall@K", "MRR"]
+    headers = ["Engine", "Dimension", "MRR"]
     table_rows = []
     for engine in engines:
         for dim in dimensions:
             key = (engine, dim)
             if key not in data:
                 continue
-            d = data[key]
             table_rows.append([
                 f"`{engine}`",
                 str(dim),
-                _pct(_avg(d["recall"])),
-                _fmt(_avg(d["mrr"]), 3),
+                _fmt(_avg(data[key]), 3),
             ])
 
-    note = "> Quality metrics only. Speed is excluded from cross-engine comparisons — see per-engine scaling below.\n"
+    note = "> Quality metric only. Speed is excluded from cross-engine comparisons — see per-engine scaling below.\n"
     return "## Quality by Dimension\n\n" + note + "\n" + _md_table(headers, table_rows)
-
-
-def _section_quality_by_top_k(rows: list[dict]) -> str:
-    """Shows how quality metrics change as top_k varies — the core scaling experiment."""
-    top_k_vals = sorted({_get_top_k(r) for r in rows} - {0})
-    if len(top_k_vals) < 2:
-        return ""
-
-    data: dict[tuple[str, int], dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
-    for r in rows:
-        key = (r["engine_name"], _get_top_k(r))
-        targets = r["target_ids"] or []
-        top = r["top_ids"] or []
-        data[key]["recall"].append(_recall(targets, top))
-        data[key]["mrr"].append(_mrr(targets, top))
-
-    engines = sorted({r["engine_name"] for r in rows})
-    headers = ["Engine", "top_k", "Recall@K", "MRR"]
-    table_rows = []
-    for engine in engines:
-        for k in top_k_vals:
-            key = (engine, k)
-            if key not in data:
-                continue
-            d = data[key]
-            table_rows.append([
-                f"`{engine}`",
-                str(k),
-                _pct(_avg(d["recall"])),
-                _fmt(_avg(d["mrr"]), 3),
-            ])
-
-    note = "> A good engine scores high even at small top_k. Quality dropping sharply as top_k decreases means the engine struggles to rank correct results near the top.\n"
-    return "## Quality by top_k\n\n" + note + "\n" + _md_table(headers, table_rows)
 
 
 def _section_circuit_complexity(rows: list[dict]) -> str:
@@ -329,12 +269,12 @@ def _section_speed_scaling(rows: list[dict]) -> str:
 
 
 def _section_shots_to_quality(rows: list[dict]) -> str:
-    """Quantum-specific KPI: quality at each shots value."""
+    """Quantum-specific KPI: MRR at each shots value."""
     quantum_rows = [r for r in rows if r["state_prep_ms"] is not None and r["state_prep_ms"] > 0]
     if not quantum_rows:
         return ""
 
-    by_shots: dict[int, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    by_shots: dict[int, list[float]] = defaultdict(list)
     for r in quantum_rows:
         params = r["parameters"] or {}
         shots = params.get("shots")
@@ -342,63 +282,50 @@ def _section_shots_to_quality(rows: list[dict]) -> str:
             continue
         targets = r["target_ids"] or []
         top = r["top_ids"] or []
-        by_shots[shots]["recall"].append(_recall(targets, top))
-        by_shots[shots]["mrr"].append(_mrr(targets, top))
+        by_shots[shots].append(_mrr(targets, top))
 
     if not by_shots:
         return ""
 
-    headers = ["Shots", "Recall@K", "MRR", "Runs"]
+    headers = ["Shots", "MRR", "Runs"]
     table_rows = []
     for shots in sorted(by_shots):
-        d = by_shots[shots]
+        mrr_vals = by_shots[shots]
         table_rows.append([
             str(shots),
-            _pct(_avg(d["recall"])),
-            _fmt(_avg(d["mrr"]), 3),
-            str(len(d["recall"])),
+            _fmt(_avg(mrr_vals), 3),
+            str(len(mrr_vals)),
         ])
 
     note = (
         "> Shots = number of quantum circuit measurements per query.\n"
         "> On real hardware, fewer shots = lower cost. This table shows the minimum shots\n"
-        "> needed to reach acceptable quality.\n"
+        "> needed to reach acceptable MRR.\n"
     )
     return "## Quantum: Shots vs. Quality\n\n" + note + "\n" + _md_table(headers, table_rows)
 
 
 def _section_head_to_head(rows: list[dict]) -> str:
-    """Quality-only head-to-head across all (query, dimension) combinations."""
+    """MRR head-to-head across all (query, dimension) combinations."""
     engines = sorted({r["engine_name"] for r in rows})
     if len(engines) < 2:
         return ""
 
-    index = {(r["query_id"], r["engine_name"], r["dimension"], _get_top_k(r)): r for r in rows}
+    index = {(r["query_id"], r["engine_name"], r["dimension"]): r for r in rows}
     queries = sorted({r["query_id"] for r in rows})
     dimensions = sorted({r["dimension"] for r in rows})
-    top_k_vals = sorted({_get_top_k(r) for r in rows} - {0})
 
-    headers = (
-        ["Query", "Dim", "top_k"]
-        + [f"`{e}` Recall@K" for e in engines]
-        + [f"`{e}` MRR" for e in engines]
-    )
+    headers = ["Query", "Dim"] + [f"`{e}` MRR" for e in engines]
     table_rows = []
     for query in queries:
         for dim in dimensions:
-            for k in top_k_vals:
-                row_cells = [f"`{query}`", str(dim), str(k)]
-                for engine in engines:
-                    r = index.get((query, engine, dim, k))
-                    targets = (r["target_ids"] or []) if r else []
-                    top = (r["top_ids"] or []) if r else []
-                    row_cells.append(_pct(_recall(targets, top)) if r else "—")
-                for engine in engines:
-                    r = index.get((query, engine, dim, k))
-                    targets = (r["target_ids"] or []) if r else []
-                    top = (r["top_ids"] or []) if r else []
-                    row_cells.append(_fmt(_mrr(targets, top), 3) if r else "—")
-                table_rows.append(row_cells)
+            row_cells = [f"`{query}`", str(dim)]
+            for engine in engines:
+                r = index.get((query, engine, dim))
+                targets = (r["target_ids"] or []) if r else []
+                top = (r["top_ids"] or []) if r else []
+                row_cells.append(_fmt(_mrr(targets, top), 3) if r else "—")
+            table_rows.append(row_cells)
 
     return "## Head-to-Head Quality Comparison\n\n" + _md_table(headers, table_rows)
 
@@ -407,30 +334,26 @@ def _section_per_query(rows: list[dict]) -> str:
     queries = sorted({r["query_id"] for r in rows})
     engines = sorted({r["engine_name"] for r in rows})
     dimensions = sorted({r["dimension"] for r in rows})
-    index = {(r["query_id"], r["engine_name"], r["dimension"], _get_top_k(r)): r for r in rows}
-    top_k_vals = sorted({_get_top_k(r) for r in rows} - {0})
+    index = {(r["query_id"], r["engine_name"], r["dimension"]): r for r in rows}
 
     sections = ["## Per-Query Detail\n"]
     for query in queries:
         sections.append(f"### `{query}`\n")
-        headers = ["Engine", "Dim", "top_k", "Recall@K", "MRR", "Top Results"]
+        headers = ["Engine", "Dim", "MRR", "Top Results"]
         table_rows = []
         for engine in engines:
             for dim in dimensions:
-                for k in top_k_vals:
-                    r = index.get((query, engine, dim, k))
-                    if r is None:
-                        continue
-                    targets = r["target_ids"] or []
-                    top = r["top_ids"] or []
-                    table_rows.append([
-                        f"`{engine}`",
-                        str(dim),
-                        str(k),
-                        _pct(_recall(targets, top)),
-                        _fmt(_mrr(targets, top), 3),
-                        ", ".join(f"`{x}`" for x in top),
-                    ])
+                r = index.get((query, engine, dim))
+                if r is None:
+                    continue
+                targets = r["target_ids"] or []
+                top = r["top_ids"] or []
+                table_rows.append([
+                    f"`{engine}`",
+                    str(dim),
+                    _fmt(_mrr(targets, top), 3),
+                    ", ".join(f"`{x}`" for x in top),
+                ])
         sections.append(_md_table(headers, table_rows))
         sections.append("")
 
@@ -477,8 +400,6 @@ def main() -> None:
         _section_kpi_summary(rows),
         "",
         _section_quality_by_dimension(rows),
-        "",
-        _section_quality_by_top_k(rows),
         "",
         _section_head_to_head(rows),
         "",

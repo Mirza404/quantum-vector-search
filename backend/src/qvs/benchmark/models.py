@@ -5,14 +5,18 @@ from datetime import datetime, timezone
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, List
 
 
 @dataclass(frozen=True)
 class BenchmarkQuery:
     id: str
     text: str
-    target_ids: List[str]
+
+    @property
+    def target_id(self) -> str:
+        """Derive the target image ID from the query ID by stripping the 'query_' prefix."""
+        return self.id.removeprefix("query_")
 
 
 def _strip_jsonc_comments(text: str) -> str:
@@ -22,7 +26,7 @@ def _strip_jsonc_comments(text: str) -> str:
 
 def load_benchmark_queries(path: Path) -> List[BenchmarkQuery]:
     raw = json.loads(_strip_jsonc_comments(path.read_text()))
-    return [BenchmarkQuery(**entry) for entry in raw]
+    return [BenchmarkQuery(id=entry["id"], text=entry["text"]) for entry in raw]
 
 
 @dataclass
@@ -32,12 +36,10 @@ class BenchmarkResult:
     dimension: int
     target_ids: List[str]
     top_ids: List[str]
-    recall_at_k: float
     mrr: float
     state_prep_ms: float | None
     search_ms: float
     total_ms: float
-    top_k: int = 3
     shots: int | None = None
     layers: int | None = None
     parameters: Dict[str, Any] = field(default_factory=dict)
@@ -46,22 +48,5 @@ class BenchmarkResult:
     num_qubits: int | None = None
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
-    def key(self) -> tuple[str, str, int, int, int | None, int | None]:
-        return (self.query_id, self.engine_name, self.dimension, self.top_k, self.shots, self.layers)
-
-    def as_csv_row(self) -> Dict[str, Any]:
-        payload = {
-            "timestamp": self.timestamp.isoformat(),
-            "query_id": self.query_id,
-            "engine_name": self.engine_name,
-            "dimension": self.dimension,
-            "target_ids": json.dumps(self.target_ids),
-            "top_ids": json.dumps(self.top_ids),
-            "recall_at_k": f"{self.recall_at_k:.4f}",
-            "mrr": f"{self.mrr:.4f}",
-            "state_prep_ms": f"{self.state_prep_ms:.4f}" if self.state_prep_ms is not None else "",
-            "search_ms": f"{self.search_ms:.4f}",
-            "total_ms": f"{self.total_ms:.4f}",
-            "parameters": json.dumps(self.parameters, sort_keys=True),
-        }
-        return payload
+    def key(self) -> tuple[str, str, int, int | None, int | None]:
+        return (self.query_id, self.engine_name, self.dimension, self.shots, self.layers)

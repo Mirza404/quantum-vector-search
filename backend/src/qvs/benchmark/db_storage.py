@@ -61,17 +61,17 @@ class DatabaseStorage(BaseBenchmarkStorage):
             ) from exc
         return psycopg, psycopg_json.Json
 
-    def has_record(self, key: tuple[str, str, int, int, int | None, int | None]) -> bool:
-        query_id, engine_name, dimension, top_k, shots, layers = key
+    def has_record(self, key: tuple[str, str, int, int | None, int | None]) -> bool:
+        query_id, engine_name, dimension, shots, layers = key
         sql = """
             SELECT 1
             FROM benchmark_results
             WHERE query_id = %s AND engine_name = %s AND dimension = %s
-              AND top_k = %s AND shots = %s AND layers = %s
+              AND shots = %s AND layers = %s
             LIMIT 1
         """
         with self._conn.cursor() as cursor:
-            cursor.execute(sql, (query_id, engine_name, dimension, top_k,
+            cursor.execute(sql, (query_id, engine_name, dimension,
                                  shots if shots is not None else -1,
                                  layers if layers is not None else -1))
             return cursor.fetchone() is not None
@@ -83,7 +83,6 @@ class DatabaseStorage(BaseBenchmarkStorage):
                 query_id,
                 engine_name,
                 dimension,
-                top_k,
                 shots,
                 layers,
                 target_ids,
@@ -95,7 +94,7 @@ class DatabaseStorage(BaseBenchmarkStorage):
                 dataset_size,
                 circuit_depth,
                 num_qubits
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT ON CONSTRAINT uq_run_key DO UPDATE SET
                 recorded_at   = EXCLUDED.recorded_at,
                 target_ids    = EXCLUDED.target_ids,
@@ -113,7 +112,6 @@ class DatabaseStorage(BaseBenchmarkStorage):
             result.query_id,
             result.engine_name,
             result.dimension,
-            result.top_k,
             result.shots if result.shots is not None else -1,
             result.layers if result.layers is not None else -1,
             self._json_wrapper(result.target_ids),

@@ -29,7 +29,6 @@ class BenchmarkSelection:
     quantum_engines: List[str]
     dimensions: List[int]
     queries: List[str]
-    top_k_values: List[int] = field(default_factory=lambda: [3])
     shots_values: List[int] = field(default_factory=lambda: [2048])
     layers_values: List[int] = field(default_factory=lambda: [2])
 
@@ -38,15 +37,9 @@ class BenchmarkSelection:
         return self.classical_engines + self.quantum_engines
 
 
-LIST_KEYS = {"classical_engines", "quantum_engines", "dimensions", "queries", "top_k_values", "shots_values", "layers_values"}
+LIST_KEYS = {"classical_engines", "quantum_engines", "dimensions", "queries", "shots_values", "layers_values"}
 SCALAR_KEYS: set[str] = set()
 CONFIG_KEYS = LIST_KEYS | SCALAR_KEYS
-
-
-def _recall_at_k(target_ids: List[str], ranked_ids: List[str]) -> float:
-    if not target_ids:
-        return 0.0
-    return sum(1 for t in target_ids if t in ranked_ids) / len(target_ids)
 
 
 def _mrr(target_ids: List[str], ranked_ids: List[str]) -> float:
@@ -143,7 +136,6 @@ def _load_selection_config(path: Path) -> BenchmarkSelection:
         quantum_engines=lists["quantum_engines"],
         dimensions=_parse_int_list("dimensions"),
         queries=lists["queries"],
-        top_k_values=_parse_int_list("top_k_values"),
         shots_values=_parse_int_list("shots_values"),
         layers_values=_parse_int_list("layers_values"),
     )
@@ -161,7 +153,7 @@ def _select_queries(requested_ids: List[str], available_queries: List[BenchmarkQ
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Automated benchmarking harness")
-    parser.add_argument("--dataset-dir", default="data/sample_dataset/images", help="Dataset directory")
+    parser.add_argument("--dataset-dir", default="data/images", help="Dataset directory")
     parser.add_argument("--ground-truth", default=None, help="Ground-truth JSONC (defaults to <dataset>/ground_truth.jsonc)")
     parser.add_argument("--config", default="config/benchmarks.yaml", help="Relative or absolute path to benchmark selection YAML")
     parser.add_argument(
@@ -171,7 +163,6 @@ def main() -> None:
         default=None,
         help="Override the dimensions from the YAML config (space-separated list)",
     )
-    parser.add_argument("--top-k-values", nargs="+", type=int, default=None, help="Override top_k_values from benchmarks.yaml (space-separated list)")
     parser.add_argument("--shots-values", nargs="+", type=int, default=None, help="Override shots_values from benchmarks.yaml (space-separated list)")
     parser.add_argument("--layers-values", nargs="+", type=int, default=None, help="Override layers_values from benchmarks.yaml (space-separated list)")
     parser.add_argument("--quantum-seed", type=int, default=42, help="Seed for quantum noise rng")
@@ -187,7 +178,6 @@ def main() -> None:
     config_path = _resolve_config_path(args.config)
     selection = _load_selection_config(config_path)
     dimensions = args.dimensions or selection.dimensions
-    top_k_values = args.top_k_values or selection.top_k_values
     shots_values = args.shots_values or selection.shots_values
     layers_values = args.layers_values or selection.layers_values
 
@@ -195,19 +185,11 @@ def main() -> None:
     ground_truth_path = (
         Path(args.ground_truth).resolve()
         if args.ground_truth
-        else (BACKEND_ROOT / "data" / "sample_dataset" / "ground_truth.jsonc").resolve()
+        else (BACKEND_ROOT / "data" / "ground_truth.jsonc").resolve()
     )
 
     queries = load_benchmark_queries(ground_truth_path)
     queries = _select_queries(selection.queries, queries)
-
-    max_targets = max(len(q.target_ids) for q in queries)
-    invalid_top_k = [k for k in top_k_values if k < max_targets]
-    if invalid_top_k:
-        raise SystemExit(
-            f"top_k_values {invalid_top_k} are less than the maximum number of targets in any query ({max_targets}). "
-            f"All top_k_values must be >= {max_targets} — update top_k_values in benchmarks.yaml."
-        )
 
     storage = DatabaseStorage()
     stored_vectors = storage.load_image_vectors()
@@ -217,7 +199,7 @@ def main() -> None:
             "Run `python3 scripts/index_dataset.py` first to encode and store image embeddings."
         )
 
-    all_target_ids = {tid for query in queries for tid in query.target_ids}
+    all_target_ids = {query.target_id for query in queries}
     missing = all_target_ids - stored_vectors.keys()
     if missing:
         raise SystemExit(
@@ -284,41 +266,35 @@ def main() -> None:
                         total_ms = prep_ms + search_ms
 
                         meta = result.meta or {}
-                        for top_k in top_k_values:
-                            eval_ids = result.ids[:top_k]
-                            recall = _recall_at_k(query.target_ids, eval_ids)
-                            mrr = _mrr(query.target_ids, eval_ids)
-                            parameters: dict = {"dimension": dimension, "top_k": top_k}
-                            if is_quantum:
-                                parameters.update({"shots": shots, "layers": layers})
+                        mrr = _mrr([query.target_id], result.ids)
+                        parameters: dict = {"dimension": dimension}
+                        if is_quantum:
+                            parameters.update({"shots": shots, "layers": layers})
 
-                            storage.append(
-                                BenchmarkResult(
-                                    query_id=query.id,
-                                    engine_name=engine.name,
-                                    dimension=dimension,
-                                    target_ids=query.target_ids,
-                                    top_ids=eval_ids,
-                                    recall_at_k=recall,
-                                    mrr=mrr,
-                                    state_prep_ms=prep_ms if is_quantum else 0.0,
-                                    search_ms=search_ms,
-                                    total_ms=total_ms,
-                                    top_k=top_k,
-                                    shots=shots,
-                                    layers=layers,
-                                    parameters=parameters,
-                                    dataset_size=len(dataset_ids),
-                                    circuit_depth=meta.get("circuit_depth"),
-                                    num_qubits=meta.get("num_qubits"),
-                                )
+                        storage.append(
+                            BenchmarkResult(
+                                query_id=query.id,
+                                engine_name=engine.name,
+                                dimension=dimension,
+                                target_ids=[query.target_id],
+                                top_ids=result.ids,
+                                mrr=mrr,
+                                state_prep_ms=prep_ms if is_quantum else 0.0,
+                                search_ms=search_ms,
+                                total_ms=total_ms,
+                                shots=shots,
+                                layers=layers,
+                                parameters=parameters,
+                                dataset_size=len(dataset_ids),
+                                circuit_depth=meta.get("circuit_depth"),
+                                num_qubits=meta.get("num_qubits"),
                             )
-                            print(
-                                f"[{engine.name}] query={query.id} dim={dimension} "
-                                f"top_k={top_k} shots={shots} layers={layers} "
-                                f"recall={recall:.2f} mrr={mrr:.3f} "
-                                f"total_ms={total_ms:.2f}"
-                            )
+                        )
+                        print(
+                            f"[{engine.name}] query={query.id} dim={dimension} "
+                            f"shots={shots} layers={layers} "
+                            f"mrr={mrr:.3f} total_ms={total_ms:.2f}"
+                        )
 
 
 if __name__ == "__main__":
