@@ -812,3 +812,17 @@ exist yet. Instead this project runs the swap test one image at a time — 1 mil
 quantum comparisons — so there is no speedup over just doing it classically. The value of the
 project is demonstrating that the quantum similarity computation itself works correctly and
 measuring what it costs, so we are ready when the missing piece (qRAM) eventually arrives.
+
+**Q: Does truncating CLIP embeddings affect benchmark accuracy?**
+A: Truncation cuts the less informative components from the end of CLIP embeddings. Most of the
+semantic information is concentrated near the front of the vector, so small reductions
+(e.g., from 512 → 128 or 64 dimensions) usually preserve nearest-neighbour rankings fairly well.
+
+However, truncation can slightly alter top-k results, which may affect comparisons between search
+engines, especially between classical FAISS and quantum engines. If exact ranking fidelity matters
+for a benchmark, truncation introduces a confounding factor: differences in results might come from
+the truncation rather than the engine itself.
+
+*In plain terms:* truncation makes vectors smaller and faster to process, but it can nudge results a
+little. For speed-focused experiments it’s fine; for fair accuracy comparisons, it’s safest to use
+full vectors or at least confirm that truncated vectors produce nearly identical rankings.
