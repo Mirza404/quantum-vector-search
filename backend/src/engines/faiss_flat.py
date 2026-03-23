@@ -5,7 +5,7 @@ from typing import Any, List
 import faiss
 import numpy as np
 
-from qvs.engines import SearchEngineStrategy, SearchResult
+from .base import SearchEngineStrategy, SearchResult
 
 
 class FaissFlatEngine(SearchEngineStrategy):

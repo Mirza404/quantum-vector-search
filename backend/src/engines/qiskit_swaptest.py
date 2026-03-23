@@ -8,7 +8,7 @@ import numpy as np
 from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
 
-from qvs.engines import SearchEngineStrategy, SearchResult
+from .base import SearchEngineStrategy, SearchResult
 
 
 @dataclass
