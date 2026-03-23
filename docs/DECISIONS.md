@@ -4,6 +4,10 @@
 
 - **Large `uv.lock` is expected:** Running `uv lock --refresh` after adding `[tool.uv.required-environments]` forced uv to emit metadata for both Linux/x86_64 and macOS/arm64. That’s why the lockfile gained hundreds of wheel URLs/hashes—it now records every candidate per required platform so future installs don’t miss a wheel. Only the current platform’s subset actually gets downloaded at install time.
 
+- **Remove stale `*.egg-info` (Mar 23, 2026):** Deleted `backend/src/quantum_vector_search.egg-info` because it’s a build artifact created by editable installs. Keeping it out of the tree avoids noisy diffs and aligns with the existing ignore rule (`src/*.egg-info/`).
+
+- **Single virtual environment (Mar 23, 2026):** Dropped the repo-level `.venv` and standardized on `backend/.venv`, which `uv` manages automatically. This eliminates redundant environments and makes it obvious which interpreter houses the backend dependencies. Updated `.gitignore` to keep both paths ignored going forward.
+
 ## Dataset decisions
 
 - **Importer switch (March 23, 2026):** Hugging Face removed `trust_remote_code`, so the old Flickr30k loader stopped working. Replaced it with the built-in `beans` dataset (available without custom scripts) and added `DATASET_NAME`, `DATASET_SPLIT`, and `SHUFFLE_SEED` constants for clarity. These settings let us keep pulling a tiny, reproducible image sample until we decide on the long-term dataset strategy.
