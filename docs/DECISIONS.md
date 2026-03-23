@@ -11,3 +11,5 @@
 ## Dataset decisions
 
 - **Importer switch (March 23, 2026):** Hugging Face removed `trust_remote_code`, so the old Flickr30k loader stopped working. Replaced it with the built-in `beans` dataset (available without custom scripts) and added `DATASET_NAME`, `DATASET_SPLIT`, and `SHUFFLE_SEED` constants for clarity. These settings let us keep pulling a tiny, reproducible image sample until we decide on the long-term dataset strategy.
+
+- **Flickr30k → Beans clarification (Mar 23, 2026):** The change wasn’t triggered by a local `datasets` install or a version bump—the dependency is still `datasets==2.21.0` inside `backend/.venv`. The issue was Hugging Face’s policy change that blocks datasets requiring `trust_remote_code`, which Flickr30k depends on. To unblock teammates, `scripts/import_dataset.py` now calls `load_dataset("beans", split="train")`, shuffles with a fixed seed, and saves the first `num_images` rows. Nothing else in the project changes: engines still read WebP files via `DirectoryDataLoader`, and swapping back only requires pointing the importer at another dataset that doesn’t rely on custom scripts.
