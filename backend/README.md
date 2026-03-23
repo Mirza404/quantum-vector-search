@@ -14,7 +14,8 @@ src/qvs/
 
 ## Dataset
 
-The number of images to import is set in `config/dataset.yaml` (`num_images`). Run the import script once to download images as WebP and generate `data/ground_truth.jsonc`:
+`scripts/import_dataset.py` downloads a small split of the HuggingFace `beans` dataset (bean leaf photos) and writes WebP
+images plus `data/ground_truth.jsonc`. Control how many samples are pulled via `config/dataset.yaml` (`num_images`).
 
 ```bash
 python3 scripts/import_dataset.py
@@ -30,7 +31,7 @@ python3 scripts/index_dataset.py
 
 `config/benchmarks.yaml` — comment out entries to skip without changing code. Each key is explained inline in that file.
 
-`config/dataset.yaml` — set `num_images` to control how many Flickr30k images `import_dataset.py` pulls.
+`config/dataset.yaml` — set `num_images` to control how many samples `import_dataset.py` pulls.
 
 CLI flags override `benchmarks.yaml` for one-off runs: `--shots-values`, `--layers-values`, `--dimensions`, `--clip-model`, `--device`, `--batch-size`.
 
