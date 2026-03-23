@@ -1,7 +1,7 @@
 [project]
 name = "quantum-vector-search"
 version = "0.1.0"
-description = "Add your description here"
+description = "Compares classical and quantum-inspired vector search engines for cross-modal similarity search."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
