@@ -2,12 +2,18 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import List
+import sys
 
-from qvs.benchmark import load_benchmark_queries
-from qvs.engines.faiss_flat import FaissFlatEngine
-from qvs.engines.qiskit_swaptest import QiskitSwapTestEngine
-from qvs.pipeline import CLIPEmbeddingModel
-from qvs.repository import LocalCSVDataLoader
+BACKEND_ROOT = Path(__file__).resolve().parent
+SRC_PATH = BACKEND_ROOT / "src"
+if str(SRC_PATH) not in sys.path:
+    sys.path.insert(0, str(SRC_PATH))
+
+from benchmark import load_benchmark_queries
+from engines.faiss_flat import FaissFlatEngine
+from engines.qiskit_swaptest import QiskitSwapTestEngine
+from pipeline import CLIPEmbeddingModel
+from repository import LocalCSVDataLoader
 
 CLIP_MODEL_NAME = "ViT-B/32"
 CLIP_BATCH_SIZE = 16
