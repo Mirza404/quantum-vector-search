@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Download a Flickr30k subset from HuggingFace, convert images to WebP, and generate ground_truth.jsonc.
+"""Download a beans leaf dataset from HuggingFace, convert images to WebP, and generate ground_truth.jsonc.
 
-Every run wipes backend/data/images/ and regenerates backend/data/ground_truth.jsonc from scratch.
+Every run wipes backend/data/images/ and regenerates backend/data/ground_truth.jsonc from scratch. The goal is
+to keep a tiny, reproducible sample that exercises the pipeline without large downloads.
 
 Usage (from backend/):
     python3 scripts/import_dataset.py
@@ -10,6 +11,7 @@ from __future__ import annotations
 
 import json
 import shutil
+from itertools import islice
 from pathlib import Path
 
 import yaml
@@ -17,7 +19,9 @@ import yaml
 BACKEND_ROOT = Path(__file__).resolve().parent.parent
 IMAGES_DIR = BACKEND_ROOT / "data" / "images"
 GROUND_TRUTH_PATH = BACKEND_ROOT / "data" / "ground_truth.jsonc"
-DATASET_NAME = "nlphuji/flickr30k"
+DATASET_NAME = "beans"
+DATASET_SPLIT = "train"
+SHUFFLE_SEED = 42
 
 _dataset_cfg = yaml.safe_load((BACKEND_ROOT / "config" / "dataset.yaml").read_text())
 NUM_IMAGES: int = _dataset_cfg["num_images"]
@@ -31,15 +35,10 @@ def main() -> None:
             "The 'datasets' package is required. Install it with: pip install datasets"
         ) from exc
 
-    print(f"Loading {DATASET_NAME} from HuggingFace (first {NUM_IMAGES} images)...")
-    ds = load_dataset(DATASET_NAME, split="test", streaming=True, trust_remote_code=True)
-
-    rows: list[dict] = []
-    for row in ds:
-        rows.append(row)
-        if len(rows) >= NUM_IMAGES:
-            break
-
+    print(f"Loading {DATASET_NAME}/{DATASET_SPLIT} from HuggingFace (first {NUM_IMAGES} images)...")
+    ds = load_dataset(DATASET_NAME, split=DATASET_SPLIT)
+    ds = ds.shuffle(seed=SHUFFLE_SEED)
+    rows = list(islice(ds, NUM_IMAGES))
     if not rows:
         raise SystemExit("Dataset is empty — nothing to import.")
 
@@ -50,19 +49,27 @@ def main() -> None:
 
     ground_truth: list[dict] = []
 
-    for row in rows:
-        # Use filename stem (e.g. "1000092795" from "1000092795.jpg") as the stable ID.
-        # img_id in streaming mode returns sequential integers, not the Flickr image ID.
-        img_id = Path(row["filename"]).stem
+    labels_feature = ds.features.get("labels")
+
+    def _label_to_text(raw_value) -> str:
+        if labels_feature is not None and hasattr(labels_feature, "int2str"):
+            return labels_feature.int2str(int(raw_value))
+        if isinstance(raw_value, str):
+            return raw_value
+        return str(raw_value)
+
+    for idx, row in enumerate(rows):
+        img_id = f"{idx:04d}"
         image = row["image"]  # PIL Image
-        captions: list[str] = row["caption"]
+        label_text = _label_to_text(row.get("labels", idx)).replace("_", " ")
+        description = f"A close-up photo of {label_text} bean leaves."
 
         webp_path = IMAGES_DIR / f"{img_id}.webp"
         image.save(webp_path, format="WEBP", quality=85)
 
         ground_truth.append({
             "id": f"query_{img_id}",
-            "text": captions[0],
+            "text": description,
         })
 
     # Write ground_truth.jsonc
