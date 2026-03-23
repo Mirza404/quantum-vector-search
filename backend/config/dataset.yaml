@@ -1,4 +1,4 @@
-# Controls how many images are pulled from the Flickr30k dataset during import.
+# Controls how many images the import script pulls per run.
 # Change this value, then re-run scripts/import_dataset.py to get a different sized dataset.
 #
 # Suggested values: 5 (quick smoke test), 20 (default), 100 (larger benchmark)
