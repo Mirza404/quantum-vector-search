@@ -19,7 +19,7 @@ Compares classical and quantum-inspired vector search engines for cross-modal si
    cd backend
    cp .env.example .env
    python3 -m venv .venv && source .venv/bin/activate
-   pip install -e . --extra-index-url https://download.pytorch.org/whl/cpu
+   pip install -r requirements.txt
    ```
 
 3. **Index images** (one-time — encodes images with CLIP and stores vectors in Postgres)
