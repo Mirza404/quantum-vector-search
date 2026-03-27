@@ -5,7 +5,7 @@ Benchmarking harness for classical and quantum-inspired search engines. For setu
 ## Package structure
 
 ```
-src/qvs/
+src/
 ├── benchmark/   # dataclasses, storage strategies, DatabaseStorage
 ├── engines/     # SearchEngineStrategy base + all four engine implementations
 ├── pipeline/    # EmbeddingGenerator interface, CLIPEmbeddingModel, mock
