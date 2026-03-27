@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "faiss-cpu==1.13.2",
     "fastapi==0.121.1",
-    "numpy==2.3.2",
+    "numpy>=2.0,<2.3",
     "qiskit==2.2.3",
     "qiskit-aer==0.17.2",
     "pytest>=8.3,<9",
@@ -19,12 +19,3 @@ dependencies = [
     "pgvector>=0.4.2",
     "datasets>=2.0,<3.0",
 ]
-
-[tool.uv.sources]
-torch = [{ index = "pytorch-cpu" }]
-torchvision = [{ index = "pytorch-cpu" }]
-
-[[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
