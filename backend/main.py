@@ -13,7 +13,7 @@ from benchmark import load_benchmark_queries
 from engines.faiss_flat import FaissFlatEngine
 from engines.qiskit_swaptest import QiskitSwapTestEngine
 from pipeline import CLIPEmbeddingModel
-from repository import LocalCSVDataLoader
+from repository import DirectoryDataLoader
 
 CLIP_MODEL_NAME = "ViT-B/32"
 CLIP_BATCH_SIZE = 16
@@ -28,7 +28,7 @@ def _generate_dataset_vectors(dataset, clip_model: CLIPEmbeddingModel) -> tuple[
 
 def main() -> None:
     dataset_dir = BACKEND_ROOT / "data" / "sample_dataset"
-    loader = LocalCSVDataLoader(dataset_dir=dataset_dir)
+    loader = DirectoryDataLoader(dataset_dir=dataset_dir)
     dataset = loader.get_dataset()
     clip_model = CLIPEmbeddingModel(model_name=CLIP_MODEL_NAME, batch_size=CLIP_BATCH_SIZE)
     vectors, dataset_dim = _generate_dataset_vectors(dataset, clip_model)
