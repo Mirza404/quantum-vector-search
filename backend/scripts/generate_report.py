@@ -32,7 +32,7 @@ SRC_PATH = BACKEND_ROOT / "src"
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
-from qvs.benchmark.db_storage import _bootstrap_env  # noqa: E402
+from benchmark.db_storage import _bootstrap_env  # noqa: E402
 
 _bootstrap_env()
 
