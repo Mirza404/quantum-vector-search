@@ -9,7 +9,7 @@ src/
 ├── benchmark/   # dataclasses, storage strategies, DatabaseStorage
 ├── engines/     # SearchEngineStrategy base + all four engine implementations
 ├── pipeline/    # EmbeddingGenerator interface, CLIPEmbeddingModel, mock
-└── repository/  # DataLoader interface, LocalCSVDataLoader
+└── repository/  # DataLoader interface, DirectoryDataLoader
 ```
 
 ## Dataset
