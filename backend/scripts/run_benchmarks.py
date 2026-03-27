@@ -15,12 +15,12 @@ SRC_PATH = BACKEND_ROOT / "src"
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
-from qvs.benchmark import BenchmarkResult, DatabaseStorage, load_benchmark_queries
-from qvs.engines.faiss_flat import FaissFlatEngine
-from qvs.engines.qiskit_swaptest import QiskitSwapTestEngine
-from qvs.engines.quantum_mock import QuantumMockEngine
-from qvs.engines.brute_force_cosine import BruteForceCosineEngine
-from qvs.pipeline import CLIPEmbeddingModel
+from benchmark import BenchmarkResult, DatabaseStorage, load_benchmark_queries
+from engines.faiss_flat import FaissFlatEngine
+from engines.qiskit_swaptest import QiskitSwapTestEngine
+from engines.quantum_mock import QuantumMockEngine
+from engines.brute_force_cosine import BruteForceCosineEngine
+from pipeline import CLIPEmbeddingModel
 
 
 @dataclass(frozen=True)
