@@ -1,13 +1,19 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 from typing import List
 
-from qvs.benchmark import load_benchmark_queries
-from qvs.engines.faiss_flat import FaissFlatEngine
-from qvs.engines.qiskit_swaptest import QiskitSwapTestEngine
-from qvs.pipeline import CLIPEmbeddingModel
-from qvs.repository import LocalCSVDataLoader
+BACKEND_ROOT = Path(__file__).resolve().parent
+SRC_PATH = BACKEND_ROOT / "src"
+if str(SRC_PATH) not in sys.path:
+    sys.path.insert(0, str(SRC_PATH))
+
+from benchmark import load_benchmark_queries
+from engines.faiss_flat import FaissFlatEngine
+from engines.qiskit_swaptest import QiskitSwapTestEngine
+from pipeline import CLIPEmbeddingModel
+from repository import LocalCSVDataLoader
 
 CLIP_MODEL_NAME = "ViT-B/32"
 CLIP_BATCH_SIZE = 16
@@ -21,7 +27,7 @@ def _generate_dataset_vectors(dataset, clip_model: CLIPEmbeddingModel) -> tuple[
 
 
 def main() -> None:
-    dataset_dir = Path(__file__).parent / "data" / "sample_dataset"
+    dataset_dir = BACKEND_ROOT / "data" / "sample_dataset"
     loader = LocalCSVDataLoader(dataset_dir=dataset_dir)
     dataset = loader.get_dataset()
     clip_model = CLIPEmbeddingModel(model_name=CLIP_MODEL_NAME, batch_size=CLIP_BATCH_SIZE)
