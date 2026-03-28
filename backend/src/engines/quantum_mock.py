@@ -6,7 +6,7 @@ from typing import Any, List
 
 import numpy as np
 
-from qvs.engines import SearchEngineStrategy, SearchResult
+from .base import SearchEngineStrategy, SearchResult
 
 
 class QuantumMockEngine(SearchEngineStrategy):

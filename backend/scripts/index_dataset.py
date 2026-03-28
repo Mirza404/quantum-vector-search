@@ -14,8 +14,8 @@ SRC_PATH = BACKEND_ROOT / "src"
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
-from qvs.pipeline import CLIPEmbeddingModel
-from qvs.repository import DirectoryDataLoader
+from pipeline import CLIPEmbeddingModel
+from repository import DirectoryDataLoader
 
 DEFAULT_DATASET_DIR = BACKEND_ROOT / "data" / "images"
 DB_BATCH_SIZE = 200
