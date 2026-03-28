@@ -90,8 +90,9 @@ a technology called qRAM that would make the packing instant — but that does n
 A: Measuring a quantum circuit once gives a single bit. Estimating P(ancilla=0) requires
 running the circuit N times and counting. The standard error in the estimate is 1/√N. With
 few shots (e.g., 64) the noise in the similarity estimate is large enough to scramble the
-ranking. With 2048 shots the noise is small enough (~2%) that rankings match the classical
-result on most queries.
+ranking. With 2048 shots on AerSimulator the shot noise is small enough (~2%) that rankings match
+the classical result on most queries. Real quantum hardware would require even more shots
+because physical hardware noise adds on top of shot noise.
 
 *In plain terms:* quantum measurement is random — you run the same circuit twice and can get
 different results. To get a reliable similarity score you have to run it many times and
@@ -194,14 +195,15 @@ power strip with standard sockets — any device with the right plug just works.
 **Q: Are the simulator results actually meaningful, or is the simulator just faking it?**
 A: The Qiskit AerSimulator is mathematically exact — it computes the full quantum state vector
 and produces measurement statistics identical to what a perfect, noiseless quantum chip would
-produce. This makes it **more accurate but slower** than real hardware: accuracy is higher
-because there is no physical noise; speed is lower because a regular CPU has to simulate
-quantum behaviour step by step. Real quantum hardware executes circuits much faster but
-introduces noise — gate errors, decoherence, crosstalk — that degrades accuracy below the
-simulator baseline, with the degradation growing as circuit depth increases. The simulator
-therefore represents the best-case ceiling for the algorithm's accuracy. The quantum mock
-engine adds configurable artificial noise to explore what happens as you move away from that
-ceiling toward realistic hardware conditions.
+produce. It is slower than real hardware because a classical CPU must simulate quantum behaviour
+step by step, but this slowness is a property of the simulation method, not the algorithm.
+Real quantum hardware executes circuits much faster but introduces physical noise — gate errors,
+decoherence, crosstalk — that degrades accuracy below the simulator baseline, with degradation
+growing as circuit depth increases. The simulator therefore represents the best-case ceiling
+for the algorithm's accuracy: it includes shot noise (statistical error from finite measurements)
+but no physical hardware noise. The quantum mock engine adds configurable artificial noise on
+top of this to explore what happens as you move away from that ceiling toward realistic hardware
+conditions.
 
 *In plain terms:* the simulator gives you the right answer slowly; real quantum hardware gives
 you a noisier answer quickly. For this project the simulator is ideal — we care about whether
@@ -282,10 +284,12 @@ A: Truncation cuts the less informative components from the end of CLIP embeddin
 semantic information is concentrated near the front of the vector, so small reductions
 (e.g., from 512 → 128 or 64 dimensions) usually preserve nearest-neighbour rankings fairly well.
 
-However, truncation can slightly alter top-k results, which may affect comparisons between search
-engines, especially between classical FAISS and quantum engines. If exact ranking fidelity matters
-for a benchmark, truncation introduces a confounding factor: differences in results might come from
-the truncation rather than the engine itself.
+However, truncation can slightly alter rankings. All engines in this project receive the same
+truncated vectors, so truncation does not favour one engine over another. The risk is different:
+if two engines return slightly different rankings, you cannot tell whether the difference comes
+from the algorithm or from information lost during truncation. For this reason, benchmarks run
+at the same fixed dimension across all engines, so any ranking differences are attributable to
+the algorithm, not to different levels of truncation.
 
 *In plain terms:* truncation makes vectors smaller and faster to process, but it can nudge results a
 little. For speed-focused experiments it’s fine; for fair accuracy comparisons, it’s safest to use
@@ -302,8 +306,8 @@ The search engines then compare that in-memory query vector against the stored i
 CLIP runs entirely on your local machine via PyTorch. On startup the code checks for a CUDA GPU,
 then Apple MPS, and falls back to CPU if neither is available. When running on CPU the model weights
 are cast to 32-bit float for compatibility. The variant used here, **ViT-B/32**, has approximately
-**63 million parameters across both its image and text encoders** — large by everyday standards, but
-small for a vision-language model. It fits comfortably in RAM and runs on CPU without specialised
+**151 million parameters across both encoders** (~87M image encoder + ~63M text encoder) — large
+by everyday standards, but small for a vision-language model. It fits comfortably in RAM and runs on CPU without specialised
 hardware.
 
 *In plain terms:* CLIP is a pre-trained neural network with 63 million learned values, not a cloud

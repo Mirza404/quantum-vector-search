@@ -81,13 +81,15 @@ specific dataset, yet it knows "forest" should sit near photos of trees.
 | Architecture | Vision Transformer |
 | Patch size | 32×32 pixels |
 | Input resolution | 224×224 |
-| Model size | "Base" (~86M parameters in image encoder) |
+| Model size | "Base" (~87M image encoder + ~63M text encoder = ~151M total) |
 | Output dimension | 512 |
 
 ### L2 Normalisation
 
-After encoding, vectors are optionally L2-normalised (divided by their Euclidean norm so
-‖v‖ = 1). On the unit hypersphere:
+After encoding, vectors are L2-normalised (divided by their Euclidean norm so ‖v‖ = 1).
+This is required for amplitude encoding: quantum amplitudes must satisfy |α₁|² +. .. + |αₙ|² = 1,
+which is exactly the condition for a unit-norm vector. Classical engines benefit from
+normalisation too — on the unit hypersphere:
 
 - Cosine similarity equals the dot product.
 - Euclidean distance and cosine distance become interchangeable (L2² = 2 − 2·cos θ).
