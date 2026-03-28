@@ -501,7 +501,7 @@ The `image_vectors` table uses HNSW with cosine distance. A search query becomes
 
 ```sql
 SELECT id FROM image_vectors
-ORDER BY embedding <=> '[0.1, 0.2,. ..]'::vector
+ORDER BY embedding <=> '[0.1, 0.2, ...]'::vector
 LIMIT 10;
 ```
 
@@ -555,7 +555,7 @@ Each row in `benchmark_results` represents one unique combination of
 Classical engines store `shots = -1, layers = -1` (a sentinel meaning "not applicable").
 
 **Re-running the same configuration** overwrites the existing row with fresh timings and
-scores (`ON CONFLICT. .. DO UPDATE`). There is no silent skipping — every run produces
+scores (`ON CONFLICT ... DO UPDATE`). There is no silent skipping — every run produces
 up-to-date data.
 
 **Adding a new shots or layers value** appends new rows for the new combinations without
