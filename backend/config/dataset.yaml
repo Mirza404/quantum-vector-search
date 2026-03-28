@@ -1,5 +1,11 @@
-# Controls how many images are pulled from the Flickr30k dataset during import.
+# Controls how many rows are pulled from the Flickr30k dataset during import.
 # Change this value, then re-run scripts/import_dataset.py to get a different sized dataset.
 #
 # Suggested values: 5 (quick smoke test), 20 (default), 100 (larger benchmark)
 num_images: 20
+
+# Advanced overrides for Hugging Face dataset viewer.
+# - config: dataset config name on the Hub (Flickr30k exposes a single config named "TEST")
+# - split: split name exposed by the dataset viewer (Flickr30k currently exposes "test")
+config: TEST
+split: test
