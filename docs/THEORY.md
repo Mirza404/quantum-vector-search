@@ -81,13 +81,15 @@ specific dataset, yet it knows "forest" should sit near photos of trees.
 | Architecture | Vision Transformer |
 | Patch size | 32×32 pixels |
 | Input resolution | 224×224 |
-| Model size | "Base" (~86M parameters in image encoder) |
+| Model size | "Base" (~87M image encoder + ~63M text encoder = ~151M total) |
 | Output dimension | 512 |
 
 ### L2 Normalisation
 
-After encoding, vectors are optionally L2-normalised (divided by their Euclidean norm so
-‖v‖ = 1). On the unit hypersphere:
+After encoding, vectors are L2-normalised (divided by their Euclidean norm so ‖v‖ = 1).
+This is required for amplitude encoding: quantum amplitudes must satisfy |α₁|² +. .. + |αₙ|² = 1,
+which is exactly the condition for a unit-norm vector. Classical engines benefit from
+normalisation too — on the unit hypersphere:
 
 - Cosine similarity equals the dot product.
 - Euclidean distance and cosine distance become interchangeable (L2² = 2 − 2·cos θ).
@@ -499,7 +501,7 @@ The `image_vectors` table uses HNSW with cosine distance. A search query becomes
 
 ```sql
 SELECT id FROM image_vectors
-ORDER BY embedding <=> '[0.1, 0.2, ...]'::vector
+ORDER BY embedding <=> '[0.1, 0.2,. ..]'::vector
 LIMIT 10;
 ```
 
@@ -553,7 +555,7 @@ Each row in `benchmark_results` represents one unique combination of
 Classical engines store `shots = -1, layers = -1` (a sentinel meaning "not applicable").
 
 **Re-running the same configuration** overwrites the existing row with fresh timings and
-scores (`ON CONFLICT ... DO UPDATE`). There is no silent skipping — every run produces
+scores (`ON CONFLICT. .. DO UPDATE`). There is no silent skipping — every run produces
 up-to-date data.
 
 **Adding a new shots or layers value** appends new rows for the new combinations without
