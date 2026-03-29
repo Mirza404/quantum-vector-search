@@ -1,5 +1,6 @@
 # Controls which (engine, dimension, query) combinations run during benchmarks.
 # Comment out any entry to skip it without touching Python code.
+# See docs/FAQ.md for a full explanation of every parameter and the trade-offs.
 
 # Classical engines — no shots/layers parameters.
 #   brute_force_cosine  — deterministic cosine similarity (no index, brute-force). Fast baseline.
@@ -17,25 +18,29 @@ quantum_engines:
   - quantum_mock_sampler
   # - qiskit_swap_test
 
-# Embedding dimensions to benchmark. Each engine is run once per dimension.
-# Higher dimensions = richer embeddings but slower search.
+# Vector dimensions to benchmark. Vectors are truncated to the first d components of the CLIP
+# output (already L2-normalised). Lower d = fewer qubits + shallower circuit + lower accuracy.
+# Upper bound: 512 for ViT-B/32, 768 for ViT-L/14. Add any value up to that limit here.
+# See docs/FAQ.md — "What do dimensions, shots_values, and layers_values control?"
 dimensions:
   - 64
   # - 128
+  # - 256
+  # - 512  # full ViT-B/32 output; maximum accuracy, maximum qubit cost
 
-# Number of quantum circuit measurement shots per query.
-# More shots = more accurate results but higher cost on real hardware.
-# Only used by quantum_mock_sampler and qiskit_swap_test.
+# Number of circuit executions per similarity comparison (one shot = one measurement).
+# More shots = lower variance = more accurate score, but higher cost on real hardware.
+# Safe default: 512. Practical ceiling: 4096 (~8× slower, near-noiseless).
+# Only used by quantum_mock_sampler and qiskit_swap_test (ignored by classical engines).
 shots_values:
   - 512
   # - 1024
   # - 2048
   # - 4096
 
-# Number of variational layers in the quantum circuit.
-# More layers = deeper circuit (higher circuit_depth) and potentially better accuracy,
-# but increases decoherence risk on real hardware.
-# Only used by quantum_mock_sampler.
+# Number of variational gate layers (ansatz depth). More layers = deeper circuit = higher
+# circuit_depth. For the swap-test kernel, 1–2 layers is enough; beyond 3 is rarely useful.
+# Only used by quantum_mock_sampler (qiskit_swap_test uses a fixed circuit structure).
 layers_values:
   - 1
   # - 2
