@@ -1,6 +1,23 @@
 # Quantum Vector Search
 
-Compares classical and quantum-inspired vector search engines for cross-modal similarity search (text to image). Uses CLIP embeddings and benchmarks four engines against the same dataset. React dashboard planned for a future phase.
+## What is this?
+
+You type `"a dog on a beach"`. The app finds matching images — even though no one labelled them
+with that phrase. That is cross-modal search: searching one type of data (text) and getting
+results in another type (images).
+
+The core question this project answers: **does quantum similarity search work, how accurate is
+it, and what does it cost in quantum resources?** We run the same search through multiple
+engines — classical (standard CPU math) and quantum (circuits on a simulated or real quantum
+chip) — and measure accuracy (MRR) alongside quantum resource cost (qubits, circuit depth,
+measurement shots).
+
+**We are not claiming quantum is faster.** Classical computers have already won that race for
+now. The point is to establish the baseline — built now, while quantum hardware is still too
+limited to run it at scale, so the benchmarking framework and resource cost model are ready
+when the hardware catches up.
+
+For the full theory, design decisions, and Q&A see the [`docs/`](docs/) folder.
 
 ## Quick Start
 
