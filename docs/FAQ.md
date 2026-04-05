@@ -184,6 +184,37 @@ Via PyTorch. The code auto-detects CUDA, then Apple MPS, then falls back to CPU.
 
 **Q: Would running on real IBM hardware change the conclusions?**
 
+<<<<<<< Updated upstream
 It changes practical results (more noise, accuracy gap vs simulator) but not the fundamental
 constraints: no qRAM, no error correction, same O(N) limitation. The most valuable output
 would be the simulator-vs-hardware accuracy gap, measured as a function of circuit depth.
+=======
+It changes **practical results** (more noise, accuracy gap vs simulator) but not the **fundamental constraints**: no qRAM, no error correction, same O(N) limitation. The most valuable output would be the simulator-vs-hardware accuracy gap as a function of circuit depth.
+
+---
+
+### What is the Strategy Pattern and why does the project use it?
+
+All engines implement the same interface (`SearchEngineStrategy` in `backend/src/engines/base.py`): `build_index()` + `search()`. The benchmark harness iterates over engines without knowing which one is running. Adding a new engine = implementing the interface. Nothing else changes.
+
+Same pattern for `EmbeddingGenerator` (pipeline) and `BaseDataLoader` (repository).
+
+> **Analogy:** Like USB ports. Any device that follows the USB spec works. Any engine that implements `build_index()` + `search()` can be benchmarked.
+
+---
+
+### Why doesn't the app support free text search?
+
+The app only lets users pick from **predefined queries** -- the ones in `backend/data/ground_truth.jsonc`. Each of these has a known correct answer (the target image).
+
+With free text, we'd have no ground truth. Both engines would return results, and we'd show two lists of images side by side -- but we'd have **no way to measure which engine did better**. The user would just be eyeballing two grids with no objective comparison. Did the classical engine rank a better image first? Maybe, maybe not -- there's no correct answer to check against.
+
+The predefined queries give us:
+- **MRR** for each engine (objective accuracy number)
+- **Target rank** (where the correct image landed)
+- A **green highlight** on the ground-truth image so the user can visually verify
+
+This makes the comparison scientific rather than subjective. The tradeoff is flexibility -- users can't type arbitrary queries -- but the benefit is that every search produces a meaningful, measurable result.
+
+> **Analogy:** It's the difference between a spelling test with an answer key and a creative writing contest with no rubric. Both are valid exercises, but only one lets you objectively score the participants.
+>>>>>>> Stashed changes
