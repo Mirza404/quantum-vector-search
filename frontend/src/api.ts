@@ -1,0 +1,63 @@
+/** Thin API client — all fetch calls in one place. */
+
+const BASE = '/api'
+
+export interface ImageItem {
+  id: string
+  url: string
+}
+
+export interface PaginatedImages {
+  images: ImageItem[]
+  page: number
+  per_page: number
+  total: number
+}
+
+export interface QueryItem {
+  id: string
+  text: string
+  target_image_id: string
+}
+
+export interface EngineResultItem {
+  image_id: string
+  image_url: string
+  score: number
+  is_target: boolean
+}
+
+export interface EngineResult {
+  engine_name: string
+  results: EngineResultItem[]
+  mrr: number
+  target_rank: number | null
+  search_ms: number
+}
+
+export interface SearchResponse {
+  query_id: string
+  query_text: string
+  target_image_id: string
+  classical: EngineResult
+  quantum: EngineResult
+}
+
+export async function fetchImages(page = 1, perPage = 20): Promise<PaginatedImages> {
+  const res = await fetch(`${BASE}/images?page=${page}&per_page=${perPage}`)
+  if (!res.ok) throw new Error(`Failed to fetch images: ${res.status}`)
+  return res.json()
+}
+
+export async function fetchQueries(): Promise<QueryItem[]> {
+  const res = await fetch(`${BASE}/queries`)
+  if (!res.ok) throw new Error(`Failed to fetch queries: ${res.status}`)
+  const data = await res.json()
+  return data.queries
+}
+
+export async function runSearch(queryId: string): Promise<SearchResponse> {
+  const res = await fetch(`${BASE}/search?query_id=${encodeURIComponent(queryId)}`)
+  if (!res.ok) throw new Error(`Search failed: ${res.status}`)
+  return res.json()
+}
