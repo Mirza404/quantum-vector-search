@@ -23,7 +23,7 @@ BACKEND_ROOT = Path(__file__).resolve().parent.parent
 IMAGES_DIR = BACKEND_ROOT / "data" / "images"
 GROUND_TRUTH_PATH = BACKEND_ROOT / "data" / "ground_truth.jsonc"
 DATASET_NAME = "nlphuji/flickr30k"
-ROWS_API_URL = "https://datasets-server.huggingface.co/rows"
+FILTER_API_URL = "https://datasets-server.huggingface.co/filter"
 SPLITS_API_URL = "https://datasets-server.huggingface.co/splits"
 USER_AGENT = "quantum-vector-search-importer/1.0"
 HF_TOKEN_ENV_VARS = ("HF_TOKEN", "HUGGINGFACE_TOKEN")
@@ -101,31 +101,38 @@ def _resolve_dataset_coordinates(
     return resolved_config, resolved_split
 
 
+PAGE_SIZE = 100  # /filter endpoint maximum per request
+
+
 def _fetch_rows(
     *, num_images: int, config_name: str, split_name: str, headers: dict[str, str]
 ) -> list[dict[str, Any]]:
-    params = {
-        "dataset": DATASET_NAME,
-        "config": config_name,
-        "split": split_name,
-        "offset": 0,
-        "length": num_images,
-    }
-    try:
-        response = requests.get(ROWS_API_URL, params=params, headers=headers, timeout=60)
-        response.raise_for_status()
-    except requests.RequestException as exc:
-        raise SystemExit(
-            f"Failed to load rows from Hugging Face dataset viewer ({DATASET_NAME}): {exc}"
-        ) from exc
+    rows: list[dict[str, Any]] = []
+    offset = 0
+    while offset < num_images:
+        length = min(PAGE_SIZE, num_images - offset)
+        params = {
+            "dataset": DATASET_NAME,
+            "config": config_name,
+            "split": split_name,
+            "orderby": '"filename"',
+            "offset": offset,
+            "length": length,
+        }
+        try:
+            response = requests.get(FILTER_API_URL, params=params, headers=headers, timeout=60)
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            raise SystemExit(
+                f"Failed to load rows from Hugging Face dataset viewer ({DATASET_NAME}): {exc}"
+            ) from exc
 
-    payload = response.json()
-    rows = payload.get("rows")
-    if not rows:
-        raise SystemExit(
-            f"Dataset viewer returned no rows for split '{split_name}'. "
-            "Double-check config/dataset.yaml."
-        )
+        payload = response.json()
+        page = payload.get("rows")
+        if not page:
+            break
+        rows.extend(entry["row"] for entry in page)
+        offset += len(page)
 
     if len(rows) < num_images:
         raise SystemExit(
@@ -133,7 +140,7 @@ def _fetch_rows(
             "Reduce num_images or verify the dataset split."
         )
 
-    return [entry["row"] for entry in rows[:num_images]]
+    return rows[:num_images]
 
 
 def _download_image_bytes(url: str, headers: dict[str, str]) -> bytes:
