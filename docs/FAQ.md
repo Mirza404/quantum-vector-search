@@ -1,188 +1,196 @@
 # Frequently Asked Questions
 
-For full explanations of the concepts below, see [LEARNING_ROADMAP.md](LEARNING_ROADMAP.md).
+Quick answers to the most likely exam questions. For full explanations, see [LEARNING_ROADMAP.md](LEARNING_ROADMAP.md).
 
 ---
 
-**Q: What is this project, in plain terms?**
+### What is this project, in plain terms?
 
-You type a sentence like "a dog on a beach". The system finds matching images — even though
-no one manually labelled them. Both the text and the images are converted into vectors in a
-shared space, and the system finds the closest vectors.
+You type "a dog on a beach". The app finds matching images -- even though nobody manually labelled them. Both text and images are converted into 512-number lists (vectors) by CLIP, and the system finds the closest vectors.
 
-The interesting part is *how* the matching is done. A classical engine uses standard CPU math.
-A quantum engine loads the vectors into a quantum circuit and measures quantum interference.
-We benchmark both approaches side by side — not to claim quantum is better, but to measure
-whether it works and what it costs.
+The interesting part: **how** the matching is done. A classical engine uses standard CPU math. A quantum engine loads vectors into a quantum circuit and measures interference. We benchmark both side by side -- not to claim quantum is better, but to measure whether it works and what it costs.
+
+> **Analogy:** Two different GPS systems trying to find the nearest restaurant. One uses Google Maps (classical). The other uses a prototype quantum GPS. We're testing whether the quantum GPS gives correct directions, not whether it's faster.
 
 ---
 
-**Q: Why does this project exist if quantum offers no speedup?**
+### Why does this project exist if quantum offers no speedup?
 
-Because "does it work?" and "is it faster?" are different questions. This project answers the
-first: can the swap test match classical accuracy, and what quantum resources does it require?
-That baseline is prerequisite work for evaluating quantum search when hardware improves.
-See [LEARNING_ROADMAP — Part 9](LEARNING_ROADMAP.md#part-9--the-thesis-argument).
+"Does it work?" and "Is it faster?" are different questions. This project answers the first: can the swap test match classical accuracy, and what resources does it require? That baseline is prerequisite work -- you need to know the algorithm works before you can evaluate future hardware.
 
----
-
-**Q: How does quantum parallelism differ from classical (GPU/SIMD) parallelism?**
-
-Classical parallelism uses multiple physical units doing separate work — to cover N items you
-need N/cores operations. Quantum parallelism uses superposition: one operation on n qubits
-affects all 2ⁿ states simultaneously. Adding one qubit doubles the state space.
-
-The catch: measurement collapses the superposition to a single result. You cannot read all
-2ⁿ answers out. Quantum algorithms like Grover's use amplitude amplification to make the
-correct answer overwhelmingly likely before measurement.
-See [LEARNING_ROADMAP — Part 4.2, 4.3](LEARNING_ROADMAP.md#42-multiple-qubits).
+See [LEARNING_ROADMAP -- Part 9](LEARNING_ROADMAP.md#part-9----the-thesis-argument).
 
 ---
 
-**Q: What does CLIP learn?**
+### How does quantum parallelism differ from classical (GPU/SIMD) parallelism?
 
-CLIP learns a joint embedding space from ~400M image-caption pairs via contrastive training.
-It pushes matching (image, text) pairs close together and non-matching pairs apart. The result
-is a general visual-semantic encoder that works on unseen data (zero-shot transfer).
-See [LEARNING_ROADMAP — Part 3](LEARNING_ROADMAP.md#part-3--clip-and-embeddings).
+| | Classical | Quantum |
+|---|---|---|
+| **How it works** | Multiple physical units doing separate work | One operation affects all 2^n states simultaneously |
+| **Scaling** | N/cores operations | Adding one qubit doubles the state space |
+| **Reading results** | Read all results directly | Measurement collapses to one random result |
 
----
+The catch: measurement collapses the superposition. You can't read all 2^n answers. Algorithms like Grover's use **amplitude amplification** to make the correct answer overwhelmingly likely before measurement.
 
-**Q: What is the swap test and why does it measure similarity?**
-
-A quantum circuit that estimates |⟨ψ|φ⟩|² — the squared cosine similarity of two
-amplitude-encoded vectors. It uses a Hadamard, a CSWAP, and another Hadamard on an ancilla
-qubit. The measurement probability of the ancilla encodes the similarity.
-See [LEARNING_ROADMAP — Part 6.2](LEARNING_ROADMAP.md#62-the-swap-test).
+See [LEARNING_ROADMAP -- Part 4.2, 4.3](LEARNING_ROADMAP.md#42-multiple-qubits).
 
 ---
 
-**Q: What is amplitude encoding and what is its limitation?**
+### What does CLIP learn?
 
-Amplitude encoding maps an n-dimensional unit vector to the amplitudes of a log₂(n)-qubit
-state — exponential qubit compression. The limitation: preparing an arbitrary state requires
-O(n) gates, the same cost as classical search. This is why quantum search offers no speedup
-without qRAM.
-See [LEARNING_ROADMAP — Part 6.1](LEARNING_ROADMAP.md#61-amplitude-encoding).
+CLIP learns a joint embedding space from ~400M image-caption pairs via contrastive training. It pushes matching (image, text) pairs close together and non-matching pairs apart. The result: a general visual-semantic encoder that works on unseen data (**zero-shot transfer**).
 
----
+**In the code:** `CLIPEmbeddingModel` in `backend/src/pipeline/clip_model.py`. For testing: `MockCLIPEmbeddingGenerator` in `backend/src/pipeline/mock_clip.py`.
 
-**Q: Why does more shots lead to higher accuracy?**
-
-Each circuit execution returns one random bit. Estimating the true similarity requires
-averaging many shots. Standard error scales as 1/√N_shots — more shots, less noise, more
-accurate ranking.
-See [LEARNING_ROADMAP — Part 6.3](LEARNING_ROADMAP.md#63-shot-noise).
+See [LEARNING_ROADMAP -- Part 3](LEARNING_ROADMAP.md#part-3----clip-and-embeddings).
 
 ---
 
-**Q: What is circuit depth and why does it matter?**
+### What is the swap test and why does it measure similarity?
 
-The number of sequential gate layers. On real hardware, deeper circuits run longer and
-accumulate more decoherence error. Current NISQ devices handle ~100 layers reliably. Circuit
-depth is a proxy for hardware feasibility.
-See [LEARNING_ROADMAP — Part 4.7](LEARNING_ROADMAP.md#47-circuits-depth-and-nisq).
+A quantum circuit that estimates |<psi|phi>|^2 -- the squared cosine similarity of two amplitude-encoded vectors. Uses Hadamard -> CSWAP -> Hadamard on an ancilla qubit. The measurement probability of the ancilla encodes the similarity.
 
----
+**In the code:** `QiskitSwapTestEngine._run_swap_test()` in `backend/src/engines/qiskit_swaptest.py`.
 
-**Q: What is the difference between the quantum mock engine and the Qiskit engine?**
-
-`QuantumMockEngine` computes exact cosine similarity classically and adds synthetic noise to
-simulate shot error. No quantum circuits are run. `QiskitSwapTestEngine` builds and runs real
-swap test circuits on AerSimulator. The mock is fast and useful for testing; the Qiskit engine
-demonstrates the actual algorithm.
+See [LEARNING_ROADMAP -- Part 6.2](LEARNING_ROADMAP.md#62-the-swap-test).
 
 ---
 
-**Q: Why is the Qiskit engine slow?**
+### What is amplitude encoding and what is its limitation?
 
-It runs on AerSimulator, which classically simulates quantum states using 2ⁿ complex numbers.
-For 15 qubits that's 32,768 amplitudes per state, times N images per query, times thousands
-of shots. A real quantum chip would process all amplitudes simultaneously — the slowness is
-a property of classical simulation, not the algorithm.
+**Amplitude encoding** maps an n-dimensional unit vector to the amplitudes of log2(n) qubits -- exponential compression (64 dims -> 6 qubits).
 
----
+**The limitation:** Preparing an arbitrary state requires O(n) gates, the same cost as classical search. This is why quantum search offers no speedup without qRAM.
 
-**Q: What is FAISS?**
+**In the code:** `QiskitSwapTestEngine._encode()` normalises and pads to power of 2, then `circuit.initialize()` handles state preparation.
 
-Facebook AI Similarity Search — a library with SIMD/BLAS-optimised vector operations.
-`IndexFlatL2` is its exact brute-force L2 index. For our dataset, there's no need for
-approximate indices. It demonstrates a production-grade classical baseline.
+See [LEARNING_ROADMAP -- Part 6.1](LEARNING_ROADMAP.md#61-amplitude-encoding).
 
 ---
 
-**Q: What is MRR?**
+### Why does more shots lead to higher accuracy?
 
-Mean Reciprocal Rank — average of 1/(rank of first correct result) across all queries. It
-measures how far a user scrolls before finding the right answer. MRR = 1.0 means the correct
-answer is always first.
-See [LEARNING_ROADMAP — Part 8.2](LEARNING_ROADMAP.md#82-mrr--the-quality-metric).
+Each circuit execution returns one random bit. Estimating the true similarity requires averaging many shots. Standard error scales as 1/sqrt(N_shots):
 
----
+| Shots | Error in P(0) |
+|---|---|
+| 512 | ~0.044 |
+| 2048 | ~0.022 |
+| 4096 | ~0.016 |
 
-**Q: How does dataset size affect the quantum engine?**
+More shots, less noise, more accurate ranking. Configured in `backend/config/benchmarks.yaml` under `shots_values:`.
 
-The engine runs one circuit per image per query. Larger datasets mean more circuit executions
-but the same circuit complexity (set by vector dimension, not dataset size). On a simulator
-this means linear slowdown. On real hardware it would be a scheduling concern, not a
-fundamental resource constraint.
+See [LEARNING_ROADMAP -- Part 6.3](LEARNING_ROADMAP.md#63-shot-noise).
 
 ---
 
-**Q: Are the simulator results meaningful?**
+### What is circuit depth and why does it matter?
 
-Yes. AerSimulator is mathematically exact — it produces measurement statistics identical to a
-perfect noiseless quantum chip. The only noise source is shot noise (statistical error from
-finite measurements). Real hardware would add physical noise on top, so simulator results
-represent the best-case accuracy ceiling.
+The number of sequential gate layers in a quantum circuit. On real hardware, deeper circuits take longer and accumulate more **decoherence** error. Current NISQ devices handle ~100 layers reliably.
 
----
+Circuit depth is a proxy for hardware feasibility. Tracked in the `circuit_depth` column of `benchmark_results` and reported in the benchmark report's "Quantum Circuit Complexity" section.
 
-**Q: Should we test on real IBM hardware?**
-
-Yes, and the circuits are small enough to fit the free tier. The valuable result would be the
-accuracy gap between simulator and real hardware — empirical evidence for why circuit depth
-matters. Practical downside: queue times of minutes to hours.
+See [LEARNING_ROADMAP -- Part 4.7](LEARNING_ROADMAP.md#47-circuits-depth-and-nisq).
 
 ---
 
-**Q: What is Grover's algorithm and why can't we use it directly?**
+### What is the difference between the quantum mock engine and the Qiskit engine?
 
-Grover's gives O(√N) unstructured search. To use it for vector similarity search, all N
-vectors must be loaded into superposition simultaneously, which requires qRAM. Without qRAM,
-loading is O(N) — the speedup is cancelled. Our project runs one swap test per vector instead.
-See [LEARNING_ROADMAP — Part 5](LEARNING_ROADMAP.md#part-5--grovers-algorithm).
-
----
-
-**Q: Does truncating CLIP embeddings affect accuracy?**
-
-Truncation cuts less informative components from the tail. Small reductions (512 → 128 or 64)
-usually preserve rankings well. All engines receive the same truncated vectors, so truncation
-does not favour one engine over another.
+| | `QuantumMockEngine` | `QiskitSwapTestEngine` |
+|---|---|---|
+| **File** | `quantum_mock.py` | `qiskit_swaptest.py` |
+| **Similarity** | Exact cosine (NumPy) + synthetic noise | Actual swap test circuit |
+| **Noise** | Gaussian, stdev = layers/max(1, shots) | Real shot noise from circuit measurement |
+| **Speed** | Fast (no circuits) | Slow (classical simulation of quantum states) |
+| **Circuit metrics** | Theoretical estimates | Extracted from compiled Qiskit circuit |
+| **Use case** | Testing, noise trade-off study | Demonstrating the actual quantum algorithm |
 
 ---
 
-**Q: How does CLIP run locally without a GPU?**
+### Why is the Qiskit engine slow?
 
-Via PyTorch. The code auto-detects CUDA, then Apple MPS, then falls back to CPU. ViT-B/32 has
-~151M parameters — small for a vision-language model. Fits in RAM, no GPU needed, no API key.
+It runs on AerSimulator, which **classically simulates** quantum states using 2^n complex numbers. For 15 qubits: 32,768 amplitudes per state, times N images per query, times thousands of shots.
 
----
-
-**Q: What do `dimensions`, `shots_values`, and `layers_values` in benchmarks.yaml control?**
-
-- **dimensions** — vector size fed to all engines. Lower dimensions → fewer qubits, shallower
-  circuits, less accuracy.
-- **shots_values** — circuit executions per similarity comparison. More shots → less noise →
-  more accurate but slower/costlier. Default: 512.
-- **layers_values** — variational gate layers (used by `quantum_mock_sampler` only; the swap
-  test engine uses a fixed circuit structure). More layers → deeper circuit → more decoherence
-  risk on real hardware.
+A real quantum chip would process all amplitudes simultaneously. The slowness is a property of **classical simulation**, not the algorithm.
 
 ---
 
-**Q: Would running on real IBM hardware change the conclusions?**
+### What is FAISS?
+
+**Facebook AI Similarity Search** -- a library with SIMD/BLAS-optimised vector operations. `IndexFlatL2` is its exact brute-force L2 index. Demonstrates a production-grade classical baseline.
+
+**In the code:** `FaissFlatEngine` in `backend/src/engines/faiss_flat.py` wraps `faiss.IndexFlatL2`.
+
+---
+
+### What is MRR?
+
+**Mean Reciprocal Rank** -- average of 1/(rank of first correct result) across all queries. Measures how far a user scrolls before finding the right answer.
+
+- MRR = 1.0 -> correct answer is always first
+- MRR = 0.5 -> correct answer is typically second
+
+**In the code:** `_mrr()` function in `backend/scripts/run_benchmarks.py`. The harness ranks ALL images (no top-K cutoff).
+
+See [LEARNING_ROADMAP -- Part 8.2](LEARNING_ROADMAP.md#82-mrr----the-quality-metric).
+
+---
+
+### How does dataset size affect the quantum engine?
+
+The engine runs **one circuit per image per query**. Larger datasets = more circuit executions, but **same circuit complexity** (set by vector dimension, not dataset size).
+
+On a simulator: linear slowdown. On real hardware: a scheduling concern, not a fundamental resource constraint.
+
+---
+
+### Are the simulator results meaningful?
+
+**Yes.** AerSimulator is mathematically exact -- produces measurement statistics identical to a perfect noiseless quantum chip. The only noise is **shot noise** (from finite measurements), which also exists on real hardware. Results represent the best-case accuracy ceiling.
+
+---
+
+### Should we test on real IBM hardware?
+
+Yes, and our circuits (13-15 qubits) fit the free tier. The valuable result: the **accuracy gap** between simulator and real hardware -- empirical evidence for why circuit depth matters. Practical downside: queue times of minutes to hours.
+
+---
+
+### What is Grover's algorithm and why can't we use it directly?
+
+Grover's gives O(sqrt(N)) unstructured search. To use it for vector search, all N vectors must be in superposition simultaneously, requiring **qRAM** (which doesn't exist). Without qRAM, loading is O(N) -- the speedup is cancelled.
+
+Our project runs one swap test per vector instead (O(N) total, like classical). See [LEARNING_ROADMAP -- Part 5](LEARNING_ROADMAP.md#part-5----grovers-algorithm).
+
+---
+
+### Does truncating CLIP embeddings affect accuracy?
+
+Truncation cuts less informative components from the tail. Small reductions (512 -> 64 or 128) usually preserve rankings well. All engines receive the same truncated vectors, so truncation doesn't favour one engine over another.
+
+Controlled by `dimensions:` in `backend/config/benchmarks.yaml`. Truncation happens in `_prepare_vectors()` in `run_benchmarks.py`.
+
+---
+
+### How does CLIP run locally without a GPU?
+
+Via PyTorch. Auto-detects CUDA -> Apple MPS -> CPU fallback (see `CLIPEmbeddingModel._resolve_device()` in `backend/src/pipeline/clip_model.py`). ViT-B/32 has ~151M parameters -- small enough for CPU. No API key needed.
+
+---
+
+### What do `dimensions`, `shots_values`, and `layers_values` in benchmarks.yaml control?
+
+| Parameter | What it controls | Who uses it |
+|---|---|---|
+| `dimensions` | Vector size fed to all engines. Lower = fewer qubits, less accuracy | All engines |
+| `shots_values` | Circuit executions per similarity comparison. More = less noise | Quantum engines only |
+| `layers_values` | Variational gate layers. More = deeper circuit | `quantum_mock_sampler` only (swap test has fixed structure) |
+
+Each combination of (engine, dimension, shots, layers) produces a separate row in `benchmark_results`.
+
+---
+
+### Would running on real IBM hardware change the conclusions?
 
 It changes **practical results** (more noise, accuracy gap vs simulator) but not the **fundamental constraints**: no qRAM, no error correction, same O(N) limitation. The most valuable output would be the simulator-vs-hardware accuracy gap as a function of circuit depth.
 
@@ -195,20 +203,3 @@ All engines implement the same interface (`SearchEngineStrategy` in `backend/src
 Same pattern for `EmbeddingGenerator` (pipeline) and `BaseDataLoader` (repository).
 
 > **Analogy:** Like USB ports. Any device that follows the USB spec works. Any engine that implements `build_index()` + `search()` can be benchmarked.
-
----
-
-### Why doesn't the app support free text search?
-
-The app only lets users pick from **predefined queries** -- the ones in `backend/data/ground_truth.jsonc`. Each of these has a known correct answer (the target image).
-
-With free text, we'd have no ground truth. Both engines would return results, and we'd show two lists of images side by side -- but we'd have **no way to measure which engine did better**. The user would just be eyeballing two grids with no objective comparison. Did the classical engine rank a better image first? Maybe, maybe not -- there's no correct answer to check against.
-
-The predefined queries give us:
-- **MRR** for each engine (objective accuracy number)
-- **Target rank** (where the correct image landed)
-- A **green highlight** on the ground-truth image so the user can visually verify
-
-This makes the comparison scientific rather than subjective. The tradeoff is flexibility -- users can't type arbitrary queries -- but the benefit is that every search produces a meaningful, measurable result.
-
-> **Analogy:** It's the difference between a spelling test with an answer key and a creative writing contest with no rubric. Both are valid exercises, but only one lets you objectively score the participants.
