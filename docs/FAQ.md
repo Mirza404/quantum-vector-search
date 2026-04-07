@@ -184,11 +184,6 @@ Via PyTorch. The code auto-detects CUDA, then Apple MPS, then falls back to CPU.
 
 **Q: Would running on real IBM hardware change the conclusions?**
 
-<<<<<<< Updated upstream
-It changes practical results (more noise, accuracy gap vs simulator) but not the fundamental
-constraints: no qRAM, no error correction, same O(N) limitation. The most valuable output
-would be the simulator-vs-hardware accuracy gap, measured as a function of circuit depth.
-=======
 It changes **practical results** (more noise, accuracy gap vs simulator) but not the **fundamental constraints**: no qRAM, no error correction, same O(N) limitation. The most valuable output would be the simulator-vs-hardware accuracy gap as a function of circuit depth.
 
 ---
@@ -217,4 +212,3 @@ The predefined queries give us:
 This makes the comparison scientific rather than subjective. The tradeoff is flexibility -- users can't type arbitrary queries -- but the benefit is that every search produces a meaningful, measurable result.
 
 > **Analogy:** It's the difference between a spelling test with an answer key and a creative writing contest with no rubric. Both are valid exercises, but only one lets you objectively score the participants.
->>>>>>> Stashed changes
