@@ -4,6 +4,26 @@ What the thesis asks, what we benchmark, and how results lead to conclusions. Fo
 
 ---
 
+## What This Project Actually Is
+
+This is a bachelor's graduation project. It is **not** discovering a new algorithm, proving a new theorem, or building something commercially viable. That is fine — that is not what a bachelor's project is for.
+
+What this project does:
+
+1. **Engineering:** Builds a complete, working system — CLIP embedding pipeline, five search engines (classical and quantum), PostgreSQL storage, FastAPI backend, React frontend. This is non-trivial and demonstrates real software engineering capability.
+
+2. **Empirical verification:** Theory says Grover's algorithm scales as O(sqrt(N)). We actually ran it, measured oracle calls at multiple dataset sizes, and verified the curve. That is a real empirical contribution, not just reading a textbook.
+
+3. **Honest analysis:** We documented exactly why quantum search cannot beat classical today (qRAM does not exist), what the hardware would need to look like, and where the theoretical limits are. Most student projects either overclaim or ignore limitations. This one engages with them clearly.
+
+4. **Framework:** The pluggable architecture means the benchmark is ready to re-run if relevant hardware improves.
+
+**The contribution in one sentence:** We built a working quantum vector search system, empirically verified that the algorithms behave as theory predicts, and produced an honest analysis of why the speedup does not materialise in practice.
+
+**What to say if asked "did you discover anything new?":** No. We implemented and verified existing algorithms on real quantum simulator infrastructure, measured their behaviour empirically, and built production-quality surrounding infrastructure. The value is in the engineering, the empirical data, and the depth of understanding demonstrated.
+
+---
+
 ## The Main Question
 
 > **On a noiseless quantum simulator, can quantum search algorithms (swap test and Grover's) perform cross-modal vector similarity search with accuracy comparable to classical search, and what are the quantum resource costs as a function of vector dimension and dataset size?**
