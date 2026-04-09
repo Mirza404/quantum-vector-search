@@ -4,10 +4,15 @@ from pathlib import Path
 import sys
 from typing import List
 
+import yaml
+
 BACKEND_ROOT = Path(__file__).resolve().parent
 SRC_PATH = BACKEND_ROOT / "src"
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
+
+_bench_cfg = yaml.safe_load((BACKEND_ROOT / "config" / "benchmarks.yaml").read_text())
+TOP_K: int = int(_bench_cfg.get("top_k", 10))
 
 from benchmark import load_benchmark_queries
 from engines.faiss_flat import FaissFlatEngine
@@ -52,7 +57,7 @@ def main() -> None:
 
     for engine in engines:
         engine.build_index(vectors=vectors, ids=dataset.ids())
-        result = engine.search(query_vector=query_vector, top_k=3, shots=2048)
+        result = engine.search(query_vector=query_vector, top_k=TOP_K, shots=2048)
         print(f"\nEngine: {engine.name}")
         print("IDs:", result.ids)
         print("Scores:", result.scores)

@@ -30,6 +30,7 @@ class BenchmarkSelection:
     dimensions: List[int]
     shots_values: List[int] = field(default_factory=lambda: [2048])
     layers_values: List[int] = field(default_factory=lambda: [2])
+    top_k: int = 10
 
     @property
     def engines(self) -> List[str]:
@@ -37,7 +38,7 @@ class BenchmarkSelection:
 
 
 LIST_KEYS = {"classical_engines", "quantum_engines", "dimensions", "shots_values", "layers_values"}
-SCALAR_KEYS: set[str] = set()
+SCALAR_KEYS: set[str] = {"top_k"}
 CONFIG_KEYS = LIST_KEYS | SCALAR_KEYS
 
 
@@ -128,12 +129,18 @@ def _load_selection_config(path: Path) -> BenchmarkSelection:
             raise SystemExit(f"No {key} listed in {path}.")
         return values
 
+    try:
+        top_k = int(scalars["top_k"]) if "top_k" in scalars else 10
+    except ValueError as exc:
+        raise SystemExit(f"top_k in {path} must be an integer.") from exc
+
     return BenchmarkSelection(
         classical_engines=lists["classical_engines"],
         quantum_engines=lists["quantum_engines"],
         dimensions=_parse_int_list("dimensions"),
         shots_values=_parse_int_list("shots_values"),
         layers_values=_parse_int_list("layers_values"),
+        top_k=top_k,
     )
 
 
@@ -241,7 +248,7 @@ def main() -> None:
 
                 for shots in shot_iter:
                     for layers in layer_iter:
-                        search_kwargs: dict = {"query_vector": query_vector, "top_k": len(dataset_ids)}
+                        search_kwargs: dict = {"query_vector": query_vector, "top_k": selection.top_k}
                         if is_quantum:
                             search_kwargs.update({"shots": shots, "layers": layers})
 
