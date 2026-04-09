@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import perf_counter
@@ -17,6 +18,7 @@ if str(SRC_PATH) not in sys.path:
 
 from benchmark import BenchmarkResult, DatabaseStorage, load_benchmark_queries
 from engines.faiss_flat import FaissFlatEngine
+from engines.qiskit_grover import QiskitGroverEngine
 from engines.qiskit_swaptest import QiskitSwapTestEngine
 from engines.quantum_mock import QuantumMockEngine
 from engines.brute_force_cosine import BruteForceCosineEngine
@@ -55,11 +57,28 @@ def _prepare_vectors(matrix: np.ndarray, dimension: int) -> List[List[float]]:
     return truncated.tolist()
 
 
+def _oracle_calls(engine_name: str, dataset_size: int) -> int | None:
+    """Derive oracle/comparison count from engine type and dataset size.
+
+    Classical engines: N comparisons (linear scan).
+    Swap test:        N circuit executions (one per vector — quantum brute force).
+    Grover:           floor(π√N / 4) oracle calls.
+    Mock:             N (simulates classical + noise).
+    """
+    if engine_name in ("brute_force_cosine", "faiss_flat_l2", "qiskit_swap_test", "quantum_mock_sampler"):
+        return dataset_size
+    if engine_name == "qiskit_grover":
+        n_padded = max(2, 1 << (dataset_size - 1).bit_length())
+        return max(1, int(math.pi / 4 * math.sqrt(n_padded)))
+    return None
+
+
 def _engine_factories(seed: int | None, dimension: int) -> dict[str, Callable[[], object]]:
     return {
         "brute_force_cosine": lambda: BruteForceCosineEngine(),
         "quantum_mock_sampler": lambda: QuantumMockEngine(seed=seed),
         "faiss_flat_l2": lambda: FaissFlatEngine(dimension=dimension),
+        "qiskit_grover": lambda: QiskitGroverEngine(),
         "qiskit_swap_test": lambda: QiskitSwapTestEngine(),
     }
 
@@ -280,6 +299,7 @@ def main() -> None:
                                 dataset_size=len(dataset_ids),
                                 circuit_depth=meta.get("circuit_depth"),
                                 num_qubits=meta.get("num_qubits"),
+                                oracle_calls=_oracle_calls(engine.name, len(dataset_ids)),
                             )
                         )
                         print(
