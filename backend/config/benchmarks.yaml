@@ -14,9 +14,12 @@ classical_engines:
 #                          error. Uses shots/layers below. No real quantum hardware.
 #   qiskit_swap_test    — real Qiskit circuit running a swap test on AerSimulator.
 #                         Measures vector similarity via quantum overlap. Slow on large dataset.
+#   qiskit_grover       — Grover's algorithm on AerSimulator. Demonstrates O(√N) oracle scaling.
+#                         Hardcoded state prep for toy dataset. See docs/QUANTUM_SEARCH_ANALYSIS.md.
 quantum_engines:
   - quantum_mock_sampler
   # - qiskit_swap_test
+  # - qiskit_grover
 
 # Vector dimensions to benchmark. Vectors are truncated to the first d components of the CLIP
 # output (already L2-normalised). Lower d = fewer qubits + shallower circuit + lower accuracy.
