@@ -129,11 +129,11 @@ Our circuits (13-15 qubits) fit the free tier. The most valuable result would be
 
 ---
 
-### What is Grover's algorithm and why can't we use it?
+### What is Grover's algorithm and why can't we use it end-to-end?
 
 **Grover's** gives O(sqrt(N)) unstructured search. To use it for vector search, all N vectors must be in superposition simultaneously -- requiring **qRAM** (which doesn't exist). Without it, loading is O(N), cancelling the speedup.
 
-Our project runs one swap test per vector instead (O(N) total, like classical).
+We **do** implement Grover's algorithm in `QiskitGroverEngine` (`backend/src/engines/qiskit_grover.py`). It runs on the simulator with hardcoded state preparation for small datasets. The benchmark isolates the search step to demonstrate O(sqrt(N)) oracle scaling. The swap test engine (`qiskit_swaptest.py`) remains as a separate quantum brute-force baseline. See [QUANTUM_SEARCH_ANALYSIS.md](QUANTUM_SEARCH_ANALYSIS.md) for full details on the two-step problem, qRAM requirements, and chunking theory.
 
 ---
 

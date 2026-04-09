@@ -149,6 +149,48 @@ A: HNSW is approximate. Benchmarking needs exact results to fairly measure MRR.
 
 ---
 
+## Grover's Algorithm
+
+Grover's algorithm finds a marked item in an unstructured database of N items using O(√N) oracle queries instead of O(N) classical comparisons. It uses **amplitude amplification**: repeated application of (oracle + diffusion operator) increases the probability of the correct answer until measurement finds it with high probability.
+
+| Property | Value |
+|---|---|
+| Oracle calls | floor(π√N / 4) |
+| Speedup over classical | Quadratic: O(√N) vs O(N) |
+| Requirement | All N items in superposition — needs **qRAM** |
+| Without qRAM | State prep is O(N), cancelling the speedup |
+
+**In the code:** `QiskitGroverEngine` in `backend/src/engines/qiskit_grover.py`. Uses hardcoded state preparation for toy datasets. The oracle marks the closest vector (determined classically), then Grover's circuit finds it in O(√N) iterations.
+
+> **Analogy:** Classical search opens every locker to find your keys. Grover's algorithm can sense which locker "resonates" and amplifies that signal — needing only √N checks instead of N.
+
+For full analysis of qRAM requirements, chunking, and project implications: see [QUANTUM_SEARCH_ANALYSIS.md](QUANTUM_SEARCH_ANALYSIS.md).
+
+<details><summary>Self-test</summary>
+
+**Q: For N = 1,000,000, how many oracle calls does Grover need?**
+A: floor(π × 1000 / 4) ≈ 785.
+
+**Q: Why can't we demonstrate the full speedup today?**
+A: State preparation without qRAM costs O(N), which dominates the O(√N) search cost.
+</details>
+
+---
+
+## Operation Count — Cross-Engine Scaling KPI
+
+The only valid cross-engine "speed" comparison. Stored in `benchmark_results.oracle_calls`.
+
+| Engine | Operations per query | Complexity |
+|---|---|---|
+| Classical (brute force, FAISS) | N comparisons | O(N) |
+| Swap test | N circuit executions | O(N) |
+| Grover | floor(π√N / 4) oracle calls | O(√N) |
+
+Plot both curves against N — the divergence is the entire argument for quantum search. See [BENCHMARK_KPIS.md](BENCHMARK_KPIS.md) for full KPI definitions.
+
+---
+
 ## Design Decisions
 
 - **Strategy Pattern:** All engines implement `SearchEngineStrategy` (`build_index()` + `search()`) in `backend/src/engines/base.py`. Same pattern for `EmbeddingGenerator` and `BaseDataLoader`. Adding a new engine = implementing the interface, nothing else changes.
