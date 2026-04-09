@@ -1,22 +1,18 @@
 # Frequently Asked Questions
 
-Quick answers to the most likely exam questions. For full explanations, see [LEARNING_ROADMAP.md](LEARNING_ROADMAP.md).
+Quick answers to the most likely exam questions. For full explanations: [LEARNING_ROADMAP.md](LEARNING_ROADMAP.md). For the qRAM and scaling deep dive: [QUANTUM_SEARCH_ANALYSIS.md](QUANTUM_SEARCH_ANALYSIS.md).
 
 ---
 
 ### What is this project?
 
-You type "a dog on a beach". The app finds matching images -- even though nobody labelled them. Both text and images are converted into 512-number lists (**vectors**) by CLIP, and the system finds the closest ones.
-
-The twist: **how** the matching is done. A classical engine uses CPU math. A quantum engine loads vectors into a quantum circuit and measures interference. We benchmark both -- not to claim quantum is better, but to measure whether it works and what it costs.
-
-> **Analogy:** Two GPS systems finding the nearest restaurant. One uses Google Maps (classical). The other uses a prototype quantum GPS. We're testing whether the quantum GPS gives correct directions, not whether it's faster.
+A text-to-image search system. You type "a dog on a beach", it finds matching images using vector similarity. Both text and images are converted to 512-dim vectors by CLIP, and the system finds the closest matches. We benchmark **five** search engines (two classical, three quantum) side-by-side to compare accuracy and cost.
 
 ---
 
 ### Why does this project exist if quantum isn't faster?
 
-"Does it work?" and "Is it faster?" are different questions. This project answers the first: can the swap test match classical accuracy, and what resources does it need? You have to prove the algorithm works before you can evaluate future hardware.
+"Does it work?" and "Is it faster?" are different questions. This project answers the first: can the quantum algorithms match classical accuracy, and what resources do they need? You have to prove correctness before you can evaluate future hardware. See [QUANTUM_SEARCH_ANALYSIS.md](QUANTUM_SEARCH_ANALYSIS.md) for why this is still a valuable contribution.
 
 ---
 
@@ -25,16 +21,16 @@ The twist: **how** the matching is done. A classical engine uses CPU math. A qua
 | | Classical (GPU/SIMD) | Quantum |
 |---|---|---|
 | **Mechanism** | Multiple physical units doing separate work | One operation on all 2^n states simultaneously |
-| **Scaling** | N/cores operations | Adding one qubit doubles the state space |
+| **Scaling** | Linear with hardware (N/cores) | Adding one qubit doubles the state space |
 | **Reading results** | Read everything directly | Measurement collapses to one random result |
 
-The catch: you can't read all 2^n answers. Algorithms like Grover's use **amplitude amplification** to make the correct answer overwhelmingly likely before measurement.
+Algorithms like Grover's use **amplitude amplification** to make the correct answer overwhelmingly likely before measurement.
 
 ---
 
-### What does CLIP learn?
+### What does CLIP do?
 
-CLIP learns a shared embedding space from ~400M image-caption pairs. It pushes matching pairs close together and non-matching pairs apart. The result: a general visual-semantic encoder that works on images it's never seen (**zero-shot transfer**).
+CLIP (OpenAI, 2021) learns a shared vector space from ~400M image-caption pairs. Similar images and descriptions end up close together, enabling text-to-image search without manual labelling (**zero-shot transfer**).
 
 **In the code:** `CLIPEmbeddingModel` in `backend/src/pipeline/clip_model.py`. For testing: `MockCLIPEmbeddingGenerator` in `mock_clip.py`.
 
@@ -42,17 +38,27 @@ CLIP learns a shared embedding space from ~400M image-caption pairs. It pushes m
 
 ### What is the swap test?
 
-A quantum circuit that estimates \|<psi\|phi>\|^2 -- the squared cosine similarity of two amplitude-encoded vectors. Uses Hadamard + CSWAP gates on an ancilla qubit. The measurement probability encodes the similarity.
+A quantum circuit that estimates |<psi|phi>|^2 -- the squared cosine similarity of two amplitude-encoded vectors. Uses Hadamard + CSWAP gates on an ancilla qubit. The measurement probability encodes the similarity.
 
 **In the code:** `QiskitSwapTestEngine._run_swap_test()` in `backend/src/engines/qiskit_swaptest.py`.
 
 ---
 
-### What is amplitude encoding and its limitation?
+### What is amplitude encoding?
 
-**Amplitude encoding** maps an n-dimensional vector to the amplitudes of log2(n) qubits -- extreme compression (64 dims into 6 qubits). But preparing an arbitrary state takes O(n) gates -- the same cost as classical search. This is why quantum search can't be faster without **qRAM**.
+Maps an n-dimensional vector to the amplitudes of log2(n) qubits -- extreme compression (64 dims into 6 qubits). But preparing an arbitrary state takes O(n) gates -- the same cost as classical search. This is why quantum search can't be faster without **qRAM**.
 
-**In the code:** `QiskitSwapTestEngine._encode()` normalises and pads to power of 2, then `circuit.initialize()` prepares the state.
+**In the code:** `_encode()` normalises and pads to power of 2, then `circuit.initialize()` does state preparation.
+
+---
+
+### What is Grover's algorithm?
+
+An algorithm that finds a marked item in N unsorted items using O(sqrt(N)) oracle calls instead of O(N) classical comparisons. Uses repeated oracle + diffusion steps to amplify the correct answer's probability.
+
+**The catch:** It needs all N items in quantum superposition simultaneously, which requires **qRAM** (doesn't exist). Without qRAM, loading data costs O(N), cancelling the speedup.
+
+**In the code:** `QiskitGroverEngine` in `backend/src/engines/qiskit_grover.py`. Pre-computes the closest match classically, then runs Grover's circuit to demonstrate O(sqrt(N)) oracle scaling. See [QUANTUM_SEARCH_ANALYSIS.md](QUANTUM_SEARCH_ANALYSIS.md) for the full two-step problem explanation.
 
 ---
 
@@ -70,28 +76,27 @@ Configured in `backend/config/benchmarks.yaml` under `shots_values:`.
 
 ---
 
-### What is circuit depth?
+### What is circuit depth and why does it matter?
 
-The number of sequential gate layers in a circuit. Deeper circuits take longer and accumulate more **decoherence** error on real hardware. Current NISQ devices handle ~100 layers reliably.
-
-Tracked in `benchmark_results.circuit_depth` and reported in the benchmark report's "Quantum Circuit Complexity" section.
+Number of sequential gate layers. Deeper circuits take longer and accumulate more **decoherence** (quantum noise) on real hardware. Current NISQ devices handle ~100 layers reliably. Tracked in `benchmark_results.circuit_depth`.
 
 ---
 
-### Quantum mock engine vs. Qiskit engine?
+### What's the difference between the five engines?
 
-| | `QuantumMockEngine` | `QiskitSwapTestEngine` |
-|---|---|---|
-| **File** | `quantum_mock.py` | `qiskit_swaptest.py` |
-| **Similarity** | Exact cosine + synthetic noise | Actual swap test circuit |
-| **Speed** | Fast (no circuits) | Slow (classical simulation) |
-| **Use case** | Noise trade-off study | Demonstrating the real algorithm |
+| Engine | File | How it works | Speed |
+|---|---|---|---|
+| `brute_force_cosine` | `brute_force_cosine.py` | NumPy dot products | Fast. **Ground truth** |
+| `faiss_flat_l2` | `faiss_flat.py` | FAISS L2 index | Fast. Production-grade |
+| `quantum_mock_sampler` | `quantum_mock.py` | Exact cosine + synthetic noise | Fast. Noise study |
+| `qiskit_swap_test` | `qiskit_swaptest.py` | Real swap test circuit on simulator | Slow (simulation overhead) |
+| `qiskit_grover` | `qiskit_grover.py` | Grover's algorithm on simulator | Slow. O(sqrt(N)) oracle scaling |
 
 ---
 
 ### Why is the Qiskit engine slow?
 
-It runs on **AerSimulator**, which classically simulates quantum states using 2^n complex numbers. For 15 qubits: 32,768 amplitudes per state, times N images, times thousands of shots. A real quantum chip would process all amplitudes at once. The slowness is a property of **simulation**, not the algorithm.
+It runs on **AerSimulator**, which classically simulates quantum states using 2^n complex numbers. For 15 qubits: 32,768 amplitudes per state, times N images, times thousands of shots. A real quantum chip processes all amplitudes at once. The slowness is a property of **simulation**, not the algorithm.
 
 ---
 
@@ -107,13 +112,15 @@ It runs on **AerSimulator**, which classically simulates quantum states using 2^
 
 **Mean Reciprocal Rank** -- average of 1/(rank of first correct result). MRR 1.0 = always first. MRR 0.5 = typically second. The harness ranks ALL images (no top-K cutoff).
 
-**In the code:** `_mrr()` in `backend/scripts/run_benchmarks.py`.
+**In the code:** `_mrr()` in `run_benchmarks.py` and `generate_report.py`.
 
 ---
 
-### How does dataset size affect the quantum engine?
+### What is the operation count KPI?
 
-One circuit per image per query. Larger datasets = more circuit runs, but **same circuit complexity** (set by vector dimension, not dataset size). On a simulator: linear slowdown. On real hardware: a scheduling concern, not a fundamental resource problem.
+The **only valid cross-engine speed comparison**. Classical engines do N comparisons per query. Grover does floor(pi*sqrt(N)/4) oracle calls. Stored in `benchmark_results.oracle_calls`. The divergence between O(N) and O(sqrt(N)) as N grows is the argument for quantum search.
+
+See [BENCHMARK_KPIS.md](BENCHMARK_KPIS.md) for the full KPI specification.
 
 ---
 
@@ -125,23 +132,13 @@ One circuit per image per query. Larger datasets = more circuit runs, but **same
 
 ### What about real IBM hardware?
 
-Our circuits (13-15 qubits) fit the free tier. The most valuable result would be the **accuracy gap** between simulator and real hardware -- empirical evidence for why circuit depth matters. Practical downside: queue times of minutes to hours.
-
----
-
-### What is Grover's algorithm and why can't we use it end-to-end?
-
-**Grover's** gives O(sqrt(N)) unstructured search. To use it for vector search, all N vectors must be in superposition simultaneously -- requiring **qRAM** (which doesn't exist). Without it, loading is O(N), cancelling the speedup.
-
-We **do** implement Grover's algorithm in `QiskitGroverEngine` (`backend/src/engines/qiskit_grover.py`). It runs on the simulator with hardcoded state preparation for small datasets. The benchmark isolates the search step to demonstrate O(sqrt(N)) oracle scaling. The swap test engine (`qiskit_swaptest.py`) remains as a separate quantum brute-force baseline. See [QUANTUM_SEARCH_ANALYSIS.md](QUANTUM_SEARCH_ANALYSIS.md) for full details on the two-step problem, qRAM requirements, and chunking theory.
+Our circuits (13-15 qubits) fit the free tier. The most valuable result would be the **accuracy gap** between simulator and real hardware -- empirical evidence for how noise affects quantum search. Planned as a Phase 2 demonstration, not the core benchmark.
 
 ---
 
 ### Does truncating CLIP embeddings hurt accuracy?
 
-Small reductions (512 to 64 or 128) usually preserve rankings well. All engines get the same truncated vectors, so truncation doesn't favour any engine.
-
-Controlled by `dimensions:` in `backend/config/benchmarks.yaml`. Done in `_prepare_vectors()` in `run_benchmarks.py`.
+Small reductions (512 to 64 or 128) usually preserve rankings well. All engines get the same truncated vectors, so truncation doesn't favour any engine. Controlled by `dimensions:` in `benchmarks.yaml`.
 
 ---
 
@@ -150,8 +147,9 @@ Controlled by `dimensions:` in `backend/config/benchmarks.yaml`. Done in `_prepa
 | Parameter | Controls | Used by |
 |---|---|---|
 | `dimensions` | Vector size fed to all engines | All engines |
-| `shots_values` | Circuit executions per comparison | Quantum engines only |
+| `shots_values` | Circuit executions per comparison | Quantum engines |
 | `layers_values` | Variational gate layers | `quantum_mock_sampler` only |
+| `top_k` | Results returned per query | All engines (API + benchmarks) |
 
 Each combination produces a separate row in `benchmark_results`.
 
@@ -159,8 +157,8 @@ Each combination produces a separate row in `benchmark_results`.
 
 ### What is the Strategy Pattern?
 
-All engines implement the same interface (`SearchEngineStrategy` in `backend/src/engines/base.py`): `build_index()` + `search()`. The benchmark harness iterates over engines without knowing which one is running. Adding a new engine = implementing the interface.
+All engines implement the same interface (`SearchEngineStrategy` in `backend/src/engines/base.py`): `build_index()` + `search()`. The benchmark harness iterates over engines without knowing which one is running. Adding a new engine = implementing the interface, nothing else changes.
 
 Same pattern for `EmbeddingGenerator` (pipeline) and `BaseDataLoader` (repository).
 
-> **Analogy:** Like USB ports. Any device that follows the spec works.
+> Like USB ports. Any device that follows the spec works.
