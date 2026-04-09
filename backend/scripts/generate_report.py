@@ -15,6 +15,11 @@ dimension.  Cross-engine wall-clock comparisons are intentionally omitted:
 the quantum engine runs on a classical simulator, so its timing reflects
 circuit-simulation overhead rather than real quantum hardware latency.
 
+Cross-engine scaling comparison:
+  - Operation count    : Classical engines use N comparisons per query.
+                         Grover uses floor(π√N/4) oracle calls per query.
+                         This is the only valid cross-engine "speed" metric.
+
 Quantum-specific KPI:
   - Shots-to-quality   : MRR at each shots value, showing the minimum
                          measurement budget needed to reach a target.
@@ -52,7 +57,8 @@ def _fetch_rows(dsn: str) -> list[dict]:
                     id, recorded_at, query_id, engine_name, dimension,
                     target_ids, top_ids,
                     state_prep_ms, search_ms, total_ms,
-                    parameters, dataset_size, circuit_depth, num_qubits
+                    parameters, dataset_size, circuit_depth, num_qubits,
+                    oracle_calls
                 FROM benchmark_results
                 ORDER BY engine_name, dimension, query_id
             """)
@@ -305,6 +311,55 @@ def _section_shots_to_quality(rows: list[dict]) -> str:
     return "## Quantum: Shots vs. Quality\n\n" + note + "\n" + _md_table(headers, table_rows)
 
 
+def _section_operation_count_scaling(rows: list[dict]) -> str:
+    """Cross-engine scaling comparison: operation count vs dataset size.
+
+    Classical engines use N comparisons.  Grover uses floor(π√N/4) oracle
+    calls.  This is the only valid cross-engine "speed" metric because it is
+    hardware-independent and directly captures the O(N) vs O(√N) difference.
+    """
+    # Group by (engine, dataset_size) — average oracle_calls (should be constant per group)
+    data: dict[tuple[str, int], list[int]] = defaultdict(list)
+    for r in rows:
+        oc = r.get("oracle_calls")
+        if oc is None:
+            continue
+        key = (r["engine_name"], r["dataset_size"])
+        data[key].append(oc)
+
+    if not data:
+        return ""
+
+    engines = sorted({e for e, _ in data})
+    dataset_sizes = sorted({ds for _, ds in data})
+
+    headers = ["Engine", "Dataset Size (N)", "Operations per Query", "Complexity Class"]
+    table_rows = []
+    for engine in engines:
+        for ds in dataset_sizes:
+            key = (engine, ds)
+            if key not in data:
+                continue
+            ops = data[key][0]
+            complexity = "O(√N)" if engine == "qiskit_grover" else "O(N)"
+            table_rows.append([
+                f"`{engine}`",
+                str(ds),
+                str(ops),
+                complexity,
+            ])
+
+    note = (
+        "> **Operation count** is the cross-engine scaling KPI.\n"
+        "> Classical engines perform N comparisons per query (linear scan).\n"
+        "> Grover's algorithm uses floor(π√N/4) oracle calls per query.\n"
+        "> This comparison is hardware-independent — it measures algorithmic efficiency,\n"
+        "> not wall-clock time. The divergence between O(N) and O(√N) as N grows is the\n"
+        "> entire argument for quantum search at scale.\n"
+    )
+    return "## Operation Count Scaling (O(N) vs O(√N))\n\n" + note + "\n" + _md_table(headers, table_rows)
+
+
 def _section_head_to_head(rows: list[dict]) -> str:
     """MRR head-to-head across all (query, dimension) combinations."""
     engines = sorted({r["engine_name"] for r in rows})
@@ -400,6 +455,8 @@ def main() -> None:
         _section_kpi_summary(rows),
         "",
         _section_quality_by_dimension(rows),
+        "",
+        _section_operation_count_scaling(rows),
         "",
         _section_head_to_head(rows),
         "",
