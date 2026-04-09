@@ -46,6 +46,7 @@ class BenchmarkResult:
     dataset_size: int = 0
     circuit_depth: int | None = None
     num_qubits: int | None = None
+    oracle_calls: int | None = None
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def key(self) -> tuple[str, str, int, int | None, int | None]:

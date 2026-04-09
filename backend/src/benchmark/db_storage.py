@@ -93,8 +93,9 @@ class DatabaseStorage(BaseBenchmarkStorage):
                 parameters,
                 dataset_size,
                 circuit_depth,
-                num_qubits
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                num_qubits,
+                oracle_calls
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT ON CONSTRAINT uq_run_key DO UPDATE SET
                 recorded_at   = EXCLUDED.recorded_at,
                 target_ids    = EXCLUDED.target_ids,
@@ -105,7 +106,8 @@ class DatabaseStorage(BaseBenchmarkStorage):
                 parameters    = EXCLUDED.parameters,
                 dataset_size  = EXCLUDED.dataset_size,
                 circuit_depth = EXCLUDED.circuit_depth,
-                num_qubits    = EXCLUDED.num_qubits
+                num_qubits    = EXCLUDED.num_qubits,
+                oracle_calls  = EXCLUDED.oracle_calls
         """
         payload = (
             result.timestamp,
@@ -123,6 +125,7 @@ class DatabaseStorage(BaseBenchmarkStorage):
             result.dataset_size,
             result.circuit_depth,
             result.num_qubits,
+            result.oracle_calls,
         )
         with self._conn.cursor() as cursor:
             cursor.execute(sql, payload)
