@@ -15,7 +15,7 @@ editing YAML:
     SEARCH_DIMENSION=<int>    (fallback: first dimension entry)
     SEARCH_SHOTS=<int>        (fallback: first shots_values entry)
     SEARCH_LAYERS=<int>       (fallback: first layers_values entry)
-    SEARCH_TOP_K=10           (unchanged; not sourced from benchmarks.yaml)
+    SEARCH_TOP_K=<int>        (fallback: top_k entry)
 """
 
 from __future__ import annotations
@@ -55,6 +55,7 @@ class BenchmarkDefaults:
     dimension: int
     shots: int
     layers: int
+    top_k: int
 
 
 def _first_list_entry(config: dict[str, Any], key: str, *, fallback: Any) -> Any:
@@ -99,6 +100,7 @@ def _load_benchmark_defaults() -> BenchmarkDefaults:
     dimension = _first_list_entry(raw_config, "dimensions", fallback=64)
     shots = _first_list_entry(raw_config, "shots_values", fallback=1024)
     layers = _first_list_entry(raw_config, "layers_values", fallback=1)
+    top_k = raw_config.get("top_k", 10)
 
     try:
         return BenchmarkDefaults(
@@ -107,6 +109,7 @@ def _load_benchmark_defaults() -> BenchmarkDefaults:
             dimension=int(dimension),
             shots=int(shots),
             layers=int(layers),
+            top_k=int(top_k),
         )
     except (TypeError, ValueError) as exc:
         raise RuntimeError(
@@ -134,7 +137,7 @@ SEARCH_SHOTS = int(
 SEARCH_LAYERS = int(
     os.getenv("SEARCH_LAYERS", str(_BENCHMARK_DEFAULTS.layers))
 )
-SEARCH_TOP_K = int(os.getenv("SEARCH_TOP_K", "10"))
+SEARCH_TOP_K = int(os.getenv("SEARCH_TOP_K", str(_BENCHMARK_DEFAULTS.top_k)))
 
 DATA_DIR = BACKEND_ROOT / "data"
 IMAGES_DIR = DATA_DIR / "images"

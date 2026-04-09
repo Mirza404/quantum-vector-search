@@ -45,3 +45,8 @@ layers_values:
   - 1
   # - 2
   # - 3
+
+# Number of results returned per search query. Acts as the result-set cutoff in API
+# responses and as the k in MRR@k during benchmarks. Override at runtime with the
+# SEARCH_TOP_K environment variable.
+top_k: 10
