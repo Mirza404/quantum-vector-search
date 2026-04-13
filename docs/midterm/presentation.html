@@ -236,34 +236,32 @@
     <h2>Context and Motivation</h2>
     <div class="tag">Why this problem matters</div>
   </div>
-  <div class="slide-body">
-    <div class="col">
-      <h3>The search problem</h3>
-      <ul>
-        <li>Modern retrieval systems work in vector space -- text, images, audio all reduced to high-dimensional embeddings.</li>
-        <li>Cross-modal search (text query finding images) requires a shared embedding space: different modalities, same geometry.</li>
-        <li>As datasets grow to hundreds of millions of vectors, brute-force scan stops being viable.</li>
-      </ul>
-
-      <h3 style="margin-top:14px">Why quantum is worth studying here</h3>
-      <ul>
-        <li>Grover's algorithm provides a <em>proven, unconditional</em> quadratic speedup for unstructured search -- one of very few such results in quantum computing.</li>
-        <li>Quantum hardware is advancing. Understanding what algorithms require today informs engineering decisions for tomorrow.</li>
-        <li>Empirical benchmarks of quantum search on realistic embeddings are scarce in the literature.</li>
-      </ul>
-
-      <div class="callout" style="margin-top:12px;">
-        Goal: build the infrastructure to answer empirically how quantum search algorithms behave compared to classical on a controlled, reproducible testbed.
+  <div class="slide-body" style="flex-direction:column; gap:14px;">
+    <div style="display:flex; gap:24px;">
+      <div class="col">
+        <h3>The search problem</h3>
+        <ul>
+          <li>Modern retrieval systems work in vector space -- text, images, audio all reduced to high-dimensional embeddings.</li>
+          <li>Cross-modal search (text query finding images) requires a shared embedding space: different modalities, same geometry.</li>
+          <li>As datasets grow to hundreds of millions of vectors, brute-force scan stops being viable.</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>Why quantum is worth studying here</h3>
+        <ul>
+          <li>Grover's algorithm provides a <em>proven, unconditional</em> quadratic speedup for unstructured search -- one of very few such results in quantum computing.</li>
+          <li>Quantum hardware is advancing. Understanding what algorithms require today informs engineering decisions for tomorrow.</li>
+          <li>Empirical benchmarks of quantum search on realistic embeddings are scarce in the literature.</li>
+        </ul>
       </div>
     </div>
-    <div class="col">
+    <div style="text-align:center;">
       <img
         src="https://raw.githubusercontent.com/openai/CLIP/main/CLIP.png"
         alt="CLIP maps text and images to a shared embedding space via contrastive learning"
-        class="slide-img"
-        style="width:100%; height:auto;"
+        style="max-width:72%; height:auto; border-radius:4px; border:1px solid var(--mid); display:inline-block;"
       >
-      <p class="img-cap" style="margin-top:6px;">CLIP aligns text and image encoders in a shared vector space.<sup class="ref">[6]</sup><br>Source: Radford et al., 2021 (OpenAI)</p>
+      <p class="img-cap" style="margin-top:5px;">CLIP aligns text and image encoders in a shared vector space.<sup class="ref">[6]</sup> &nbsp; Source: Radford et al., 2021 (OpenAI)</p>
     </div>
   </div>
   <div class="criteria">Criteria: 1, 2, 4</div>
