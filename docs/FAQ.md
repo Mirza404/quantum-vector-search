@@ -131,7 +131,9 @@ See [BENCHMARK_KPIS.md](BENCHMARK_KPIS.md) for the full KPI specification.
 
 ### What about real IBM hardware?
 
-Our circuits (13-15 qubits) fit the free tier. The most valuable result would be the **accuracy gap** between simulator and real hardware -- empirical evidence for how noise affects quantum search. Planned as a Phase 2 demonstration, not the core benchmark.
+Not used in this project. The IBM Quantum free tier is publicly accessible and our circuits (13–15 qubits) would technically fit, but two practical obstacles make it unsuitable for controlled benchmarking: queue wait times on the free tier are reported to be multi-hour, and noise beyond roughly 7 qubits is significant enough to obscure the algorithmic signal we are measuring.
+
+Running on real hardware is something that could be explored as a follow-up -- the circuits exist and the comparison (simulator vs. hardware accuracy gap) would be interesting -- but it is not a planned deliverable of this project.
 
 ---
 
