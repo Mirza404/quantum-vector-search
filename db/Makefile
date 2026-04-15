@@ -24,6 +24,7 @@ dump:
 reset:
 	docker compose down -v
 	$(MAKE) up
+	$(MAKE) migrate
 	$(MAKE) seed
 
 # Roll back migrations above N.  Usage: make rollback N=2

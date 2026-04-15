@@ -6,7 +6,7 @@ Quick answers to the most likely exam questions. For full explanations: [LEARNIN
 
 ### What is this project?
 
-A text-to-image search system. You type "a dog on a beach", it finds matching images using vector similarity. Both text and images are converted to 512-dim vectors by CLIP, and the system finds the closest matches. We benchmark **five** search engines (two classical, three quantum) side-by-side to compare accuracy and cost.
+A text-to-image search system. You type "a dog on a beach", it finds matching images using vector similarity. Both text and images are converted to 512-dim vectors by CLIP, and the system finds the closest matches. We benchmark **four** search engines (two classical, two quantum) side-by-side to compare accuracy and cost.
 
 ---
 
@@ -32,7 +32,7 @@ Algorithms like Grover's use **amplitude amplification** to make the correct ans
 
 CLIP (OpenAI, 2021) learns a shared vector space from ~400M image-caption pairs. Similar images and descriptions end up close together, enabling text-to-image search without manual labelling (**zero-shot transfer**).
 
-**In the code:** `CLIPEmbeddingModel` in `backend/src/pipeline/clip_model.py`. For testing: `MockCLIPEmbeddingGenerator` in `mock_clip.py`.
+**In the code:** `CLIPEmbeddingModel` in `backend/src/pipeline/clip_model.py`. Auto-detects CUDA / MPS / CPU — runs on CPU without a GPU.
 
 ---
 
@@ -82,13 +82,12 @@ Number of sequential gate layers. Deeper circuits take longer and accumulate mor
 
 ---
 
-### What's the difference between the five engines?
+### What's the difference between the four engines?
 
 | Engine | File | How it works | Speed |
 |---|---|---|---|
 | `brute_force_cosine` | `brute_force_cosine.py` | NumPy dot products | Fast. **Ground truth** |
 | `faiss_flat_l2` | `faiss_flat.py` | FAISS L2 index | Fast. Production-grade |
-| `quantum_mock_sampler` | `quantum_mock.py` | Exact cosine + synthetic noise | Fast. Noise study |
 | `qiskit_swap_test` | `qiskit_swaptest.py` | Real swap test circuit on simulator | Slow (simulation overhead) |
 | `qiskit_grover` | `qiskit_grover.py` | Grover's algorithm on simulator | Slow. O(sqrt(N)) oracle scaling |
 
@@ -110,7 +109,7 @@ It runs on **AerSimulator**, which classically simulates quantum states using 2^
 
 ### What is MRR?
 
-**Mean Reciprocal Rank** -- average of 1/(rank of first correct result). MRR 1.0 = always first. MRR 0.5 = typically second. The harness ranks ALL images (no top-K cutoff).
+**Mean Reciprocal Rank** -- average of 1/(rank of first correct result). MRR 1.0 = always first. MRR 0.5 = typically second. Evaluated over top_k results (default 10) — correct result outside top_k counts as 0.
 
 **In the code:** `_mrr()` in `run_benchmarks.py` and `generate_report.py`.
 
@@ -148,7 +147,7 @@ Small reductions (512 to 64 or 128) usually preserve rankings well. All engines 
 |---|---|---|
 | `dimensions` | Vector size fed to all engines | All engines |
 | `shots_values` | Circuit executions per comparison | Quantum engines |
-| `layers_values` | Variational gate layers | `quantum_mock_sampler` only |
+| `layers_values` | Required by harness, ignored by current engines | — |
 | `top_k` | Results returned per query | All engines (API + benchmarks) |
 
 Each combination produces a separate row in `benchmark_results`.

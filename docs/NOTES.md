@@ -39,18 +39,16 @@ We do **not** compare raw speed -- the quantum engine runs on a classical simula
 ### Phase 2: Embedding Pipeline
 
 - **Interface:** `EmbeddingGenerator` in `backend/src/pipeline/base.py`
-- **Real:** `CLIPEmbeddingModel` in `clip_model.py` -- ViT-B/32, auto-detects CUDA/MPS/CPU, L2-normalises output
-- **Mock:** `MockCLIPEmbeddingGenerator` in `mock_clip.py` -- deterministic pseudo-random vectors via SHA-256 (for testing without GPU)
+- **Real:** `CLIPEmbeddingModel` in `clip_model.py` -- ViT-B/32, auto-detects CUDA/MPS/CPU, L2-normalises output. Runs on CPU without a GPU.
 
 ### Phase 3: Search Engines
 
-Five engines implementing `SearchEngineStrategy` (`build_index()` + `search()`) in `backend/src/engines/base.py`:
+Four engines implementing `SearchEngineStrategy` (`build_index()` + `search()`) in `backend/src/engines/base.py`:
 
 | Engine | Class | File | Purpose |
 |---|---|---|---|
 | `brute_force_cosine` | `BruteForceCosineEngine` | `brute_force_cosine.py` | NumPy dot products. Exact. **Ground truth** |
 | `faiss_flat_l2` | `FaissFlatEngine` | `faiss_flat.py` | FAISS L2. Exact. Production-grade |
-| `quantum_mock_sampler` | `QuantumMockEngine` | `quantum_mock.py` | Cosine + noise. No circuits. Fast noise study |
 | `qiskit_swap_test` | `QiskitSwapTestEngine` | `qiskit_swaptest.py` | Real swap test on AerSimulator |
 | `qiskit_grover` | `QiskitGroverEngine` | `qiskit_grover.py` | Grover's algorithm. O(sqrt(N)) oracle scaling |
 
@@ -104,10 +102,10 @@ Results go to PostgreSQL via `DatabaseStorage` in `backend/src/benchmark/db_stor
 | Section | Controls | Example values |
 |---|---|---|
 | `classical_engines` | Which classical engines run | `brute_force_cosine`, `faiss_flat_l2` |
-| `quantum_engines` | Which quantum engines run | `quantum_mock_sampler`, `qiskit_swap_test`, `qiskit_grover` |
+| `quantum_engines` | Which quantum engines run | `qiskit_swap_test`, `qiskit_grover` |
 | `dimensions` | Vector sizes to test | 64, 128, 256, 512 |
 | `shots_values` | Shots per comparison (quantum) | 512, 1024, 2048 |
-| `layers_values` | Gate layers (mock only) | 1, 2, 3 |
+| `layers_values` | Required by harness, ignored by current engines | 1 |
 | `top_k` | Results per search query | 10 |
 
 CLI flags override YAML: `--dimensions`, `--shots-values`, `--layers-values`, `--clip-model`, `--device`, `--batch-size`.
@@ -128,7 +126,7 @@ See [BENCHMARK_KPIS.md](BENCHMARK_KPIS.md) for the full specification.
 
 **In one sentence:** MRR compares accuracy across engines; operation count compares scaling; depth, qubits, and shots measure quantum cost; wall-clock speed is per-engine only.
 
-<details><summary>Self-test</summary>
+**Self-test**
 
 **Q: Why not compare speed across engines?**
 A: Quantum engine timing reflects classical simulation cost, not real hardware speed.
@@ -138,4 +136,4 @@ A: `(query_id, engine_name, dimension, shots, layers)`. Ensures one row per conf
 
 **Q: Where are CLIP embeddings stored?**
 A: `image_vectors` table. Stored by `index_dataset.py`, loaded by `run_benchmarks.py` via `storage.load_image_vectors()`.
-</details>
+

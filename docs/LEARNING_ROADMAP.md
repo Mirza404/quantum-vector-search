@@ -37,14 +37,14 @@ On unit vectors this is just the dot product. The swap test computes |a . b|^2 (
 
 **In one sentence:** Normalise vectors, then a dot product tells you how similar two things are.
 
-<details><summary>Self-test</summary>
+**Self-test**
 
 **Q: Why normalise before comparing?**
 A: So cosine, dot product, and L2 all give the same ranking -- and so vectors satisfy the quantum requirement that amplitudes squared sum to 1.
 
 **Q: Cosine similarity of a unit vector with itself?**
 A: 1.0.
-</details>
+
 
 ---
 
@@ -77,14 +77,14 @@ For millions of vectors, brute force is too slow. **HNSW** (Hierarchical Navigab
 
 **In one sentence:** Classical search either checks every vector (brute force, O(N)) or uses an index (HNSW, O(log N)) to skip most of them.
 
-<details><summary>Self-test</summary>
+**Self-test**
 
 **Q: Why include both `brute_force_cosine` and `faiss_flat_l2`?**
 A: Brute-force is a transparent baseline. FAISS demonstrates a production-grade implementation. Both are exact.
 
-**Q: Why not use HNSW for benchmarking?**
-A: HNSW is approximate. Benchmarking needs exact results to fairly compare MRR.
-</details>
+**Q: Will HNSW be added as a benchmark engine?**
+A: Yes, planned. HNSW (O(log N) approximate) is the most relevant classical comparison for the quantum question — it beats Grover even with ideal qRAM. Adding it as an engine would complete the picture: brute force (O(N) exact), FAISS (O(N) exact, optimised), HNSW (O(log N) approximate), and quantum.
+
 
 ---
 
@@ -104,7 +104,7 @@ A function that converts input (text, image, audio) into a fixed-length vector, 
 
 The key insight: **both output into the same vector space**. A photo of a dog and the sentence "a dog on a beach" end up near each other. This is what makes text-to-image search possible.
 
-**In the code:** `CLIPEmbeddingModel` in `backend/src/pipeline/clip_model.py`. For testing without loading the real model: `MockCLIPEmbeddingGenerator` in `mock_clip.py` (deterministic pseudo-random vectors via SHA-256 hash).
+**In the code:** `CLIPEmbeddingModel` in `backend/src/pipeline/clip_model.py`. Auto-detects CUDA / MPS / CPU — runs on CPU without a GPU.
 
 ### Truncation
 
@@ -112,14 +112,14 @@ CLIP outputs 512 dims. The project **truncates** to smaller sizes (64, 128) to s
 
 **In one sentence:** CLIP puts text and images into the same 512-number vector space; we normalise and optionally truncate before feeding to any engine.
 
-<details><summary>Self-test</summary>
+**Self-test**
 
 **Q: Why can we search for images using text?**
 A: CLIP maps both into the same vector space. Similar meanings = nearby vectors, regardless of input type.
 
 **Q: What does truncation from 512 to 64 dimensions cost?**
 A: Some accuracy loss (fewer features captured), but fewer qubits needed (6 per register instead of 9).
-</details>
+
 
 ---
 
@@ -177,14 +177,14 @@ This project tracks circuit depth in `benchmark_results.circuit_depth` because i
 
 **In one sentence:** Qubits hold superpositions, gates manipulate them, measurement collapses to one answer, and circuit depth determines if real hardware can run it.
 
-<details><summary>Self-test</summary>
+**Self-test**
 
 **Q: Why can't you read all 2^n amplitudes?**
 A: Measurement collapses to one random result. You need many shots (repeated measurements) to estimate probabilities.
 
 **Q: What limits current quantum hardware?**
 A: Circuit depth. NISQ devices handle ~100 gate layers before noise dominates.
-</details>
+
 
 ---
 
@@ -235,18 +235,18 @@ Each circuit run returns one bit (0 or 1). To estimate P(0), you run many **shot
 | 2048 | ~0.022 |
 | 4096 | ~0.016 |
 
-The `quantum_mock_sampler` engine simulates this: exact cosine + Gaussian noise scaled by `layers / max(1, shots)` (see `QuantumMockEngine.search()` in `quantum_mock.py`).
+For reference, standard error in P(0) = 1/sqrt(shots). At 512 shots that's ~0.044; at 2048 it drops to ~0.022.
 
 **In one sentence:** The swap test uses quantum interference to measure vector similarity; more shots = more accurate estimate.
 
-<details><summary>Self-test</summary>
+**Self-test**
 
 **Q: If two vectors are identical (similarity = 1.0), what's P(0)?**
 A: (1 + 1) / 2 = 1.0. The ancilla always measures 0.
 
 **Q: If two vectors are orthogonal (similarity = 0)?**
 A: (1 + 0) / 2 = 0.5. The ancilla is a fair coin -- maximum uncertainty.
-</details>
+
 
 ---
 
@@ -282,14 +282,14 @@ Without qRAM, loading each vector costs O(n) gates. Loading all N = O(N) -- the 
 
 **In one sentence:** Grover's could search in sqrt(N) time, but needs qRAM to load data -- so we benchmark the search step alone and document the qRAM bottleneck.
 
-<details><summary>Self-test</summary>
+**Self-test**
 
 **Q: For N = 1,000,000, how many Grover iterations are needed?**
 A: floor(pi * sqrt(1,000,000) / 4) = floor(pi * 1000 / 4) ~ 785.
 
 **Q: Why does the Grover engine pre-compute the answer classically?**
 A: To build the oracle (which marks the correct item). Without qRAM, there's no way to avoid this O(N) classical step. The value is in measuring the O(sqrt(N)) search, not the loading.
-</details>
+
 
 ---
 
@@ -318,14 +318,14 @@ We use **AerSimulator** (Qiskit's noiseless simulator) -- mathematically exact, 
 
 **In one sentence:** qRAM would unlock quantum speedup but doesn't exist; we measure everything else so the baseline is ready.
 
-<details><summary>Self-test</summary>
+**Self-test**
 
 **Q: Why can't IBM's 1,100 qubits be used as qRAM?**
 A: Those are processor qubits for gate circuits. qRAM needs a completely different architecture (quantum memory with tree routing). Like having transistors but needing capacitors.
 
 **Q: Why are simulator results meaningful?**
 A: Mathematically exact -- same statistics as a perfect chip. Shot noise is real. Results are the best-case ceiling.
-</details>
+
 
 ---
 
@@ -339,11 +339,10 @@ All implement `SearchEngineStrategy` (`build_index()` + `search()`) in `backend/
 |---|---|---|---|
 | `brute_force_cosine` | `brute_force_cosine.py` | NumPy dot products. Exact. **Ground truth** | O(N) |
 | `faiss_flat_l2` | `faiss_flat.py` | FAISS L2 search. Exact. Production-grade | O(N) |
-| `quantum_mock_sampler` | `quantum_mock.py` | Cosine + noise. No circuits. Fast noise study | O(N) |
 | `qiskit_swap_test` | `qiskit_swaptest.py` | Real swap test on AerSimulator | O(N) |
 | `qiskit_grover` | `qiskit_grover.py` | Grover's algorithm on AerSimulator | O(sqrt(N)) oracle calls |
 
-> Five chefs cooking the same dish. Two use standard recipes (classical). One pretends to use a quantum oven but adds random salt (mock). One uses the quantum oven for similarity only (swap test). One uses the quantum oven with Grover's shortcut (Grover). We taste-test all five.
+> Four chefs cooking the same dish. Two use standard recipes (classical). One uses a quantum oven for similarity only (swap test). One uses the quantum oven with Grover's shortcut (Grover). We taste-test all four.
 
 ### MRR (Mean Reciprocal Rank)
 
@@ -357,7 +356,7 @@ The main quality metric. Each query has one correct image. The engine ranks all 
 | 2nd | 0.5 |
 | 5th | 0.2 |
 
-The harness ranks ALL images (no top-K cutoff -- `top_k=selection.top_k` in `run_benchmarks.py`). Each query maps to one correct image via `BenchmarkQuery.target_id` (strips `query_` prefix from query ID).
+The harness computes MRR over the top_k results (`top_k=selection.top_k`, default 10, in `run_benchmarks.py`). If the correct image isn't in the top 10, MRR = 0 for that query. Each query maps to one correct image via `BenchmarkQuery.target_id`.
 
 ### Operation count -- the cross-engine scaling KPI
 
@@ -372,14 +371,14 @@ The quantum engines run on a classical simulator. Their timing reflects simulati
 
 **In one sentence:** Five interchangeable engines let us compare quantum accuracy against classical, with oracle count as the scaling KPI and MRR as the quality KPI.
 
-<details><summary>Self-test</summary>
+**Self-test**
 
 **Q: Why is brute-force cosine the ground truth?**
 A: Simplest, most transparent exact implementation.
 
 **Q: Why can't we compare wall-clock speed across engines?**
 A: Quantum engine timing reflects CPU simulation overhead, not real quantum hardware speed.
-</details>
+
 
 ---
 
@@ -399,7 +398,7 @@ The full argument, end to end:
 
 > **How to frame at a defence:** "We proved the algorithms work under ideal conditions, measured their cost, and identified the missing technology (qRAM) that prevents practical speedup. Our Grover oracle scales as O(sqrt(N)) on the simulator. The system is architecturally ready for when quantum hardware catches up."
 
-<details><summary>Self-test</summary>
+**Self-test**
 
 **Q: Summarise the thesis in one sentence.**
 A: Quantum swap test and Grover's algorithm correctly perform vector search on a simulator, but state preparation cost prevents end-to-end speedup until qRAM becomes available.
@@ -409,4 +408,4 @@ A: (1) Empirical proof both swap test and Grover work, (2) measured circuit dept
 
 **Q: Most common examiner misconception?**
 A: That the project claims quantum is faster. It doesn't -- it measures correctness and cost.
-</details>
+
