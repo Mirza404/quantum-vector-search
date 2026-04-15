@@ -34,14 +34,14 @@ Once data is in superposition, **Grover's algorithm** finds the closest match in
 
 **In one sentence:** The search algorithm works (we prove it), but the data loading step can't be done efficiently without hardware that doesn't exist yet.
 
-<details><summary>Self-test</summary>
+**Self-test**
 
 **Q: What are the two steps?**
 A: (1) Loading data into superposition (needs qRAM, O(N) without it), (2) Searching (O(sqrt(N)) with Grover's).
 
 **Q: Why doesn't the O(sqrt(N)) search help without qRAM?**
 A: The O(N) loading cost dominates. O(N) + O(sqrt(N)) = O(N).
-</details>
+
 
 ---
 
@@ -58,22 +58,24 @@ Classical search checks items one at a time. Grover's exploits **amplitude ampli
 
 **In the code:** `QiskitGroverEngine._build_grover_circuit()` in `qiskit_grover.py`. Oracle: `_apply_oracle()`. Diffusion: `_apply_diffusion()`.
 
-| N | Classical comparisons | Grover oracle calls | Speedup |
+| N | Brute-force comparisons (O(N)) | Grover oracle calls (O(√N)) | Speedup vs brute force |
 |---|---|---|---|
 | 100 | 100 | 8 | 12x |
 | 1,000 | 1,000 | 25 | 40x |
 | 1,000,000 | 1,000,000 | 785 | 1,274x |
 
-**In one sentence:** Grover's uses quantum interference to amplify the correct answer's probability, needing only sqrt(N) iterations instead of N checks.
+> Note: this compares Grover against brute-force exact search only. HNSW achieves O(log N) approximate search (~20 ops at N=1M) — faster than Grover even with ideal qRAM.
 
-<details><summary>Self-test</summary>
+**In one sentence:** Grover's uses quantum interference to amplify the correct answer's probability, needing only sqrt(N) iterations instead of N checks — a speedup over brute force, but not over HNSW.
+
+**Self-test**
 
 **Q: What does the oracle do?**
 A: Flips the phase (sign) of the correct answer's amplitude. Doesn't change its probability directly -- the diffusion step converts the phase difference into amplitude difference.
 
 **Q: What happens if you run too many iterations?**
 A: The amplitude overshoots and the probability of the correct answer starts *decreasing*. The optimal number is floor(pi*sqrt(N)/4).
-</details>
+
 
 ---
 
@@ -97,14 +99,14 @@ For our use case (512-dim float32 embeddings): each vector = 16,384 bits. The nu
 
 **In one sentence:** Practical qRAM for interesting dataset sizes is multiple orders of magnitude beyond current or near-term hardware.
 
-<details><summary>Self-test</summary>
+**Self-test**
 
 **Q: Why can't you just use IBM's qubits as qRAM?**
 A: Different architecture entirely. Processor qubits run gate circuits. qRAM needs quantum memory with coherent tree routing.
 
 **Q: How many physical qubits for qRAM at 1M vectors with error correction?**
-A: ~1 billion. IBM Condor has ~1,100.
-</details>
+A: ~1 billion qRAM routing nodes. IBM Condor has ~1,100 processor qubits — but those are gate-circuit qubits, not qRAM. They're a completely different hardware category. IBM having 1,100 processor qubits says nothing about qRAM capacity; it's like saying "we have transistors, so we're close to RAM." qRAM doesn't exist at any scale.
+
 
 ---
 
@@ -124,6 +126,8 @@ Practically: not a near-term or medium-term prospect, and the requirements are n
 IBM's aggressive roadmap targets ~100,000 processor qubits by ~2033. Those are gate-circuit qubits — a completely different architecture from qRAM, which needs quantum memory with coherent tree routing. No lab has demonstrated working qRAM at any meaningful scale. This is not "we need a bigger chip." It is a hardware category that does not exist yet and has no clear path to existence.
 
 **Honest assessment:** The O(sqrt(N)) future is theoretically real. Practically, it is blocked by hardware requirements so extreme that it does not appear on any credible roadmap.
+
+**But even in that hypothetical future, classical still wins.** Grover with ideal qRAM gives O(sqrt(N)) *exact* search. HNSW gives O(log N) *approximate* search — and since log N grows far slower than sqrt(N), HNSW is faster at any interesting dataset size. At N=1M: HNSW ~20 ops, Grover ~785 oracle calls. HNSW wins by ~40x, on a laptop, today, with no exotic hardware. The only domain where Grover would win is *exact* nearest-neighbor search — and in practice, HNSW's 95-99% recall is indistinguishable from exact for virtually every real application. So qRAM would not make quantum vector search the best option; it would just make it viable rather than hopeless.
 
 ---
 

@@ -42,7 +42,6 @@ from engines import (
     BruteForceCosineEngine,
     FaissFlatEngine,
     QiskitSwapTestEngine,
-    QuantumMockEngine,
     SearchEngineStrategy,
 )
 from pipeline import CLIPEmbeddingModel
@@ -95,7 +94,7 @@ def _load_benchmark_defaults() -> BenchmarkDefaults:
         raw_config, "classical_engines", fallback="brute_force_cosine"
     )
     quantum = _first_list_entry(
-        raw_config, "quantum_engines", fallback="quantum_mock_sampler"
+        raw_config, "quantum_engines", fallback="qiskit_swap_test"
     )
     dimension = _first_list_entry(raw_config, "dimensions", fallback=64)
     shots = _first_list_entry(raw_config, "shots_values", fallback=1024)
@@ -152,7 +151,6 @@ def _make_engine(name: str, dimension: int) -> SearchEngineStrategy:
     factories = {
         "brute_force_cosine": lambda: BruteForceCosineEngine(),
         "faiss_flat_l2": lambda: FaissFlatEngine(dimension=dimension),
-        "quantum_mock_sampler": lambda: QuantumMockEngine(seed=42),
         "qiskit_swap_test": lambda: QiskitSwapTestEngine(),
     }
     if name not in factories:

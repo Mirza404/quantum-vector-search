@@ -1,128 +1,60 @@
 # Benchmark KPI Definitions
 
-All metrics are measured **per query**. One DB row = one query = one set of measurements. This is how `run_benchmarks.py` and `generate_report.py` work.
-
-For theory behind these metrics: [LEARNING_ROADMAP.md](LEARNING_ROADMAP.md). For the scaling analysis: [QUANTUM_SEARCH_ANALYSIS.md](QUANTUM_SEARCH_ANALYSIS.md).
+Three metrics answer three different questions about the engines. For theory: [LEARNING_ROADMAP.md](LEARNING_ROADMAP.md).
 
 ---
 
-## Primary KPI: MRR (Mean Reciprocal Rank)
+## 1. MRR — Does it find the right answer?
 
-How high does the correct result rank? Directly comparable across all engines because all use normalised vectors.
+**Mean Reciprocal Rank** = average of 1/(rank of correct result) across all queries.
 
-- 1.0 = correct result is first
-- 0.5 = correct result is second
-- 0.2 = correct result is fifth
+- Rank 1 → 1.0, rank 2 → 0.5, rank 5 → 0.2
+- Evaluated over top_k results (default 10). Correct result outside top 10 = 0 for that query.
+- This is the primary accuracy metric. Directly comparable across all engines.
 
-Computed from `target_ids` and `top_ids` columns. Code: `_mrr()` in `run_benchmarks.py` and `generate_report.py`. The harness ranks ALL images (no cutoff).
-
-> "How far does the user scroll?" MRR 1.0 = never scrolls.
+> "How far does the user scroll before finding the right image?" MRR 1.0 = always first.
 
 ---
 
-## Cross-Engine Scaling KPI: Operation Count
+## 2. Operation Count — How does it scale?
 
-The **only valid cross-engine speed comparison**. Hardware-independent -- measures algorithmic efficiency, not wall-clock time.
+The number of times the core operation runs per query — literally the loop iteration count. Hardware-agnostic: a slow laptop and a fast server run the same number of iterations.
 
-| Engine | Operations per query | Complexity |
+| Engine | Loop runs N times? | Complexity |
 |---|---|---|
-| `brute_force_cosine` | N comparisons | O(N) |
-| `faiss_flat_l2` | N comparisons | O(N) |
-| `quantum_mock_sampler` | N comparisons | O(N) |
-| `qiskit_swap_test` | N circuit executions | O(N) |
-| `qiskit_grover` | floor(pi*sqrt(N)/4) oracle calls | **O(sqrt(N))** |
+| `brute_force_cosine` | Yes — one comparison per vector | O(N) |
+| `faiss_flat_l2` | Yes — one comparison per vector | O(N) |
+| `qiskit_swap_test` | Yes — one circuit per vector | O(N) |
+| `qiskit_grover` | No — floor(π√N/4) oracle cycles | **O(√N)** |
 
-Stored in `benchmark_results.oracle_calls`. Computed by `_oracle_calls()` in `run_benchmarks.py` -- derivable from engine name and dataset size, no runtime instrumentation needed.
+This is why you can't compare wall-clock time across engines — one runs on a CPU, one on a simulator, one eventually on quantum hardware. Iteration count is the only fair comparison.
 
-**How to read it:** Plot both curves against N. The divergence as N grows is the entire argument for quantum search.
-
----
-
-## Time per Query (per-engine only)
-
-Tracked as `search_ms`, `state_prep_ms`, `total_ms`. **Never compared across engines.**
-
-| Engine type | Track? | Report? | What it measures |
-|---|---|---|---|
-| Classical (brute force, FAISS) | Yes | Yes | Real performance |
-| Simulator (swap test, Grover) | Yes | No | CPU simulation overhead (misleading) |
-| IBM (future) | Execution time only | Supporting | Real quantum hardware time |
-
-- Classical wall-clock: reported per engine, plotted vs dimension
-- Simulator wall-clock: stored for operational use only, **never in report graphs**
-- IBM total wall-clock: never recorded (queue wait dominates)
+Stored in `benchmark_results.oracle_calls`, computed by `_oracle_calls()` in `run_benchmarks.py`.
 
 ---
 
-## Quantum-Only Metrics
+## 3. Circuit Metrics — What hardware does it need? (quantum only)
 
-### Shots-to-Quality
+- **Circuit depth** — number of sequential gate layers. Deeper = more noise on real hardware. NISQ devices handle ~100 layers reliably.
+- **Qubit count** — qubits the circuit requires. 64-dim swap test = 13 qubits. 128-dim = 15 qubits.
+- **Shots vs. MRR** — how accuracy changes as you run more circuit shots. More shots = less noise = better MRR.
 
-MRR at each shots value. Shows the minimum measurement budget for acceptable accuracy.
+These answer "could this run on real hardware, and what would it cost?"
 
-- Reported in "Shots vs. Quality" section of `generate_report.py`
-- Controlled by `shots_values` in `benchmarks.yaml`
-- Shot noise (1/sqrt(shots)) is identical on simulator and real hardware -- our results are a lower bound
-
-### Circuit Depth and Qubit Count
-
-Hardware-agnostic cost proxies:
-- **Circuit depth** = sequential gate layers. Deeper = more decoherence on real hardware. NISQ limit ~100
-- **Qubit count** = qubits required. Current QPUs: 100-1,000
-
-Stored in `benchmark_results.circuit_depth` and `num_qubits`. Extracted from compiled Qiskit circuits.
+Stored in `benchmark_results.circuit_depth`, `num_qubits`.
 
 ---
 
-## What Is NOT a KPI
+## What We Don't Report (and why)
 
-| Metric | Why it's invalid |
-|---|---|
-| **Cross-engine wall-clock** | Classical runs locally, IBM over HTTP with queues, simulator reflects CPU cost. Incomparable environments |
-| **Simulator wall-clock vs N** | Shows how expensive *simulation* is, not quantum algorithm speed. Makes quantum look worse for the wrong reason |
-| **IBM total wall-clock** | Queue wait (hours on free tier) dominates the number |
+**Wall-clock time is never compared across engines.** Classical runs on CPU, quantum runs on a simulator that uses exponentially more CPU to fake quantum states. Comparing their runtimes would just show "simulation is slow" — not anything about the quantum algorithm itself. Simulator wall-clock is stored in the DB but excluded from report graphs.
 
 ---
 
-## Database Schema (key columns)
-
-| Column | Type | Purpose |
-|---|---|---|
-| `target_ids` | JSONB | Ground truth image IDs |
-| `top_ids` | JSONB | Ranked search results |
-| `search_ms` | DOUBLE PRECISION | Search wall-clock (per-engine only) |
-| `state_prep_ms` | DOUBLE PRECISION | State prep wall-clock (quantum only) |
-| `total_ms` | DOUBLE PRECISION | Total wall-clock (per-engine only) |
-| `dataset_size` | INTEGER | Number of vectors searched |
-| `oracle_calls` | INTEGER | **Operations per query** (cross-engine KPI) |
-| `circuit_depth` | INTEGER | Sequential gate layers (quantum only) |
-| `num_qubits` | INTEGER | Qubits required (quantum only) |
-
-Run key: `(query_id, engine_name, dimension, shots, layers)`. Re-running upserts; new params append.
-
----
-
-## Report Sections
-
-Generated by `backend/scripts/generate_report.py`:
-
-| Section | KPI | Scope |
-|---|---|---|
-| Results Summary | MRR | All engines |
-| Quality KPIs by Engine | MRR | All engines |
-| Quality by Dimension | MRR | All engines |
-| Operation Count Scaling | oracle_calls vs N | All engines |
-| Head-to-Head | MRR per query | All engines |
-| Shots vs. Quality | MRR at each shots | Quantum only |
-| Circuit Complexity | depth, qubits | Quantum only |
-| Speed Scaling | ms vs dimension | Per-engine only |
-| Per-Query Detail | MRR, top results | All engines |
-
-<details><summary>Self-test</summary>
+**Self-test**
 
 **Q: What's the only valid cross-engine speed metric?**
-A: Operation count (oracle_calls). Classical = N, Grover = floor(pi*sqrt(N)/4).
+A: Operation count. Classical = N iterations, Grover = floor(π√N/4) iterations.
 
-**Q: Why not report simulator wall-clock in graphs?**
-A: It measures how hard it is to *simulate* quantum circuits on a CPU, not how fast the quantum algorithm is. Would make quantum look slower for the wrong reasons.
-</details>
+**Q: Why not compare wall-clock times across engines?**
+A: Simulator wall-clock measures how expensive it is to *simulate* quantum on a CPU — not how fast the quantum algorithm is. It would make quantum look worse for the wrong reason.

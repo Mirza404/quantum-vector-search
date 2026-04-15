@@ -20,7 +20,6 @@ from benchmark import BenchmarkResult, DatabaseStorage, load_benchmark_queries
 from engines.faiss_flat import FaissFlatEngine
 from engines.qiskit_grover import QiskitGroverEngine
 from engines.qiskit_swaptest import QiskitSwapTestEngine
-from engines.quantum_mock import QuantumMockEngine
 from engines.brute_force_cosine import BruteForceCosineEngine
 from pipeline import CLIPEmbeddingModel
 
@@ -65,7 +64,7 @@ def _oracle_calls(engine_name: str, dataset_size: int) -> int | None:
     Grover:           floor(π√N / 4) oracle calls.
     Mock:             N (simulates classical + noise).
     """
-    if engine_name in ("brute_force_cosine", "faiss_flat_l2", "qiskit_swap_test", "quantum_mock_sampler"):
+    if engine_name in ("brute_force_cosine", "faiss_flat_l2", "qiskit_swap_test"):
         return dataset_size
     if engine_name == "qiskit_grover":
         n_padded = max(2, 1 << (dataset_size - 1).bit_length())
@@ -76,7 +75,6 @@ def _oracle_calls(engine_name: str, dataset_size: int) -> int | None:
 def _engine_factories(seed: int | None, dimension: int) -> dict[str, Callable[[], object]]:
     return {
         "brute_force_cosine": lambda: BruteForceCosineEngine(),
-        "quantum_mock_sampler": lambda: QuantumMockEngine(seed=seed),
         "faiss_flat_l2": lambda: FaissFlatEngine(dimension=dimension),
         "qiskit_grover": lambda: QiskitGroverEngine(),
         "qiskit_swap_test": lambda: QiskitSwapTestEngine(),
