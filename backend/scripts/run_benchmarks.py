@@ -265,6 +265,12 @@ def main() -> None:
 
                 for shots in shot_iter:
                     for layers in layer_iter:
+                        if storage.has_record((query.id, engine_name, dimension, shots, layers)):
+                            print(
+                                f"[{engine_name}] skipping query={query.id} dim={dimension} "
+                                f"shots={shots} layers={layers} — already in DB"
+                            )
+                            continue
                         search_kwargs: dict = {"query_vector": query_vector, "top_k": selection.top_k}
                         if is_quantum:
                             search_kwargs.update({"shots": shots, "layers": layers})

@@ -23,7 +23,7 @@ BACKEND_ROOT = Path(__file__).resolve().parent.parent
 IMAGES_DIR = BACKEND_ROOT / "data" / "images"
 GROUND_TRUTH_PATH = BACKEND_ROOT / "data" / "ground_truth.jsonc"
 DATASET_NAME = "nlphuji/flickr30k"
-FILTER_API_URL = "https://datasets-server.huggingface.co/filter"
+ROWS_API_URL = "https://datasets-server.huggingface.co/rows"
 SPLITS_API_URL = "https://datasets-server.huggingface.co/splits"
 USER_AGENT = "quantum-vector-search-importer/1.0"
 HF_TOKEN_ENV_VARS = ("HF_TOKEN", "HUGGINGFACE_TOKEN")
@@ -101,7 +101,7 @@ def _resolve_dataset_coordinates(
     return resolved_config, resolved_split
 
 
-PAGE_SIZE = 100  # /filter endpoint maximum per request
+PAGE_SIZE = 100  # /rows endpoint maximum per request
 
 
 def _fetch_rows(
@@ -115,12 +115,11 @@ def _fetch_rows(
             "dataset": DATASET_NAME,
             "config": config_name,
             "split": split_name,
-            "orderby": '"filename"',
             "offset": offset,
             "length": length,
         }
         try:
-            response = requests.get(FILTER_API_URL, params=params, headers=headers, timeout=60)
+            response = requests.get(ROWS_API_URL, params=params, headers=headers, timeout=60)
             response.raise_for_status()
         except requests.RequestException as exc:
             raise SystemExit(
