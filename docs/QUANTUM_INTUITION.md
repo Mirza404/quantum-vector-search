@@ -55,9 +55,25 @@ is what the next two steps do.
 
 ## 4. The oracle -- marking the prize door
 
-The oracle is a quantum gate that knows which state is the answer. It does one specific
-thing: it flips the phase (the sign of the amplitude) of the correct state, leaving
-every other state untouched.
+The oracle does not discover the answer. It is *constructed* to mark a specific state.
+There are two very different situations:
+
+**In theory -- the oracle computes the answer.**
+The oracle is a quantum circuit that evaluates a function (e.g. "is this the closest
+vector to the query?") across all N states simultaneously while they are in superposition.
+It does not search sequentially -- it runs the computation over all candidates at once
+and flips the phase of whichever state satisfies the condition. But to do this, the
+circuit needs all N database vectors loaded into quantum registers at the same time.
+That is the qRAM requirement. Without qRAM, you cannot build this oracle.
+
+**In our simulation -- the oracle is hardcoded.**
+We have no qRAM, so we find the nearest neighbour classically first (brute force), then
+construct a circuit that marks exactly that index. The oracle "knows" because we told it
+the answer before running the quantum part. This is why the simulation is measuring the
+*scaling behaviour* of amplitude amplification, not a search that replaces the classical step.
+
+In both cases the oracle does one specific thing: it flips the phase (the sign of the
+amplitude) of the target state, leaving every other state untouched.
 
 Amplitude is a complex number. Think of it as an arrow. Flipping the phase is like
 flipping that arrow upside-down -- the magnitude does not change, only the direction.
@@ -68,6 +84,27 @@ exploited.
 
 **Key point:** The oracle does not *reveal* the answer. It marks it. You still need to
 *amplify* it.
+
+**Why can't the oracle just tell you what it marked?**
+
+Because the oracle is not a classical function that returns a value -- it is a quantum gate
+that transforms quantum states. It has no output channel. The marking lives inside the
+quantum amplitudes as a sign change, trapped inside the quantum system.
+
+The only way to extract classical information from a quantum system is to measure it. But
+measuring right after the oracle still gives you a random state -- the phase flip did not
+change any probabilities (probability = |amplitude|², squaring removes the sign). You would
+still get a random answer.
+
+If the oracle could simply tell you which state it marked, you would not need Grover at all --
+you would run the oracle once, ask "what did you mark?", and have your answer in O(1). The
+reason Grover is interesting is precisely that the oracle evaluates the condition across all
+N states simultaneously, but only as a quantum operation, not as a readable output. You pay
+for that power with the constraint that measurement only gives you one answer, and only gives
+you the *right* answer if the amplitudes are already concentrated there.
+
+The diffusion step is the bridge: it converts the oracle's invisible phase marking into a
+real shift in measurement probabilities, round by round, until the target dominates.
 
 ---
 
@@ -196,8 +233,12 @@ physical architectures, like asking your CPU's transistors to act as RAM capacit
 
 When we say "qRAM doesn't exist," we are not saying IBM's processor is too small. We are
 saying the memory device -- an entirely different piece of hardware that has never been
-built by anyone -- does not exist. IBM's 1,100 processor qubits and qRAM nodes are not
-the same thing and cannot be compared directly.
+built by anyone -- does not exist. Both are built from qubits, but they need completely different physical architectures.
+Processor qubits are wired for gate operations -- running circuits, executing algorithms.
+qRAM nodes need qubits arranged as a memory routing tree, with different connectivity,
+different error correction, and different fabrication requirements. You cannot repurpose
+IBM's processor qubits as qRAM nodes, just as you cannot repurpose a CPU's transistors
+as RAM capacitors -- same underlying physics, incompatible architecture.
 
 ### The state preparation problem
 
@@ -288,14 +329,111 @@ The speedup has also not been "dequantized" -- no one has found a classical algo
 that matches it for truly unstructured problems (unlike some other quantum algorithms
 that turned out to have classical equivalents).
 
-Where quantum wins is in cases where:
-1. The dataset cannot be pre-indexed (qRAM solves state prep)
-2. Exact search is required (approximate algorithms like HNSW are not acceptable)
-3. N is large enough that O(√N) is meaningfully better than O(N)
+### When HNSW doesn't apply and Grover would win
 
-For vector similarity search in ML: condition 3 is met, condition 2 is rarely a hard
-requirement (approximation is almost always fine), and condition 1 blocks everything
-until qRAM hardware exists.
+HNSW requires building an index in advance on a static dataset and exploits the geometric
+structure of vectors in a metric space. When either condition breaks down, you are back to
+unstructured search and Grover has its opening.
+
+**No geometric structure.**
+HNSW works because nearby vectors stay nearby -- it builds a graph of neighbours from that
+structure. If the search is over an arbitrary boolean function ("does this input satisfy this
+condition?"), there is no geometry to exploit and no index to build. Grover's oracle works on
+any computable function, not just distance in a metric space.
+
+**Cryptography.**
+Finding a hash preimage (a password that produces a given hash) is pure unstructured search
+-- the hash function deliberately destroys structure. You cannot index hash outputs. Classical
+is stuck at O(N). Grover does O(√N). This is the domain where quantum search actually matters.
+
+**Combinatorial search.**
+SAT solving, finding a satisfying assignment to a boolean formula -- no geometry, no shortcut,
+no index possible. Grover applies directly.
+
+**One-shot data with no preprocessing.**
+If you receive data and must search it immediately without any indexing phase, brute force is
+all you have classically. Grover beats it.
+
+### Does Grover need qRAM for cryptography?
+
+No -- and this is the key difference from vector search. For a hash preimage search, the
+oracle is the hash function itself implemented as quantum gates: "does hash(x) equal the
+target?" The circuit runs entirely on the processor. There is no dataset to load into
+superposition. qRAM is only needed when the oracle has to evaluate distances over a stored
+dataset -- not when it computes a function from scratch.
+
+This means Grover is a real cryptographic threat in principle. AES-128 has effective 64-bit
+security against Grover (halved from 128-bit), because Grover can search the key space in
+O(√2¹²⁸) = O(2⁶⁴) oracle calls instead of O(2¹²⁸). This is why post-quantum cryptography
+standards recommend AES-256 -- Grover halves it to 128-bit, which remains acceptable.
+
+**However**, breaking AES-128 with Grover still requires ~2⁶⁴ oracle calls, each running a
+full AES circuit on fault-tolerant hardware. Current estimates put this at millions of
+physical qubits running for years. Not a near-term threat, but a real long-term one.
+
+### Grover vs Shor -- two different threats to cryptography
+
+The headlines about "quantum breaks encryption" mostly conflate two different algorithms:
+
+- **Grover** threatens *symmetric* encryption (AES, SHA). Quadratic speedup. Halves effective
+  key length. Mitigated by doubling key size (AES-128 → AES-256).
+- **Shor** threatens *asymmetric* encryption (RSA, ECC). *Exponential* speedup for integer
+  factorization and discrete logarithm. RSA-2048 is broken entirely -- no key size increase
+  helps. This is the catastrophic threat that drives post-quantum cryptography research.
+
+Grover is the less severe threat. Shor is the one that breaks the internet's security model.
+
+### Why vector search is the wrong problem for Grover
+
+For vector similarity search in ML: the data has rich geometric structure (HNSW exploits it),
+approximation is almost always acceptable (HNSW's 95-99% recall is fine), and the qRAM
+requirement blocks state preparation entirely. Grover's real domain is problems with no
+exploitable structure. Vector search just happens to be the wrong shape for it.
+
+### Is Grover the best at anything? What is it actually used for?
+
+In practice today: nothing at production scale. The fault-tolerant hardware to run it usefully
+does not exist yet. But theoretically it holds a strong position:
+
+**It is proven optimal for unstructured search.**
+There is a proven lower bound that no quantum algorithm -- not just Grover, any algorithm --
+can do better than O(√N) for truly unstructured search. Grover hits that bound exactly. That
+is rare in computer science: most algorithms are just "the best we know of." Grover is
+provably the best possible.
+
+**It is a subroutine inside larger quantum algorithms.**
+Many algorithms contain a step that is essentially "search N candidates for one satisfying a
+condition." You can drop Grover in as that step and get a quadratic speedup on the whole
+algorithm. Most of Grover's practical theoretical value is here -- not as a standalone search
+tool but as a component that makes other quantum algorithms faster.
+
+**Collision finding in cryptography.**
+Finding two inputs that produce the same hash output (used in attacking hash functions) --
+Grover-based algorithms do this in O(N^(1/3)) vs the classical O(N^(1/2)). A real
+improvement, just not deployable on current hardware.
+
+**NP problems generally.**
+Any NP problem is essentially "search an exponential space for a satisfying assignment."
+Grover gives a quadratic speedup on all of them. For problems with 2^300 possible
+assignments, even a quadratic speedup is enormous in theory.
+
+The blunt summary: Grover is a fundamental theoretical result that defines the limits of
+quantum search, and a useful building block inside future algorithms. It is not a near-term
+practical tool. Shor gets the headlines because it threatens something we rely on right now.
+Grover's impact is more abstract and longer-term.
+
+### When will Shor break encryption?
+
+Nobody knows. Breaking RSA-2048 requires ~4,000 logical qubits -- with error correction
+overhead, that is roughly 4-8 million physical qubits. Current best hardware is ~1,100
+noisy physical qubits. Credible estimates range from 10 to 30+ years. Some researchers say
+never, if error rates do not improve fundamentally.
+
+The threat that already exists is "harvest now, decrypt later" -- adversaries collecting
+encrypted traffic today to decrypt once the hardware arrives. NIST responded: in 2024 they
+finalized post-quantum cryptography standards resistant to both Shor and Grover. TLS,
+Signal, and Apple iMessage have already started migrating. The cryptography world is
+treating it as a planning horizon, not science fiction.
 
 ---
 

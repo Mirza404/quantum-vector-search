@@ -83,7 +83,7 @@ For millions of vectors, brute force is too slow. **HNSW** (Hierarchical Navigab
 A: Brute-force is a transparent baseline. FAISS demonstrates a production-grade implementation. Both are exact.
 
 **Q: Will HNSW be added as a benchmark engine?**
-A: Yes, planned. HNSW (O(log N) approximate) is the most relevant classical comparison for the quantum question — it beats Grover even with ideal qRAM. Adding it as an engine would complete the picture: brute force (O(N) exact), FAISS (O(N) exact, optimised), HNSW (O(log N) approximate), and quantum.
+A: Yes, planned. HNSW (O(log N) approximate) is the most relevant classical comparison for the quantum question - it beats Grover even with ideal qRAM. Adding it as an engine would complete the picture: brute force (O(N) exact), FAISS (O(N) exact, optimised), HNSW (O(log N) approximate), and quantum.
 
 
 ---
@@ -104,7 +104,7 @@ A function that converts input (text, image, audio) into a fixed-length vector, 
 
 The key insight: **both output into the same vector space**. A photo of a dog and the sentence "a dog on a beach" end up near each other. This is what makes text-to-image search possible.
 
-**In the code:** `CLIPEmbeddingModel` in `backend/src/pipeline/clip_model.py`. Auto-detects CUDA / MPS / CPU — runs on CPU without a GPU.
+**In the code:** `CLIPEmbeddingModel` in `backend/src/pipeline/clip_model.py`. Auto-detects CUDA / MPS / CPU - runs on CPU without a GPU.
 
 ### Truncation
 

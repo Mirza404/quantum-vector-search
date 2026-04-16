@@ -23,7 +23,7 @@ LAST_N=$(grep -oP "VALUES \('\K\d+(?=_[^']+\.sql')" "$SEED_FILE" | sort -n | tai
 LAST_N="${LAST_N:-0}"
 
 if [ "$LAST_N" -gt 0 ]; then
-    echo "Seed state: migrations up to #$LAST_N — rolling back anything above that..."
+    echo "Seed state: migrations up to #$LAST_N - rolling back anything above that..."
     bash "$SCRIPT_DIR/migrate.sh" down "$LAST_N"
 fi
 

@@ -60,7 +60,7 @@ def _oracle_calls(engine_name: str, dataset_size: int) -> int | None:
     """Derive oracle/comparison count from engine type and dataset size.
 
     Classical engines: N comparisons (linear scan).
-    Swap test:        N circuit executions (one per vector — quantum brute force).
+    Swap test:        N circuit executions (one per vector - quantum brute force).
     Grover:           floor(π√N / 4) oracle calls.
     Mock:             N (simulates classical + noise).
     """
@@ -268,7 +268,7 @@ def main() -> None:
                         if storage.has_record((query.id, engine_name, dimension, shots, layers)):
                             print(
                                 f"[{engine_name}] skipping query={query.id} dim={dimension} "
-                                f"shots={shots} layers={layers} — already in DB"
+                                f"shots={shots} layers={layers} - already in DB"
                             )
                             continue
                         search_kwargs: dict = {"query_vector": query_vector, "top_k": selection.top_k}

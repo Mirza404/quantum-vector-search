@@ -18,8 +18,8 @@ CLIP [6] is what enables text-to-image search. It aligns a text encoder and an i
 so that a description and the matching image land near each other in a shared 512-dimensional
 space. Nearest-neighbour lookup does the rest.
 
-The quantum angle: Grover's algorithm has a proven quadratic speedup for unstructured search [1].
-Most of the literature is theoretical. We run it on a real simulator against real embeddings
+The quantum angle: Grover's algorithm has a proven quadratic speedup for exact unstructured search [1].
+We run it on a real simulator against real embeddings
 and measure what it actually costs.
 
 ---
@@ -30,7 +30,7 @@ Walk through the three research questions briefly. The third is the most interes
 even if qRAM existed and state prep were free, would quantum search beat classical?
 We address that on slide 11.
 
-On IBM hardware: free tier has reported multi-hour queue waits and significant noise
+On IBM hardware: free tier has reported  queue waits and significant noise
 beyond about 7 qubits. That makes controlled scaling experiments uninterpretable.
 AerSimulator is mathematically exact -- shot noise is identical to real hardware,
 so our MRR results transfer directly.
@@ -49,8 +49,8 @@ production standard. It becomes critical on slide 11.
 
 Quantum: the swap test estimates vector overlap via a quantum circuit [3].
 Grover amplifies the correct answer in O(sqrt(N)) oracle calls [1][2].
-Point to the amber box: that O(sqrt(N)) is oracle calls only -- state preparation is
-a separate cost. See slide 11.
+That O(sqrt(N)) is oracle calls only -- state preparation is
+a separate cost.
 
 ---
 
@@ -85,6 +85,14 @@ Still O(N) circuits -- a similarity measurement, not a speedup.
 Grover oracle: different. All N candidates in superposition. Oracle marks the target,
 diffusion amplifies it. Repeat floor(pi*sqrt(N)/4) times. 1,000 vectors needs 24 oracle
 calls instead of 1,000. We verify this empirically -- our circuit reproduces the curve.
+
+One thing to be explicit about: the oracle in this simulation is classically pre-specified.
+For a real quantum search, the oracle circuit would need to compute which vector is closest
+entirely inside the quantum system -- loading all N vectors into superposition, evaluating
+distances, marking the minimum. That requires qRAM. Since qRAM doesn't exist, we identify
+the nearest neighbour classically first, then build an oracle that marks that specific index.
+The amplitude amplification and the sqrt(N) scaling are fully real and verified. What we're
+measuring is the scaling property of the algorithm, not a search that replaces the classical step.
 
 HNSW: multi-layer proximity graph. O(log N), 95-99%+ recall. Not yet implemented but the
 architecture is ready (strategy pattern). This is the most important comparison point -- see
@@ -151,19 +159,31 @@ The two-step problem: quantum search is two operations. Loading data into superp
 without qRAM [4] -- same as classical. The speedup is cancelled. Grover's O(sqrt(N)) search
 still works -- we verify it -- but the total is O(N) without hardware that does not exist.
 
-Point to the qRAM table. Key framing: qRAM is memory hardware, not the quantum processor.
-IBM's processor runs circuits -- that exists. qRAM would store the dataset -- that does not exist.
-They are different devices, like CPU vs RAM in a laptop.
+Point to the qRAM table. Key framing: qubit = processor, qRAM = storage. IBM's processor
+(the qubit chip) exists and runs Grover's circuit -- that needs only ~20 qubits regardless
+of dataset size. qRAM is the storage layer that would hold the dataset and feed it to the
+processor -- that does not exist. They are completely different hardware, like a CPU vs a
+hard drive.
 
-If qRAM existed, it would need one quantum routing node per vector [4]. With error correction:
-1,000 vectors needs ~1,000,000 qubits of memory hardware. For comparison, 1,000 vectors in
-classical RAM is ~2 MB. Both scale linearly, but classical RAM is already cheap.
-This is not a timeline problem -- the hardware architecture does not exist on any roadmap.
+The table shows this split directly. Algorithm qubits: Grover needs log₂(N) qubits -- just
+enough to represent a number up to N. At 1,000 vectors that's ~10 qubits; at 1,000,000 it's
+~20. Tiny. The qRAM storage is the opposite: 1,000 vectors needs ~1,000,000 physical qubits;
+1,000,000 vectors needs ~1,000,000,000.
+The multiplier is ~1,000 physical qubits per memory slot: qubits are fragile, so reliable
+storage wraps each slot in error correction circuitry. qRAM needs one slot per vector, so the
+cost is N × 1,000 qubits. Classical RAM for the same data is 2 MB vs 2 GB -- linear in both
+cases, but classical RAM is already cheap. This is not a timeline problem -- the hardware
+architecture does not exist on any roadmap.
 
 The bigger finding -- point to the complexity table.
 Even with ideal qRAM, HNSW is O(log N) [5], Grover is O(sqrt(N)) [1].
 Log N grows slower than sqrt(N). At N = 1,000,000: HNSW needs ~20 ops, Grover needs ~785.
 HNSW wins by 40x, on a laptop, today.
+
+Point to the quote callout at the bottom -- Hoefler et al. (2023) [10]. Vector search is the wrong
+shape for quantum: each comparison is a trivial dot product, the hard part is the data volume, and
+loading all of it into superposition is exactly the qRAM problem already covered above. Quantum wins
+on small data with enormous computation -- molecule simulation, cryptography -- not dataset scans.
 
 ---
 
@@ -209,7 +229,7 @@ search system around it. Negative results that are well-supported are scientific
 
 **"Why not use real IBM quantum hardware?"**
 
-IBM free tier has reported multi-hour queue waits and significant gate noise beyond ~7 qubits.
+IBM free tier reportedly has reported long queue waits and significant gate noise beyond ~7 qubits.
 That makes controlled scaling experiments impossible to interpret cleanly.
 AerSimulator is mathematically exact. Shot noise is identical on simulator and real hardware,
 so MRR results transfer directly. IBM hardware would be a noise-accuracy study -- out of scope.
