@@ -1,29 +1,5 @@
 # Midterm Presentation -- Speaker Notes
 
-Full talking points per slide, transitions, and Q&A cheat sheet.
-Target: 7-8 minutes total speaking time. Approximate time per slide is noted.
-Sources slide (14) does not count toward the time limit.
-
-Inline citation numbers like [1] match the numbered sources on the final slide.
-You do not need to say these aloud -- they are there so you know which claim
-has backing if a committee member challenges it.
-
-## Reference Key (quick lookup during Q&A)
-
-| # | Source | What it backs |
-|---|--------|---------------|
-| [1] | Grover (1996), DOI:10.1145/237814.237866 | O(sqrt(N)) oracle count |
-| [2] | Bennett et al. (1997), arxiv.org/abs/quant-ph/9701001 | O(sqrt(N)) is provably optimal |
-| [3] | Buhrman et al. (2001), DOI:10.1103/PhysRevLett.87.167902 | Swap test circuit formula |
-| [4] | Giovannetti, Lloyd, Maccone (2008), DOI:10.1103/PhysRevLett.100.160501 | qRAM hardware requirements |
-| [5] | Malkov & Yashunin (2020), arXiv:1603.09320 | HNSW O(log N); ~20 ops at N=1M |
-| [6] | Radford et al. (2021), arXiv:2103.00020 | CLIP ViT-B/32 embedding space |
-| [7] | Tang (2019), arXiv:1807.04271 | Grover's speedup not dequantized |
-| [8] | Young et al. (2014), DOI:10.1162/tacl_a_00166 | Flickr30k dataset |
-| [9] | IBM Newsroom (Dec 4, 2023) | IBM Condor ~1,100 qubits |
-
----
-
 ## Slide 1 -- Title (~15 seconds)
 
 "This project benchmarks classical and quantum vector search engines on identical data.
