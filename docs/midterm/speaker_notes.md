@@ -262,27 +262,3 @@ with known ground-truth image matches [8] are what make quantitative comparison 
 Fair point. HNSW [5] is the most relevant classical benchmark because it shows O(log N) already
 exists classically. It is documented as the next extension and the architecture is ready for it.
 Including it would make the comparison against Grover cleaner. It is a natural next step.
-
----
-
-## Timing Guide
-
-| Slide | Content | Target time |
-|-------|---------|-------------|
-| 1 | Title | 0:15 |
-| 2 | Context | 0:45 |
-| 3 | Problem | 0:40 |
-| 4 | Theory | 0:45 |
-| 5 | Architecture | 0:25 |
-| 6 | All Engines | 0:45 |
-| 7 | Completed | 0:40 |
-| 8 | In Progress | 0:35 |
-| 9 | Timeline | 0:15 |
-| 10 | KPIs | 0:25 |
-| 11 | Honest Quantum | 0:55 |
-| 12 | Expected Outcomes | 0:25 |
-| 13 | Conclusion | 0:20 |
-| **Total** | | **~7:30** |
-
-If running long: cut slide 9 (timeline, ~10 sec saved) and trim slide 10 (KPIs, ~15 sec).
-Do not cut slides 11 or 13 -- that is where the project's argument lives.

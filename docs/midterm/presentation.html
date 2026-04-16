@@ -182,6 +182,8 @@
     margin-left: 1px;
     letter-spacing: 0;
   }
+  sup.ref a { color: var(--blue); text-decoration: none; }
+  sup.ref a:hover { text-decoration: underline; }
   .footnote-line {
     font-size: .7rem;
     color: var(--gray);
@@ -743,9 +745,9 @@
       <table style="margin-bottom:8px; font-size:.79rem;">
         <thead><tr><th>#</th><th>Problem</th><th>Status</th></tr></thead>
         <tbody>
-          <tr><td><strong>1</strong></td><td>qRAM doesn't exist -- state prep is O(N), speedup cancelled</td><td class="warn">Hard blocker today</td></tr>
-          <tr><td><strong>2</strong></td><td>Even if qRAM existed, it requires O(N) quantum nodes -- same linear scaling as classical RAM, but at astronomical cost per unit. 1B vectors = ~1 trillion physical qubits of memory.</td><td class="warn">Economic blocker at scale</td></tr>
-          <tr><td><strong>3</strong></td><td>Even ignoring 1 and 2, Grover's O(sqrt(N)) is beaten by HNSW's O(log N) classically. At N=1M: HNSW ~20 ops, Grover ~785 oracle calls.<sup class="ref">[1][5]</sup></td><td class="warn">Algorithmic blocker</td></tr>
+          <tr><td><strong>1</strong></td><td>qRAM doesn't exist -- state prep is O(N), speedup cancelled<sup class="ref"><a href="#sources">[10]</a></sup></td><td class="warn">Hard blocker today</td></tr>
+          <tr><td><strong>2</strong></td><td>Even if qRAM existed, it requires O(N) quantum nodes -- same linear scaling as classical RAM, but at astronomical cost per unit. 1B vectors = ~1 trillion physical qubits of memory.<sup class="ref"><a href="#sources">[11]</a></sup></td><td class="warn">Economic blocker at scale</td></tr>
+          <tr><td><strong>3</strong></td><td>Even ignoring 1 and 2, Grover's O(sqrt(N)) is beaten by HNSW's O(log N) classically. At N=1M: HNSW ~20 ops, Grover ~785 oracle calls.<sup class="ref"><a href="#sources">[5]</a></sup></td><td class="warn">Algorithmic blocker</td></tr>
         </tbody>
       </table>
       <div class="callout" style="font-size:.82rem; margin-bottom:6px;">
@@ -849,7 +851,7 @@
 <!-- ==================================================
      14 / SOURCES
      ================================================== -->
-<section class="slide" data-num="14 / 14">
+<section class="slide" id="sources" data-num="14 / 14">
   <div class="slide-header">
     <h2>Sources and References</h2>
     <div class="tag">Numbers correspond to inline citations on previous slides</div>
@@ -882,12 +884,19 @@
           <li>
             <span>[5] Malkov, Y. A. and Yashunin, D. A. (2020).</span>
             "Efficient and robust approximate nearest neighbor search using HNSW." IEEE TPAMI 42(4).<br>
-            <a href="https://arxiv.org/abs/1603.09320">arxiv.org/abs/1603.09320</a>
+            <a href="https://arxiv.org/pdf/1603.09320">arxiv.org/pdf/1603.09320</a><br>
+            <em style="color:var(--gray); font-size:.74rem;">"Starting search from the upper layer...allows a logarithmic complexity scaling"</em>
+          </li>
+          <li>
+            <span>[10] Hoefler, T., Häner, T., Troyer, M. (2023).</span>
+            "Disentangling Hype from Practicality: On Realistically Achieving Quantum Advantage." arXiv:2307.00523.<br>
+            <a href="https://arxiv.org/pdf/2307.00523">arxiv.org/pdf/2307.00523</a><br>
+            <em style="color:var(--gray); font-size:.74rem;">"any problem that is limited by accessing classical data, such as search problems in databases, will be solved faster by classical computers"</em>
           </li>
         </ul>
       </div>
       <div class="col">
-        <h3>References [6] -- [9]</h3>
+        <h3>References [6] -- [11]</h3>
         <ul class="refs">
           <li>
             <span>[6] Radford, A. et al. (2021).</span>
@@ -908,6 +917,12 @@
             <span>[9] IBM Newsroom (2023).</span>
             "IBM Debuts Next-Generation Quantum Processor and IBM Quantum System Two." December 4, 2023.<br>
             <a href="https://newsroom.ibm.com/2023-12-04-IBM-Debuts-Next-Generation-Quantum-Processor-IBM-Quantum-System-Two,-Extends-Roadmap-to-Advance-Era-of-Quantum-Utility">newsroom.ibm.com (December 4, 2023)</a>
+          </li>
+          <li>
+            <span>[11] Hann, C. T. et al. (2021).</span>
+            "Resilience of quantum random access memory to generic noise." arXiv:2012.05340.<br>
+            <a href="https://arxiv.org/pdf/2012.05340">arxiv.org/pdf/2012.05340</a><br>
+            <em style="color:var(--gray); font-size:.74rem;">"both the fanout and bucket-brigade architectures require O(N) ancillary qubits to serve as routers"</em>
           </li>
         </ul>
       </div>
