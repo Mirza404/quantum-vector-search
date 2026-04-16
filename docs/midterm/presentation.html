@@ -759,33 +759,35 @@
     <h2>Expected Final Outcomes</h2>
     <div class="tag">Hypotheses, contribution, and project claim</div>
   </div>
-  <div class="slide-body">
-    <div class="col">
-      <h3>Expected findings (hypotheses)</h3>
-      <ul>
-        <li>Grover oracle count will follow the floor(pi * sqrt(N) / 4) curve empirically.</li>
-        <li>Swap test will converge to classical MRR at a measurable shot budget (hypothesis: 512-1024 shots).</li>
-        <li>Circuit depth and qubit count will grow predictably with dimension.</li>
-        <li>Without qRAM, end-to-end quantum search will not beat classical -- consistent with theory.</li>
-      </ul>
-
+  <div class="slide-body" style="flex-direction:column; gap:10px;">
+    <div style="display:flex; gap:24px;">
+      <div class="col">
+        <h3>Expected findings (hypotheses)</h3>
+        <ul>
+          <li>Grover oracle count will follow the floor(pi * sqrt(N) / 4) curve empirically.</li>
+          <li>Swap test will converge to classical MRR at a measurable shot budget (hypothesis: 512-1024 shots).</li>
+          <li>Circuit depth and qubit count will grow predictably with dimension.</li>
+          <li>Without qRAM, end-to-end quantum search will not beat classical -- consistent with theory.</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>Contribution</h3>
+        <ul>
+          <li>Working Grover and swap test circuits verified on a real simulator with measured resource costs.</li>
+          <li>Fair, reproducible benchmarking methodology: identical data, identical evaluation, documented assumptions.</li>
+          <li>Empirical oracle count scaling data -- measuring theoretical predictions against real circuit behaviour.</li>
+          <li>Honest, documented analysis of where quantum vector search stands and what it would need to be practical.</li>
+        </ul>
+      </div>
     </div>
-    <div class="col">
-      <h3>Contribution</h3>
-      <ul>
-        <li>Working Grover and swap test circuits verified on a real simulator with measured resource costs.</li>
-        <li>Fair, reproducible benchmarking methodology: identical data, identical evaluation, documented assumptions.</li>
-        <li>Empirical oracle count scaling data -- measuring theoretical predictions against real circuit behaviour.</li>
-        <li>Honest, documented analysis of where quantum vector search stands and what it would need to be practical.</li>
-      </ul>
-
+    <div>
+      <h3 style="margin-bottom:7px;">What this project will show</h3>
+      <div class="callout green" style="font-size:.84rem; margin:0;">
+        A complete benchmarking platform, empirical verification of quantum circuit behaviour against theory,
+        and a rigorous analysis of exactly where quantum search stands today --
+        including the finding that even ideal qRAM would not make Grover competitive with HNSW for approximate retrieval.
+      </div>
     </div>
-  </div>
-  <h3 style="margin-top:13px">What this project will show</h3>
-  <div class="callout green" style="font-size:.84rem;">
-    A complete benchmarking platform, empirical verification of quantum circuit behaviour against theory,
-    and a rigorous analysis of exactly where quantum search stands today --
-    including the finding that even ideal qRAM would not make Grover competitive with HNSW for approximate retrieval.
   </div>
 </section>
 
