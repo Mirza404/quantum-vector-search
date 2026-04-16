@@ -133,7 +133,6 @@
   .pipe-arrow { padding: 0 3px; color: var(--blue); font-size: 1rem; font-weight: 700; }
 
   /* ---- ENGINE CARDS ---- */
-  .engine-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 6px; }
   .engine-card { border: 1px solid var(--mid); border-radius: 4px; padding: 9px 11px; }
   .engine-card .en  { font-weight: 700; color: var(--navy); font-size: .82rem; }
   .engine-card .et  { font-size: .7rem; color: var(--gray); }
@@ -175,9 +174,6 @@
   .refs a { color: var(--blue); text-decoration: none; }
   .refs a:hover { text-decoration: underline; }
 
-  /* ---- CRITERIA ---- */
-  .criteria { font-size: .65rem; letter-spacing: .4px; color: #aab; text-align: right; padding: 4px 34px 6px; border-top: 1px solid #f0f2f5; }
-
   /* ---- CITATIONS ---- */
   sup.ref {
     font-size: .65rem;
@@ -207,7 +203,7 @@
 <!-- ==================================================
      1 / TITLE
      ================================================== -->
-<section class="slide title-slide" data-num="1 / 18">
+<section class="slide title-slide" data-num="1 / 14">
   <div class="slide-header">
     <div class="tag">ENS490 -- Graduation Project -- Spring 2026</div>
     <div class="tag">Midterm Progress Review</div>
@@ -224,14 +220,13 @@
       <strong>Date:</strong> April 2026 &nbsp;|&nbsp; <strong>Stage:</strong> Midterm Progress Review
     </div>
   </div>
-  <div class="criteria">Criteria: 1, 6</div>
 </section>
 
 
 <!-- ==================================================
      2 / CONTEXT AND MOTIVATION
      ================================================== -->
-<section class="slide" data-num="2 / 18">
+<section class="slide" data-num="2 / 14">
   <div class="slide-header">
     <h2>Context and Motivation</h2>
     <div class="tag">Why this problem matters</div>
@@ -241,17 +236,17 @@
       <div class="col">
         <h3>The search problem</h3>
         <ul>
-          <li>Modern retrieval systems work in vector space -- text, images, audio all reduced to high-dimensional embeddings.</li>
-          <li>Cross-modal search (text query finding images) requires a shared embedding space: different modalities, same geometry.</li>
-          <li>As datasets grow to hundreds of millions of vectors, brute-force scan stops being viable.</li>
+          <li>Text, images, and audio can all be encoded as high-dimensional number vectors. Once everything is a vector, the same geometry applies: similarity between two items is the angle between their vectors.</li>
+          <li>This is why cross-modal search works: a text description and its matching image can be placed near each other in the same vector space. Finding the nearest vector finds the match -- regardless of modality.</li>
+          <li>As datasets grow to hundreds of millions of vectors, checking every one becomes too slow. Smarter algorithms are needed.</li>
         </ul>
       </div>
       <div class="col">
         <h3>Why quantum is worth studying here</h3>
         <ul>
-          <li>Grover's algorithm provides a <em>proven, unconditional</em> quadratic speedup for unstructured search -- one of very few such results in quantum computing.</li>
-          <li>Quantum hardware is advancing. Understanding what algorithms require today informs engineering decisions for tomorrow.</li>
-          <li>Most quantum search literature analyses circuit complexity theoretically. We run real Qiskit circuits on real embeddings and measure what the resources actually look like.</li>
+          <li>Grover's algorithm provides a <em>proven, unconditional</em> quadratic speedup for unstructured search -- exact, not approximate -- one of very few such results in quantum computing.<sup class="ref">[1]</sup></li>
+          <li>Quantum hardware is advancing. Understanding what algorithms require today informs engineering decisions for the future.</li>
+          <li>Grover's speedup is well-established theoretically. This project runs real Qiskit circuits on real embeddings to measure what the resource costs actually look like in practice.</li>
         </ul>
       </div>
     </div>
@@ -264,14 +259,13 @@
       <p class="img-cap" style="margin-top:5px;">CLIP aligns text and image encoders in a shared vector space.<sup class="ref">[6]</sup> &nbsp; Source: Radford et al., 2021 (OpenAI)</p>
     </div>
   </div>
-  <div class="criteria">Criteria: 1, 2, 4</div>
 </section>
 
 
 <!-- ==================================================
      3 / PROBLEM DEFINITION
      ================================================== -->
-<section class="slide" data-num="3 / 18">
+<section class="slide" data-num="3 / 14">
   <div class="slide-header">
     <h2>Problem Definition, Scope, and Objectives</h2>
     <div class="tag">What we are building and measuring</div>
@@ -298,26 +292,20 @@
       <div class="callout green" style="margin-bottom:8px;">
         <strong>In scope:</strong> Simulator-only benchmarks, CLIP embeddings on Flickr30k, web UI for comparison, academic analysis of quantum resource costs and algorithmic limits.
       </div>
-      <div class="callout amber">
-        <strong>Possible future additions:</strong> Real quantum hardware (IBM free tier has reported multi-hour queue waits and significant noise beyond ~7 qubits, so not included in this phase). Production deployment. Larger datasets beyond the current benchmark configuration.
-      </div>
 
-      <h3 style="margin-top:12px">Why simulator and not IBM hardware</h3>
-      <ul class="sm">
-        <li>AerSimulator is noise-free and deterministic -- ideal for measuring oracle count scaling.</li>
-        <li>Shot noise exists identically on simulator and real hardware; our MRR results are directly transferable.</li>
-        <li>IBM free tier: reported multi-hour queue waits, significant noise beyond ~7 qubits -- would obscure the algorithmic signal we're measuring.</li>
-      </ul>
+      <h3 style="margin-top:14px">Possible future addition</h3>
+      <div class="callout amber">
+        <strong>Real IBM quantum hardware.</strong> Not included in this phase -- the free tier has multi-hour queue waits and significant gate noise beyond ~7 qubits, which would make controlled scaling experiments hard to interpret cleanly. AerSimulator gives the same shot noise with none of the interference.
+      </div>
     </div>
   </div>
-  <div class="criteria">Criteria: 2, 5</div>
 </section>
 
 
 <!-- ==================================================
      4 / THEORETICAL BACKGROUND
      ================================================== -->
-<section class="slide" data-num="4 / 18">
+<section class="slide" data-num="4 / 14">
   <div class="slide-header">
     <h2>Theoretical Background</h2>
     <div class="tag">CLIP, vector search, and quantum fundamentals</div>
@@ -342,30 +330,29 @@
     <div class="col">
       <h3>Quantum computing foundations</h3>
       <ul class="sm">
-        <li><strong>Superposition:</strong> a qubit can be in a combination of |0⟩ and |1⟩ simultaneously, described by complex amplitudes. n qubits represent 2ⁿ states at once.</li>
-        <li><strong>Amplitude encoding:</strong> a d-dimensional vector is loaded into log₂(d) qubits by assigning its components as quantum amplitudes -- exponential compression.</li>
-        <li><strong>Interference:</strong> algorithms manipulate amplitudes so that wrong answers cancel out and the correct answer is amplified before measurement.</li>
-        <li><strong>Measurement:</strong> collapses the superposition to a single outcome with probability equal to the amplitude squared. Algorithms must make the correct outcome dominant first.</li>
+        <li><strong>Superposition:</strong> n qubits can represent all 2&sup;n states simultaneously. Think of a maze where you send a copy of yourself down every path at once -- classically you try one path at a time.</li>
+        <li><strong>Amplitude encoding:</strong> a d-dimensional vector is loaded into log&#x2082;(d) qubits by assigning its components as quantum amplitudes -- exponential compression.</li>
+        <li><strong>Interference:</strong> algorithms manipulate amplitudes so that wrong answers cancel out and the correct answer is amplified. In the maze analogy: all dead-end copies destructively interfere; only the exit survives.</li>
+        <li><strong>Measurement:</strong> collapses superposition to a single outcome. The algorithm must make the correct outcome dominant before measuring.</li>
       </ul>
       <div style="text-align:center; margin-top:10px;">
         <img
           src="https://upload.wikimedia.org/wikipedia/commons/f/f0/Bloch_Sphere_representation.svg"
           alt="Bloch sphere representing a single qubit state as a point on the unit sphere"
           class="slide-img"
-          style="max-height:160px; width:auto; display:block; margin:0 auto;"
+          style="max-height:150px; width:auto; display:block; margin:0 auto;"
         >
         <p class="img-cap">Bloch sphere: any single-qubit state as a point on the unit sphere. Source: Wikipedia Commons</p>
       </div>
     </div>
   </div>
-  <div class="criteria">Criteria: 4, 5</div>
 </section>
 
 
 <!-- ==================================================
      5 / SYSTEM ARCHITECTURE
      ================================================== -->
-<section class="slide" data-num="5 / 18">
+<section class="slide" data-num="5 / 14">
   <div class="slide-header">
     <h2>System Architecture</h2>
     <div class="tag">Five-phase pipeline -- strategy pattern</div>
@@ -377,7 +364,7 @@
       <div class="pipe-arrow">-&gt;</div>
       <div class="pipe-step"><strong>2. Embedding</strong><span>CLIP ViT-B/32</span><span style="display:block;font-size:.64rem;color:#999;">512-dim vectors</span></div>
       <div class="pipe-arrow">-&gt;</div>
-      <div class="pipe-step"><strong>3. Storage</strong><span>PostgreSQL + pgvector</span><span style="display:block;font-size:.64rem;color:#999;">HNSW index</span></div>
+      <div class="pipe-step"><strong>3. Storage</strong><span>PostgreSQL + pgvector</span><span style="display:block;font-size:.64rem;color:#999;">persisted vectors</span></div>
       <div class="pipe-arrow">-&gt;</div>
       <div class="pipe-step"><strong>4. Search</strong><span>All engines</span><span style="display:block;font-size:.64rem;color:#999;">strategy pattern</span></div>
       <div class="pipe-arrow">-&gt;</div>
@@ -386,260 +373,96 @@
 
     <div style="display:flex; gap:18px; flex:1;">
       <div class="col">
-        <h3>Engines -- pluggable strategy interface</h3>
-        <p style="font-size:.78rem; color:var(--gray); margin-bottom:6px;">All implement <code style="font-family:monospace; font-size:.78rem; color:var(--accent);">build_index()</code> + <code style="font-family:monospace; font-size:.78rem; color:var(--accent);">search()</code>. New engines require no changes to the harness or storage layer.</p>
-        <div class="engine-grid">
-          <div class="engine-card">
-            <div class="en">Brute Force Cosine</div>
-            <div class="et">Classical baseline</div>
-            <div class="ec">O(N) -- deterministic ground truth</div>
-          </div>
-          <div class="engine-card">
-            <div class="en">FAISS Flat L2</div>
-            <div class="et">Classical, SIMD-accelerated</div>
-            <div class="ec">O(N) -- exact, production-grade</div>
-          </div>
-          <div class="engine-card">
-            <div class="en">Qiskit Swap Test</div>
-            <div class="et">Real quantum circuit (AerSimulator)</div>
-            <div class="ec">O(N) circuits -- overlap via measurement</div>
-          </div>
-          <div class="engine-card hl">
-            <div class="en" style="color:var(--blue);">Qiskit Grover Oracle</div>
-            <div class="et">Real quantum circuit on AerSimulator</div>
-            <div class="ec">O(sqrt(N)) oracle calls -- central scaling experiment</div>
-          </div>
+        <h3>Strategy pattern -- pluggable engine interface</h3>
+        <p style="font-size:.82rem; color:var(--gray); margin-bottom:10px; line-height:1.5;">Every engine implements two methods. The harness, storage layer, and API do not know or care which engine is running -- the comparison is structurally fair.</p>
+        <div style="background:var(--light); border-radius:4px; padding:10px 14px; font-family:'SFMono-Regular',Consolas,monospace; font-size:.8rem; color:var(--navy); line-height:1.8;">
+          build_index(vectors: list[ndarray]) -&gt; None<br>
+          search(query: ndarray, k: int) -&gt; list[Result]
         </div>
+        <p style="font-size:.78rem; color:var(--gray); margin-top:8px; line-height:1.45;">All five engines -- brute force, FAISS, swap test, Grover, and the planned HNSW -- implement this interface. Details on the next slide.</p>
       </div>
       <div class="col-n">
         <h3>Dataset and infrastructure</h3>
         <ul class="sm">
-          <li>Flickr30k subset: .webp images, ground truth captions as query text.</li>
-          <li>PostgreSQL 16 + pgvector via Docker; HNSW index on image_vectors.</li>
-          <li>Automated benchmark runner: sweeps engine x dimension x shots combos.</li>
+          <li>Flickr30k subset: .webp images, ground truth captions as query text.<sup class="ref">[8]</sup></li>
+          <li>PostgreSQL 16 + pgvector via Docker. Vectors are stored and loaded from here for every benchmark run.</li>
+          <li>Automated benchmark runner: runs every engine at every configuration (dimension, shot count) automatically and stores results.</li>
           <li>Report generator: reads DB, outputs structured analysis.</li>
           <li>Migrations tracked; reproducible via one-command Docker stack.</li>
         </ul>
-        <div class="callout" style="margin-top:10px; font-size:.8rem;">
-          Strategy pattern means the engine count is not fixed. HNSW is the natural next addition -- see slide 10 for a dedicated discussion.
-        </div>
       </div>
     </div>
 
   </div>
-  <div class="criteria">Criteria: 2, 3</div>
 </section>
 
 
 <!-- ==================================================
-     6 / BRUTE FORCE COSINE
+     6 / ALL ENGINES
      ================================================== -->
-<section class="slide" data-num="6 / 18">
+<section class="slide" data-num="6 / 14">
   <div class="slide-header">
-    <h2>Engine 1: Brute Force Cosine</h2>
-    <div class="tag">Classical baseline -- deterministic ground truth</div>
+    <h2>Search Engines</h2>
+    <div class="tag">Four implemented + one planned -- all share the same interface</div>
   </div>
-  <div class="slide-body">
-    <div class="col">
-      <h3>How it works</h3>
-      <ul>
-        <li><strong>No index, no approximation.</strong> Computes cosine similarity between the query and every vector in the dataset, returns top-k by score.</li>
-        <li><strong>Cosine similarity:</strong> cos(θ) = q·d. All vectors are L2-normalised at ingest, so the denominator is 1 and this reduces to a dot product.</li>
-        <li><strong>Complexity:</strong> O(N) per query. Exact and deterministic.</li>
-        <li><strong>Role:</strong> ground truth. MRR for every other engine is computed against this output.</li>
-      </ul>
-      <div class="callout green" style="margin-top:10px; font-size:.83rem;">
-        The only engine whose output requires no validation assumption. It defines correctness for all MRR calculations.
+  <div class="slide-body" style="flex-direction:column; gap:10px;">
+
+    <div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:8px;">
+      <div class="engine-card">
+        <div class="en">Brute Force Cosine</div>
+        <div class="et">Classical</div>
+        <div class="ec" style="margin-bottom:4px;">O(N) &bull; exact</div>
+        <span class="chip done">done</span>
+        <div style="font-size:.71rem; color:var(--gray); margin-top:6px; line-height:1.4;">Dot product against every vector. No index. Defines correctness -- all other engines' MRR is computed against this output.</div>
+      </div>
+      <div class="engine-card">
+        <div class="en">FAISS Flat L2</div>
+        <div class="et">Classical, SIMD-accelerated</div>
+        <div class="ec" style="margin-bottom:4px;">O(N) &bull; exact</div>
+        <span class="chip done">done</span>
+        <div style="font-size:.71rem; color:var(--gray); margin-top:6px; line-height:1.4;">Meta's production library. AVX2/AVX-512 vectorised inner loop. On normalised vectors, L2 and cosine rankings are identical.</div>
+      </div>
+      <div class="engine-card hl">
+        <div class="en">Qiskit Swap Test</div>
+        <div class="et">Quantum (AerSimulator)</div>
+        <div class="ec" style="margin-bottom:4px;">O(N) circuits &bull; exact</div>
+        <span class="chip done">done</span>
+        <div style="font-size:.71rem; color:var(--gray); margin-top:6px; line-height:1.4;">1 ancilla + 2 registers of log&#x2082;(dim) qubits. Measurement probability encodes vector overlap. Maps the shots-to-quality curve.</div>
+      </div>
+      <div class="engine-card hl">
+        <div class="en">Qiskit Grover Oracle</div>
+        <div class="et">Quantum (AerSimulator)</div>
+        <div class="ec" style="margin-bottom:4px;">O(&#x221a;N) oracle calls &bull; exact</div>
+        <span class="chip done">done</span>
+        <div style="font-size:.71rem; color:var(--gray); margin-top:6px; line-height:1.4;">Superposition over all N candidates. Oracle marks target; diffusion amplifies it. Verified to follow floor(pi*sqrt(N)/4).</div>
+      </div>
+      <div class="engine-card" style="border-style:dashed;">
+        <div class="en" style="color:var(--gray);">HNSW</div>
+        <div class="et">Classical</div>
+        <div class="ec" style="margin-bottom:4px;">O(log N) &bull; approximate*</div>
+        <span class="chip todo">planned</span>
+        <div style="font-size:.71rem; color:var(--gray); margin-top:6px; line-height:1.4;">Multi-layer proximity graph. 95-99%+ recall. Architecture is ready. Key reference point for Grover comparison -- see slide 11.</div>
       </div>
     </div>
-    <div class="col">
-      <img
-        src="https://upload.wikimedia.org/wikipedia/commons/7/76/Inner-product-angle.svg"
-        alt="Angle between two vectors illustrating cosine similarity"
-        class="slide-img"
-        style="width:100%; height:auto; display:block;"
-      >
-      <p class="img-cap" style="margin-top:6px;">cos(θ) = a·b / (|a|·|b|). Small angle = high similarity = top rank. Source: Wikipedia Commons</p>
+
+    <div style="display:flex; gap:10px; margin-top:4px;">
+      <div class="callout" style="flex:2; font-size:.8rem; margin:0;">
+        <strong>Complexity:</strong> Brute force &amp; FAISS O(N) -&gt; Grover O(sqrt(N)) oracle calls -&gt; HNSW O(log N) approximate. Since log N grows slower than sqrt(N), HNSW beats Grover even with ideal hardware -- the full story is on slide 11.
+      </div>
+      <div class="callout amber" style="flex:1; font-size:.8rem; margin:0;">
+        <strong>Quantum note:</strong> Wall-clock time is not a valid comparison -- simulator overhead reflects classical CPU cost. Oracle call count is the metric.<br>
+        <span style="font-size:.69rem;">* HNSW 95-99%+ recall is effectively exact for retrieval applications.</span>
+      </div>
     </div>
+
   </div>
-  <div class="criteria">Criteria: 2, 3</div>
 </section>
 
 
 <!-- ==================================================
-     7 / FAISS FLAT L2
+     7 / COMPLETED
      ================================================== -->
-<section class="slide" data-num="7 / 18">
-  <div class="slide-header">
-    <h2>Engine 2: FAISS Flat L2</h2>
-    <div class="tag">Classical, SIMD-accelerated -- production-grade exact search</div>
-  </div>
-  <div class="slide-body">
-    <div class="col">
-      <h3>How it works</h3>
-      <ul>
-        <li><strong>FAISS (Facebook AI Similarity Search):</strong> production library used at scale. <code style="font-family:monospace; font-size:.8rem; color:var(--accent);">IndexFlatL2</code> stores all vectors uncompressed with a SIMD-vectorised (AVX2/AVX-512) inner loop.</li>
-        <li><strong>L2 vs cosine:</strong> ||q − d||² = 2 − 2·(q·d) = 2(1 − cos θ). On L2-normalised vectors, minimising L2 distance is identical to maximising cosine similarity -- rankings match brute force exactly.</li>
-        <li><strong>Complexity:</strong> O(N) per query, exact. Faster wall-clock time than brute force on large N due to hardware vectorisation.</li>
-        <li><strong>Role:</strong> production classical reference -- what a real system would use for exact search today.</li>
-      </ul>
-    </div>
-    <div class="col">
-      <img
-        src="https://upload.wikimedia.org/wikipedia/commons/5/55/Euclidean_distance_2d.svg"
-        alt="Euclidean (L2) distance between two points in 2D space"
-        class="slide-img"
-        style="width:100%; height:auto; display:block;"
-      >
-      <p class="img-cap" style="margin-top:6px;">||q−d||² = 2 − 2·(q·d) = 2(1−cos θ). Minimising L2 = maximising cosine on normalised vectors. Source: Wikipedia Commons</p>
-    </div>
-  </div>
-  <div class="criteria">Criteria: 2, 3</div>
-</section>
-
-
-<!-- ==================================================
-     8 / QISKIT SWAP TEST
-     ================================================== -->
-<section class="slide" data-num="8 / 18">
-  <div class="slide-header">
-    <h2>Engine 3: Qiskit Swap Test</h2>
-    <div class="tag">Real quantum circuit -- vector similarity via measurement</div>
-  </div>
-  <div class="slide-body">
-    <div class="col">
-      <h3>Circuit</h3>
-      <img
-        src="https://upload.wikimedia.org/wikipedia/commons/d/d6/Quantum-swap-test-circuit-correct.png"
-        alt="Quantum swap test circuit: ancilla qubit, controlled-SWAP, measurement"
-        class="slide-img"
-        style="width:100%; height:auto; display:block; margin-bottom:10px;"
-      >
-      <ul class="sm">
-        <li>1 ancilla + 2 registers (log₂(dim) qubits each). Measurement encodes vector overlap.</li>
-        <li>Repeat N times (once per candidate). Average shots for accuracy.</li>
-      </ul>
-      <div class="callout amber" style="margin-top:8px; font-size:.82rem;">
-        Similarity estimate, not a speedup. Complexity: O(N) circuits.
-      </div>
-    </div>
-    <div class="col">
-      <h3>Resources and accuracy</h3>
-      <ul>
-        <li><strong>Qubits:</strong> 2·log₂(dim) + 1. At dim=64 → 13 qubits; dim=128 → 15 qubits.</li>
-        <li><strong>Shots:</strong> MRR converges to brute force at 512–1024 shots (verified).</li>
-        <li><strong>Depth:</strong> shallow -- grows with dim due to amplitude encoding, not with N.</li>
-        <li><strong>Simulator:</strong> Qiskit AerSimulator -- noiseless.</li>
-      </ul>
-
-      <h3 style="margin-top:13px">Role in the benchmark</h3>
-      <ul class="sm">
-        <li>Verifies the swap test produces the expected overlap estimate against theory.</li>
-        <li>Maps shots-to-quality curve: minimum shot budget for acceptable MRR.</li>
-        <li>Measures qubit count and circuit depth growth vs dimension.</li>
-      </ul>
-    </div>
-  </div>
-  <div class="criteria">Criteria: 2, 3, 4</div>
-</section>
-
-
-<!-- ==================================================
-     9 / QISKIT GROVER ORACLE
-     ================================================== -->
-<section class="slide" data-num="9 / 18">
-  <div class="slide-header">
-    <h2>Engine 4: Qiskit Grover Oracle</h2>
-    <div class="tag">O(&#x221a;N) oracle calls -- central scaling experiment</div>
-  </div>
-  <div class="slide-body">
-    <div class="col">
-      <h3>How Grover's algorithm works</h3>
-      <div style="text-align:center; margin-bottom:10px;">
-        <img
-          src="https://upload.wikimedia.org/wikipedia/commons/a/ae/Grovers_algorithm.svg"
-          alt="Grover's algorithm circuit: Hadamard, oracle, diffusion, repeat"
-          class="slide-img"
-          style="width:100%; height:auto; margin: 0 auto; display:block;"
-        >
-        <p class="img-cap">Oracle marks the target; diffusion amplifies it. Source: Wikipedia Commons</p>
-      </div>
-      <ul class="sm">
-        <li><strong>State prep:</strong> all N vectors in superposition. Requires qRAM (see slide 15).</li>
-        <li><strong>Oracle:</strong> flips phase of the target (most similar) state.</li>
-        <li><strong>Diffusion:</strong> amplifies the target amplitude. Repeat ⌊π·√N / 4⌋ times.</li>
-      </ul>
-    </div>
-    <div class="col">
-      <h3>What we benchmarked</h3>
-      <ul>
-        <li>Hardcoded toy state prep (qRAM does not exist). Oracle + diffusion are real Qiskit circuits on AerSimulator.</li>
-        <li><strong>Central result:</strong> oracle call count follows floor(π·√N / 4) empirically (N = 100 to 2000).</li>
-      </ul>
-      <div class="callout green" style="margin-top:8px; font-size:.83rem;">
-        O(√N) oracle scaling is real and proven.<sup class="ref">[7]</sup> We verify our circuit reproduces it.
-      </div>
-      <table style="margin-top:10px;">
-        <thead><tr><th>N</th><th>Classical</th><th>Grover</th></tr></thead>
-        <tbody>
-          <tr><td>100</td><td>100</td><td class="hi">7</td></tr>
-          <tr><td>500</td><td>500</td><td class="hi">17</td></tr>
-          <tr><td>1000</td><td>1000</td><td class="hi">24</td></tr>
-          <tr><td>2000</td><td>2000</td><td class="hi">35</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-  <div class="criteria">Criteria: 2, 3, 4, 5</div>
-</section>
-
-
-<!-- ==================================================
-     10 / FUTURE EXTENSION: HNSW
-     ================================================== -->
-<section class="slide" data-num="10 / 18">
-  <div class="slide-header">
-    <h2>Future Extension: HNSW Engine</h2>
-    <div class="tag">The production standard -- natural next benchmark engine</div>
-  </div>
-  <div class="slide-body">
-    <div class="col">
-      <img
-        src="https://upload.wikimedia.org/wikipedia/commons/2/28/Hierarchical_Navigable_Small_World_(HNSW).png"
-        alt="Hierarchical Navigable Small World (HNSW) graph showing multi-layer structure"
-        class="slide-img"
-        style="width:100%; height:auto; display:block;"
-      >
-      <p class="img-cap" style="margin-top:6px;">Sparse top layers for fast navigation, dense bottom for precision. Query greedy-descends. O(log N) total. Source: Wikipedia Commons</p>
-    </div>
-    <div class="col">
-      <h3>How HNSW works</h3>
-      <ul>
-        <li>Multi-layer proximity graph. Top layers: sparse, long-range. Bottom layer: dense, precise.</li>
-        <li>Query traversal: O(log N) edge hops. Recall: 95–99%+ in practice.<sup class="ref">[5]</sup></li>
-        <li>Already in use: pgvector's HNSW index backs our PostgreSQL storage layer.</li>
-      </ul>
-
-      <h3 style="margin-top:12px">Why add it as an engine</h3>
-      <ul>
-        <li>Completes the comparison: O(N) brute force → O(log N) HNSW → O(√N) Grover [ideal qRAM].</li>
-        <li>Strategy pattern: only needs <code style="font-family:monospace; font-size:.8rem; color:var(--accent);">build_index()</code> + <code style="font-family:monospace; font-size:.8rem; color:var(--accent);">search()</code>.</li>
-      </ul>
-
-      <div class="callout amber" style="margin-top:10px; font-size:.83rem;">
-        At N = 1,000,000: HNSW ~20 ops. Grover + ideal qRAM ~785 oracle calls.<sup class="ref">[1][5]</sup>
-        <strong>HNSW wins by ~40x -- on a laptop, today.</strong>
-      </div>
-    </div>
-  </div>
-  <div class="criteria">Criteria: 2, 5</div>
-</section>
-
-
-<!-- ==================================================
-     10 / COMPLETED
-     ================================================== -->
-<section class="slide" data-num="11 / 18">
+<section class="slide" data-num="7 / 14">
   <div class="slide-header">
     <h2>What We Have Completed</h2>
     <div class="tag">Implementation status -- phases 1-4</div>
@@ -687,17 +510,16 @@
           <tr><td>qiskit_grover</td><td>--</td><td class="hi">3 (vs 20 classical)</td></tr>
         </tbody>
       </table>
-      <p style="font-size:.72rem; color:var(--gray); margin-top:4px;">Small dataset -- integration validation only. Full benchmark matrix is a next step.</p>
+      <p style="font-size:.72rem; color:var(--gray); margin-top:4px;">Small dataset -- integration validation only. Full benchmark sweep is a next step.</p>
     </div>
   </div>
-  <div class="criteria">Criteria: 3, 5</div>
 </section>
 
 
 <!-- ==================================================
-     7 / IN PROGRESS AND TODO
+     8 / IN PROGRESS AND TODO
      ================================================== -->
-<section class="slide" data-num="12 / 18">
+<section class="slide" data-num="8 / 14">
   <div class="slide-header">
     <h2>In Progress and Remaining Work</h2>
     <div class="tag">Current state and next milestones</div>
@@ -707,7 +529,7 @@
       <h3>Frontend -- comparison UI <span class="chip wip">in progress</span></h3>
       <ul>
         <li>React 19 + TypeScript + Vite application is scaffolded, connecting to the API.</li>
-        <li>Engine multi-select: user picks any combination of engines via a dropdown; results render in a dynamic grid (not a hardcoded 2-column layout).</li>
+        <li>Engine multi-select: user picks any combination of engines via a dropdown; results render in a dynamic grid.</li>
         <li>Each result card shows ranked images, MRR score, and oracle call count for that engine.</li>
         <li>Pre-populated from GET /api/engines; all engines checked by default.</li>
       </ul>
@@ -720,34 +542,33 @@
       </ul>
     </div>
     <div class="col">
-      <h3>Full benchmark matrix <span class="chip todo">TODO</span></h3>
+      <h3>Full benchmark sweep <span class="chip todo">TODO</span></h3>
       <ul>
-        <li>Extend dataset to N = 100, 500, 1000, 2000 images.</li>
-        <li>Run all engines across dimensions: 64, 128, 256, 512.</li>
+        <li>Run across multiple dataset sizes (small scale -- quantum simulation is compute-intensive).</li>
+        <li>Sweep dimensions: 64, 128, 256, 512.</li>
         <li>Sweep shots values (128, 512, 1024, 2048) to map shots-to-quality curve.</li>
         <li>Plot classical O(N) vs Grover O(sqrt(N)) oracle count curves -- the central scaling result.</li>
         <li>Verify outputs: results must be reproducible across runs; report auto-generated from DB state.</li>
       </ul>
 
       <div class="callout amber" style="margin-top:10px;">
-        <strong>Status of benchmark results:</strong> The harness is built and integration-tested on a small dataset. Running the full matrix and analysing the output is the primary remaining engineering milestone. All quantitative conclusions are pending this run.
+        <strong>Status of benchmark results:</strong> The harness is built and integration-tested. Running the full sweep and analysing the output is the primary remaining engineering milestone. All quantitative conclusions are pending this run.
       </div>
 
-      <h3 style="margin-top:10px;">Documentation <span class="chip todo">TODO</span></h3>
+      <h3 style="margin-top:10px;">Written thesis <span class="chip todo">TODO</span></h3>
       <ul class="sm">
-        <li>Reproducibility guide: one-command setup and benchmark run instructions.</li>
-        <li>Reproducibility guide: one-command setup and benchmark run instructions.</li>
+        <li>Analysis of benchmark results, limitations, and conclusions.</li>
+        <li>Honest assessment of where quantum vector search stands today.</li>
       </ul>
     </div>
   </div>
-  <div class="criteria">Criteria: 3, 5</div>
 </section>
 
 
 <!-- ==================================================
-     8 / TIMELINE
+     9 / TIMELINE
      ================================================== -->
-<section class="slide" data-num="13 / 18">
+<section class="slide" data-num="9 / 14">
   <div class="slide-header">
     <h2>Project Timeline</h2>
     <div class="tag">Planning and organisation to final defence</div>
@@ -792,7 +613,7 @@
           <div class="tl-bar"><div class="tl-dot next"></div><div class="tl-line"></div></div>
           <div class="tl-content">
             <p><strong>Full benchmark run and analysis</strong></p>
-            <small>Matrix across N, dimension, shots. Plot scaling curves. Analyse MRR vs shots-to-quality. Verify outputs.</small>
+            <small>Sweep dimensions and shots. Plot scaling curves. Analyse MRR vs shots-to-quality. Verify outputs.</small>
           </div>
         </div>
         <div class="tl-row">
@@ -810,7 +631,7 @@
       <ul class="sm">
         <li>Running web app: predefined ground-truth query selection, ranked results from all engines side by side.</li>
         <li>Grover oracle count curve vs classical -- empirically measured.</li>
-        <li>MRR comparison across all engines at multiple N and dimension.</li>
+        <li>MRR comparison across all engines at multiple dimensions.</li>
         <li>Shots-to-quality curve for the swap test.</li>
         <li>Circuit depth and qubit count per dimension.</li>
         <li>Honest analysis: qRAM gap, HNSW comparison, practical verdict.</li>
@@ -821,14 +642,13 @@
       </div>
     </div>
   </div>
-  <div class="criteria">Criteria: 3</div>
 </section>
 
 
 <!-- ==================================================
-     9 / KPIs AND SUCCESS MEASURES
+     10 / KPIs AND SUCCESS MEASURES
      ================================================== -->
-<section class="slide" data-num="14 / 18">
+<section class="slide" data-num="10 / 14">
   <div class="slide-header">
     <h2>Targets, KPIs, and Success Measures</h2>
     <div class="tag">How we evaluate correctness, quality, and cost</div>
@@ -881,14 +701,13 @@
       </div>
     </div>
   </div>
-  <div class="criteria">Criteria: 5</div>
 </section>
 
 
 <!-- ==================================================
-     10 / HONEST QUANTUM PICTURE
+     11 / HONEST QUANTUM PICTURE
      ================================================== -->
-<section class="slide" data-num="15 / 18">
+<section class="slide" data-num="11 / 14">
   <div class="slide-header">
     <h2>The Honest Quantum Picture</h2>
     <div class="tag">What the theory and the numbers actually say</div>
@@ -907,95 +726,88 @@
 
       <h3 style="margin-top:12px">qRAM hardware reality</h3>
       <p style="font-size:.82rem; color:var(--text); margin-bottom:6px; line-height:1.45;">
-        The bucket-brigade qRAM model requires O(N) quantum routing nodes as physical hardware.<sup class="ref">[4]</sup>
-        With error correction (~1,000 physical qubits per logical qubit), even a small dataset demands hardware orders of magnitude beyond anything that exists or is on any roadmap:
+        qRAM is <em>memory</em> hardware -- separate from the quantum processor that runs circuits.
+        It does not exist. If it did, it would need one quantum routing node per vector stored.<sup class="ref">[4]</sup>
       </p>
       <table>
-        <thead><tr><th>Dataset size</th><th>Physical qubits needed*</th><th>IBM Condor (2023) <sup class="ref">[9]</sup></th></tr></thead>
+        <thead><tr><th>Dataset size</th><th>Classical RAM needed</th><th>qRAM nodes needed</th></tr></thead>
         <tbody>
-          <tr><td>1,000 vectors</td><td class="warn">~1,000,000</td><td>~1,100</td></tr>
-          <tr><td>1,000,000 vectors</td><td class="warn">~1,000,000,000</td><td>--</td></tr>
+          <tr><td>1,000 vectors</td><td>~2 MB</td><td class="warn">~1,000,000 qubits</td></tr>
+          <tr><td>1,000,000 vectors</td><td>~2 GB</td><td class="warn">~1,000,000,000 qubits</td></tr>
         </tbody>
       </table>
-      <p style="font-size:.7rem; color:var(--gray); margin-top:3px;">* Bucket-brigade model <sup class="ref">[4]</sup> with error correction (~1000 physical per logical qubit). Note: qRAM is a different hardware architecture from processor qubits -- IBM's processor qubits cannot substitute.</p>
+      <p style="font-size:.7rem; color:var(--gray); margin-top:3px;">Includes ~1,000 physical qubits per logical qubit for error correction.<sup class="ref">[4]</sup> Both scale linearly -- classical RAM is already cheap. qRAM hardware does not exist on any roadmap.</p>
     </div>
     <div class="col">
-      <h3>Research finding: even ideal qRAM may not be enough</h3>
-      <table style="margin-bottom:10px;">
-        <thead><tr><th>Method</th><th>Complexity</th><th>Exact?</th><th>Requires</th></tr></thead>
+      <h3>Three compounding reasons Grover loses</h3>
+      <table style="margin-bottom:8px; font-size:.79rem;">
+        <thead><tr><th>#</th><th>Problem</th><th>Status</th></tr></thead>
         <tbody>
-          <tr><td>Brute force</td><td>O(N)</td><td>Yes</td><td>Nothing</td></tr>
-          <tr><td>HNSW <sup class="ref">[5]</sup></td><td class="hi">O(log N)</td><td>Approximate*</td><td>Nothing</td></tr>
-          <tr><td>Grover + ideal qRAM <sup class="ref">[1][4]</sup></td><td>O(sqrt(N))</td><td>Yes</td><td>qRAM (does not exist)</td></tr>
+          <tr><td><strong>1</strong></td><td>qRAM doesn't exist -- state prep is O(N), speedup cancelled</td><td class="warn">Hard blocker today</td></tr>
+          <tr><td><strong>2</strong></td><td>Even if qRAM existed, it requires O(N) quantum nodes -- same linear scaling as classical RAM, but at astronomical cost per unit. 1B vectors = ~1 trillion physical qubits of memory.</td><td class="warn">Economic blocker at scale</td></tr>
+          <tr><td><strong>3</strong></td><td>Even ignoring 1 and 2, Grover's O(sqrt(N)) is beaten by HNSW's O(log N) classically. At N=1M: HNSW ~20 ops, Grover ~785 oracle calls.<sup class="ref">[1][5]</sup></td><td class="warn">Algorithmic blocker</td></tr>
         </tbody>
       </table>
-      <p style="font-size:.71rem; color:var(--gray); margin-bottom:6px;">* HNSW recall is 95-99%+ in practice -- the approximate and exact nearest neighbour are effectively the same result for a user.<sup class="ref">[5]</sup></p>
-      <div class="callout" style="font-size:.83rem;">
-        At N = 1,000,000: HNSW needs ~20 effective operations. Grover with ideal qRAM needs ~785 oracle calls.<sup class="ref">[1][5]</sup>
-        <strong>HNSW wins by ~40x, on a laptop, today.</strong>
-        Grover's niche -- exact search at large N -- barely exists in real ML applications.
+      <div class="callout" style="font-size:.82rem; margin-bottom:6px;">
+        <strong>HNSW</strong> needs O(N) classical bits (cheap RAM) + O(log N) search ops.
+        <strong>Grover + qRAM</strong> needs O(N) quantum routing nodes (astronomically more expensive per unit) + O(sqrt(N)) search ops -- and O(sqrt(N)) &gt; O(log N).
+        Classical wins on every axis.
       </div>
 
-      <h3 style="margin-top:10px">Why Grover's speedup still matters</h3>
+      <h3 style="margin-top:8px">Why Grover's speedup still matters</h3>
       <ul class="sm">
-        <li>One of the only proven, unconditional quantum speedups that has not been dequantized.</li>
-        <li>Empirically verifying it on a simulator is a concrete contribution -- literature is mostly theoretical.</li>
+        <li>One of the only proven, unconditional quantum speedups that has not been dequantized.<sup class="ref">[7]</sup></li>
+        <li>Empirically verifying it on a simulator with real embeddings is a concrete contribution.</li>
         <li>The platform is architecturally ready for a qRAM backend if hardware ever exists.</li>
       </ul>
     </div>
   </div>
-  <div class="criteria">Criteria: 4, 5</div>
 </section>
 
 
 <!-- ==================================================
-     11 / EXPECTED OUTCOMES
+     12 / EXPECTED OUTCOMES
      ================================================== -->
-<section class="slide" data-num="16 / 18">
+<section class="slide" data-num="12 / 14">
   <div class="slide-header">
     <h2>Expected Final Outcomes</h2>
-    <div class="tag">Hypotheses, contribution, and defensible claims</div>
+    <div class="tag">Hypotheses, contribution, and project claim</div>
   </div>
   <div class="slide-body">
     <div class="col">
       <h3>Expected findings (hypotheses)</h3>
       <ul>
-        <li>Grover oracle count will follow the floor(pi * sqrt(N) / 4) curve empirically across N = 100 to 2000.</li>
+        <li>Grover oracle count will follow the floor(pi * sqrt(N) / 4) curve empirically.</li>
         <li>Swap test will converge to classical MRR at a measurable shot budget (hypothesis: 512-1024 shots).</li>
         <li>Circuit depth and qubit count will grow predictably with dimension.</li>
-        <li>Without qRAM, end-to-end quantum latency will not beat classical even at large N -- consistent with theory.</li>
+        <li>Without qRAM, end-to-end quantum search will not beat classical -- consistent with theory.</li>
       </ul>
 
-      <div class="callout amber" style="margin-top:10px; font-size:.83rem;">
-        All quantitative values above are hypotheses. Final numbers are:
-        <strong>Pending final benchmark execution.</strong>
-      </div>
     </div>
     <div class="col">
       <h3>Contribution</h3>
       <ul>
         <li>Working Grover and swap test circuits verified on a real simulator with measured resource costs.</li>
         <li>Fair, reproducible benchmarking methodology: identical data, identical evaluation, documented assumptions.</li>
-        <li>Empirical oracle count scaling data -- filling a gap between theoretical claims and measured behaviour.</li>
+        <li>Empirical oracle count scaling data -- measuring theoretical predictions against real circuit behaviour.</li>
         <li>Honest, documented analysis of where quantum vector search stands and what it would need to be practical.</li>
       </ul>
 
-      <h3 style="margin-top:13px">Defensible final claim</h3>
+      <h3 style="margin-top:13px">What this project will show</h3>
       <div class="callout green" style="font-size:.84rem;">
-        "We built a complete benchmarking platform, empirically verified quantum circuit behaviour against theory,
-        and produced a rigorous analysis of exactly where quantum search stands today --
-        including the finding that even ideal qRAM would not make Grover competitive with HNSW for approximate retrieval."
+        A complete benchmarking platform, empirical verification of quantum circuit behaviour against theory,
+        and a rigorous analysis of exactly where quantum search stands today --
+        including the finding that even ideal qRAM would not make Grover competitive with HNSW for approximate retrieval.
       </div>
     </div>
   </div>
-  <div class="criteria">Criteria: 2, 5, 6</div>
 </section>
 
 
 <!-- ==================================================
-     16 / CONCLUSION
+     13 / CONCLUSION
      ================================================== -->
-<section class="slide" data-num="17 / 18">
+<section class="slide" data-num="13 / 14">
   <div class="slide-header">
     <h2>Conclusion</h2>
     <div class="tag">What this project is -- and what it is not</div>
@@ -1005,7 +817,7 @@
       <h3>What this project actually is</h3>
       <ul>
         <li>A rigorous, reproducible benchmarking platform for comparing quantum and classical vector search engines on identical data with well-defined KPIs.</li>
-        <li>An empirical verification that Grover's O(√N) oracle scaling holds in practice -- filling the gap between theoretical claims and measured circuit behaviour.</li>
+        <li>An empirical verification that Grover's O(sqrt(N)) oracle scaling holds in practice -- measuring theory against real circuit behaviour.</li>
         <li>An honest, documented analysis of exactly where quantum search stands today and what hardware it would need to become practical.</li>
       </ul>
       <div class="callout green" style="margin-top:10px; font-size:.83rem;">
@@ -1016,12 +828,12 @@
       <h3>What the results show</h3>
       <ul>
         <li><strong>Quantum swap test:</strong> produces correct similarity estimates at sufficient shot budget, but provides no speedup over classical. Cost: O(N) circuits.</li>
-        <li><strong>Grover oracle:</strong> O(√N) oracle count is real and empirically verified. But the bottleneck is state preparation -- O(N) gates without qRAM that does not exist.</li>
-        <li><strong>HNSW (classical):</strong> achieves O(log N) approximate search on a laptop today, with 95–99%+ recall. Even ideal qRAM would not close this gap.</li>
+        <li><strong>Grover oracle:</strong> O(sqrt(N)) oracle count is real and empirically verified. But the bottleneck is state preparation -- O(N) gates without qRAM that does not exist.</li>
+        <li><strong>HNSW (classical):</strong> achieves O(log N) approximate search on a laptop today, with 95-99%+ recall. Even ideal qRAM would not make Grover competitive.</li>
       </ul>
 
       <div class="callout amber" style="margin-top:10px; font-size:.83rem;">
-        <strong>Practical verdict:</strong> Quantum vector search is not useful in practice today, and will not become useful until fault-tolerant qRAM hardware exists -- which is not on any current roadmap. Classical approximate search (HNSW) dominates by every metric that matters to a real application.
+        <strong>Practical verdict:</strong> Quantum vector search faces three compounding blockers: (1) qRAM does not exist -- no speedup today; (2) even if it did, qRAM requires O(N) quantum nodes at astronomical cost per unit compared to classical RAM; (3) even ignoring both, Grover's O(sqrt(N)) is beaten by HNSW's O(log N) classically. Each blocker alone is sufficient. All three together leave no realistic path to competitiveness.
       </div>
 
       <h3 style="margin-top:10px">Why this analysis matters</h3>
@@ -1031,14 +843,13 @@
       </ul>
     </div>
   </div>
-  <div class="criteria">Criteria: 4, 5, 6</div>
 </section>
 
 
 <!-- ==================================================
-     17 / SOURCES
+     14 / SOURCES
      ================================================== -->
-<section class="slide" data-num="18 / 18">
+<section class="slide" data-num="14 / 14">
   <div class="slide-header">
     <h2>Sources and References</h2>
     <div class="tag">Numbers correspond to inline citations on previous slides</div>
@@ -1046,7 +857,7 @@
   <div class="slide-body" style="flex-direction:column;">
     <div style="display:flex; gap:28px; flex:1;">
       <div class="col">
-        <h3>Quantum algorithms</h3>
+        <h3>References [1] -- [5]</h3>
         <ul class="refs">
           <li>
             <span>[1] Grover, L. K. (1996).</span>
@@ -1069,34 +880,30 @@
             <a href="https://doi.org/10.1103/PhysRevLett.100.160501">doi.org/10.1103/PhysRevLett.100.160501</a>
           </li>
           <li>
-            <span>[7] Tang, E. (2019).</span>
-            "A quantum-inspired classical algorithm for recommendation systems." ACM STOC.<br>
-            <a href="https://arxiv.org/abs/1807.04271">arxiv.org/abs/1807.04271</a>
-          </li>
-        </ul>
-      </div>
-      <div class="col">
-        <h3>Classical search and embeddings</h3>
-        <ul class="refs">
-          <li>
             <span>[5] Malkov, Y. A. and Yashunin, D. A. (2020).</span>
             "Efficient and robust approximate nearest neighbor search using HNSW." IEEE TPAMI 42(4).<br>
             <a href="https://arxiv.org/abs/1603.09320">arxiv.org/abs/1603.09320</a>
           </li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>References [6] -- [9]</h3>
+        <ul class="refs">
           <li>
             <span>[6] Radford, A. et al. (2021).</span>
             "Learning Transferable Visual Models From Natural Language Supervision." ICML 2021.<br>
             <a href="https://arxiv.org/abs/2103.00020">arxiv.org/abs/2103.00020</a>
           </li>
           <li>
+            <span>[7] Tang, E. (2019).</span>
+            "A quantum-inspired classical algorithm for recommendation systems." ACM STOC.<br>
+            <a href="https://arxiv.org/abs/1807.04271">arxiv.org/abs/1807.04271</a>
+          </li>
+          <li>
             <span>[8] Young, P. et al. (2014).</span>
             "From image descriptions to visual denotations." TACL 2(1):67-78.<br>
             <a href="https://doi.org/10.1162/tacl_a_00166">doi.org/10.1162/tacl_a_00166</a>
           </li>
-        </ul>
-
-        <h3 style="margin-top:12px">Hardware reference</h3>
-        <ul class="refs">
           <li>
             <span>[9] IBM Newsroom (2023).</span>
             "IBM Debuts Next-Generation Quantum Processor and IBM Quantum System Two." December 4, 2023.<br>

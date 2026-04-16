@@ -1,8 +1,8 @@
 # Midterm Presentation -- Speaker Notes
 
 Full talking points per slide, transitions, and Q&A cheat sheet.
-Target: 8-10 minutes total speaking time. Approximate time per slide is noted.
-Sources slide (18) does not count toward the time limit.
+Target: 7-8 minutes total speaking time. Approximate time per slide is noted.
+Sources slide (14) does not count toward the time limit.
 
 Inline citation numbers like [1] match the numbered sources on the final slide.
 You do not need to say these aloud -- they are there so you know which claim
@@ -52,7 +52,7 @@ and measure what it actually costs.
 
 Walk through the three research questions briefly. The third is the most interesting:
 even if qRAM existed and state prep were free, would quantum search beat classical?
-We address that on slide 15.
+We address that on slide 11.
 
 On IBM hardware: free tier has reported multi-hour queue waits and significant noise
 beyond about 7 qubits. That makes controlled scaling experiments uninterpretable.
@@ -69,12 +69,12 @@ CLIP [6]: contrastive pre-training aligns text and image encoders. Result: cosin
 between a text vector and an image vector measures semantic match.
 
 Vector search: brute force and FAISS are O(N) exact. HNSW is O(log N) approximate -- the
-production standard. It becomes critical on slide 15. Each engine has a dedicated slide.
+production standard. It becomes critical on slide 11.
 
 Quantum: the swap test estimates vector overlap via a quantum circuit [3].
 Grover amplifies the correct answer in O(sqrt(N)) oracle calls [1][2].
 Point to the amber box: that O(sqrt(N)) is oracle calls only -- state preparation is
-a separate cost. See slide 15.
+a separate cost. See slide 11.
 
 ---
 
@@ -83,58 +83,43 @@ a separate cost. See slide 15.
 Walk through the pipeline left to right. The key point is the strategy pattern:
 every engine implements the same two-method interface. The harness does not know or care
 which engine it is running. Same data, same query, same evaluation. That is what makes
-the comparison fair. The next five slides walk through each engine in detail.
+the comparison fair.
+
+If asked about pgvector and HNSW: pgvector (our storage layer) uses HNSW internally
+as a database index to speed up vector lookups from PostgreSQL. This is unrelated to
+the HNSW benchmarking engine we plan to add in Phase 4. One is a storage optimization;
+the other is a search algorithm we benchmark directly.
 
 ---
 
-## Slide 6 -- Engine 1: Brute Force Cosine (~20 seconds)
+## Slide 6 -- Search Engines (~45 seconds)
 
-Point to the diagram. "Simplest possible engine -- dot product against every vector.
-No index, no approximation. Its only role is ground truth: every other engine's MRR
-is computed against this output."
+Walk across the five cards left to right.
 
----
+Brute force: simplest possible -- dot product against every vector, no index. Its only role
+is ground truth; every other engine's MRR is computed against this output.
 
-## Slide 7 -- Engine 2: FAISS Flat L2 (~20 seconds)
+FAISS: Meta's production library, SIMD-vectorised. On normalised vectors L2 and cosine
+give identical rankings -- results match brute force exactly, just faster.
 
-"FAISS is the production library from Meta. SIMD-vectorised L2 distance.
-The unit circle diagram shows why L2 and cosine give identical rankings on normalised vectors:
-smaller chord equals smaller angle equals higher cosine. Results match brute force exactly,
-just faster."
+Swap test: one ancilla qubit controls a swap between two vector registers. Measurement
+probability encodes vector overlap [3]. You repeat many times (shots) and average.
+Still O(N) circuits -- a similarity measurement, not a speedup.
 
----
+Grover oracle: different. All N candidates in superposition. Oracle marks the target,
+diffusion amplifies it. Repeat floor(pi*sqrt(N)/4) times. 1,000 vectors needs 24 oracle
+calls instead of 1,000. We verify this empirically -- our circuit reproduces the curve.
 
-## Slide 8 -- Engine 3: Qiskit Swap Test (~35 seconds)
+HNSW: multi-layer proximity graph. O(log N), 95-99%+ recall. Not yet implemented but the
+architecture is ready (strategy pattern). This is the most important comparison point -- see
+slide 11 for why.
 
-Point to the circuit diagram. "One ancilla qubit controls a swap between the two vector
-registers. The measurement probability encodes the vector overlap -- that formula at the bottom
-is the exact relationship [3]. You repeat the circuit many times (shots) and average.
-It is a quantum similarity measurement, not a speedup -- still O(N) circuits, one per candidate.
-What it tells us is how accurately a real quantum circuit can estimate vector similarity,
-and how many shots you need for acceptable MRR."
-
----
-
-## Slide 9 -- Engine 4: Qiskit Grover Oracle (~35 seconds)
-
-Point to the circuit diagram. "This is different. All N candidates go into superposition.
-The oracle marks the target with a phase flip. The diffusion operator amplifies it.
-Repeat floor(pi * sqrt(N) / 4) times. The table shows what that means:
-1,000 vectors needs 24 oracle calls instead of 1,000.
-We verify this empirically -- our circuit reproduces the theoretical scaling curve."
+Point to the complexity callout: the progression brute force O(N) → Grover O(√N) → HNSW O(log N)
+is the central story of the project.
 
 ---
 
-## Slide 10 -- Future Extension: HNSW (~25 seconds)
-
-Point to the graph. "Three layers -- sparse at the top for fast navigation, dense at
-the bottom for precision. The query enters at the top and greedily descends. O(log N) total.
-It is not in the benchmark yet, but the architecture is ready for it.
-And as we will see in two slides, it is the most important comparison point."
-
----
-
-## Slide 11 -- Completed Work (~40 seconds)
+## Slide 7 -- Completed Work (~40 seconds)
 
 Phases 1 through 4 are done. End-to-end pipeline running.
 
@@ -147,7 +132,7 @@ That is the relationship we will measure systematically at scale.
 
 ---
 
-## Slide 12 -- In Progress and TODO (~35 seconds)
+## Slide 8 -- In Progress and TODO (~35 seconds)
 
 Two open areas.
 
@@ -162,7 +147,7 @@ All quantitative conclusions are pending that run.
 
 ---
 
-## Slide 13 -- Timeline (~15 seconds)
+## Slide 9 -- Timeline (~15 seconds)
 
 Green is done, amber is now, open circles are upcoming.
 Core engineering is complete. Remaining work is running the experiments,
@@ -170,7 +155,7 @@ analysing the output, and writing the thesis. Brief and move on.
 
 ---
 
-## Slide 14 -- KPIs (~25 seconds)
+## Slide 10 -- KPIs (~25 seconds)
 
 MRR: measures quality. Directly comparable across all engines -- same normalised vectors,
 same ground truth. MRR 1.0 means always first. MRR 0.5 means typically second.
@@ -182,7 +167,7 @@ not the quantum algorithm's complexity.
 
 ---
 
-## Slide 15 -- The Honest Quantum Picture (~55 seconds)
+## Slide 11 -- The Honest Quantum Picture (~55 seconds)
 
 Most important slide. Take your time.
 
@@ -190,10 +175,14 @@ The two-step problem: quantum search is two operations. Loading data into superp
 without qRAM [4] -- same as classical. The speedup is cancelled. Grover's O(sqrt(N)) search
 still works -- we verify it -- but the total is O(N) without hardware that does not exist.
 
-Point to the qRAM table. The bucket-brigade model needs O(N) quantum routing nodes [4].
-With error correction, ~1,000 physical qubits per logical qubit.
-For 1,000 vectors: ~1,000,000 physical qubits. IBM Condor has ~1,100 [9].
-This is not a timeline problem. The hardware architecture does not exist.
+Point to the qRAM table. Key framing: qRAM is memory hardware, not the quantum processor.
+IBM's processor runs circuits -- that exists. qRAM would store the dataset -- that does not exist.
+They are different devices, like CPU vs RAM in a laptop.
+
+If qRAM existed, it would need one quantum routing node per vector [4]. With error correction:
+1,000 vectors needs ~1,000,000 qubits of memory hardware. For comparison, 1,000 vectors in
+classical RAM is ~2 MB. Both scale linearly, but classical RAM is already cheap.
+This is not a timeline problem -- the hardware architecture does not exist on any roadmap.
 
 The bigger finding -- point to the complexity table.
 Even with ideal qRAM, HNSW is O(log N) [5], Grover is O(sqrt(N)) [1].
@@ -202,7 +191,7 @@ HNSW wins by 40x, on a laptop, today.
 
 ---
 
-## Slide 16 -- Expected Outcomes (~25 seconds)
+## Slide 12 -- Expected Outcomes (~25 seconds)
 
 Walk through the hypotheses briefly -- these are predictions, not results.
 
@@ -212,7 +201,7 @@ gap lies. Read out the defensible claim callout.
 
 ---
 
-## Slide 17 -- Conclusion (~20 seconds)
+## Slide 13 -- Conclusion (~20 seconds)
 
 "Quantum vector search is not useful in practice today. State preparation requires hardware
 that does not exist, and even ideal qRAM would not make Grover competitive with HNSW.
@@ -285,20 +274,15 @@ Including it would make the comparison against Grover cleaner. It is a natural n
 | 3 | Problem | 0:40 |
 | 4 | Theory | 0:45 |
 | 5 | Architecture | 0:25 |
-| 6 | Brute Force | 0:20 |
-| 7 | FAISS | 0:20 |
-| 8 | Swap Test | 0:35 |
-| 9 | Grover | 0:35 |
-| 10 | HNSW | 0:25 |
-| 11 | Completed | 0:40 |
-| 12 | In Progress | 0:35 |
-| 13 | Timeline | 0:15 |
-| 14 | KPIs | 0:25 |
-| 15 | Honest Quantum | 0:55 |
-| 16 | Expected Outcomes | 0:25 |
-| 17 | Conclusion | 0:20 |
-| **Total** | | **~8:40** |
+| 6 | All Engines | 0:45 |
+| 7 | Completed | 0:40 |
+| 8 | In Progress | 0:35 |
+| 9 | Timeline | 0:15 |
+| 10 | KPIs | 0:25 |
+| 11 | Honest Quantum | 0:55 |
+| 12 | Expected Outcomes | 0:25 |
+| 13 | Conclusion | 0:20 |
+| **Total** | | **~7:30** |
 
-If running long: cut slides 13 (timeline, 10 sec) and 14 (KPIs, 15 sec) -- they are supporting.
-Engine slides 6-10 can be trimmed to 15 sec each if needed -- the diagrams carry the content.
-Do not cut slides 15 or 17 -- that is where the project's argument lives.
+If running long: cut slide 9 (timeline, ~10 sec saved) and trim slide 10 (KPIs, ~15 sec).
+Do not cut slides 11 or 13 -- that is where the project's argument lives.

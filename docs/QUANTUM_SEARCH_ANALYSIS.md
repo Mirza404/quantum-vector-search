@@ -83,15 +83,15 @@ A: The amplitude overshoots and the probability of the correct answer starts *de
 
 The most studied model (bucket-brigade qRAM) requires **O(N) quantum routing nodes** as hardware -- not O(log N). The log N is query *time*, not hardware *size*.
 
-| Dataset size | qRAM nodes | IBM's largest machine |
-|---|---|---|
-| 1,000 vectors | ~1,000 | ~1,100 qubits (Condor) |
-| 100,000 vectors | ~100,000 | -- |
-| 1,000,000 vectors | ~1,000,000 | -- |
+**Important:** qRAM is memory hardware, not a quantum processor. IBM's processors run circuits. qRAM would store data. They are completely different devices -- like CPU vs RAM in a laptop. IBM having ~1,100 processor qubits says nothing about qRAM; qRAM doesn't exist at any scale.
 
-**With error correction** (~1,000 physical qubits per logical qubit): 1,000,000 vectors would need ~**1 billion physical qubits**.
+| Dataset size | Classical RAM needed | qRAM nodes needed | With error correction |
+|---|---|---|---|
+| 1,000 vectors | ~2 MB | ~1,000 | ~1,000,000 physical qubits |
+| 100,000 vectors | ~200 MB | ~100,000 | ~100,000,000 physical qubits |
+| 1,000,000 vectors | ~2 GB | ~1,000,000 | ~1,000,000,000 physical qubits |
 
-**Why IBM's qubits don't help:** Those are processor qubits for gate circuits. qRAM is a completely different architecture -- a quantum memory array with tree routing. Having processor qubits doesn't get you qRAM, like having transistors doesn't get you RAM (RAM needs capacitors, decoders, sense amplifiers).
+Both scale linearly with dataset size. Classical RAM is already cheap. qRAM hardware does not exist.
 
 For our use case (512-dim float32 embeddings): each vector = 16,384 bits. The numbers don't improve with data width.
 

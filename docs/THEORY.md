@@ -83,9 +83,14 @@ A: 0.5. Fair coin flip.
 
 Finds a marked item in N items using O(sqrt(N)) oracle queries instead of O(N) classical comparisons. Implemented in `QiskitGroverEngine` in `qiskit_grover.py`.
 
+**Intuition -- the maze analogy:**
+A classical searcher tries maze paths one at a time (O(N) attempts). A quantum searcher sends a copy of themselves down every path simultaneously (superposition). The oracle "marks" the exit by flipping its phase. The diffusion operator then uses interference to cancel out all dead-end copies and amplify the exit copy. After O(sqrt(N)) rounds of oracle + diffusion, measurement collapses to the exit with high probability.
+
+This is the key difference: classical search is sequential elimination. Grover is amplitude amplification -- you do not eliminate wrong answers, you destructively interfere them away.
+
 **How it works:**
-1. Uniform superposition via Hadamard gates
-2. Repeat floor(pi*sqrt(N)/4) times: oracle (phase flip on target) + diffusion (reflect around mean)
+1. Uniform superposition via Hadamard gates -- all N states explored simultaneously
+2. Repeat floor(pi*sqrt(N)/4) times: oracle (phase flip on target) + diffusion (reflect around mean, amplifying the marked state)
 3. Measure -- target has probability ~1
 
 **Key limitation:** Needs all N items in superposition simultaneously, which requires **qRAM** (doesn't exist). Without qRAM, state preparation costs O(N), cancelling the O(sqrt(N)) search savings.
