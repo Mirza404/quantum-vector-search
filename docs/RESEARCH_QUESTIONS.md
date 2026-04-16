@@ -6,11 +6,11 @@ What the thesis asks, what we benchmark, and how results lead to conclusions. Fo
 
 ## What This Project Actually Is
 
-This is a bachelor's graduation project. It is **not** discovering a new algorithm, proving a new theorem, or building something commercially viable. That is fine — that is not what a bachelor's project is for.
+This is a bachelor's graduation project. It is **not** discovering a new algorithm, proving a new theorem, or building something commercially viable. That is fine - that is not what a bachelor's project is for.
 
 What this project does:
 
-1. **Engineering:** Builds a complete, working system — CLIP embedding pipeline, four search engines (two classical, two quantum), PostgreSQL storage, FastAPI backend, React frontend. This is non-trivial and demonstrates real software engineering capability.
+1. **Engineering:** Builds a complete, working system - CLIP embedding pipeline, four search engines (two classical, two quantum), PostgreSQL storage, FastAPI backend, React frontend. This is non-trivial and demonstrates real software engineering capability.
 
 2. **Empirical verification:** Theory says Grover's algorithm scales as O(sqrt(N)). We actually ran it, measured oracle calls at multiple dataset sizes, and verified the curve. That is a real empirical contribution, not just reading a textbook.
 
@@ -143,10 +143,10 @@ Run at dim=64 and dim=128 to measure:
 Defence prep
 
 **Q: "So quantum is useless for search?"**
-A: "Algorithmically correct, but practically blocked on two fronts. First, qRAM doesn't exist — and even building it requires O(N) quantum routing nodes as hardware, so at 1M vectors you'd need roughly a billion physical qubits just for memory, not search. Second, even with ideal qRAM, Grover runs in O(sqrt(N)) while HNSW already achieves O(log N) classically — so quantum search would still lose on speed for the approximate case that covers most real applications. The honest answer is: the algorithms work, the oracle scaling is verified, but the path to practical quantum vector search requires hardware advances far beyond 'just build qRAM'."
+A: "Algorithmically correct, but practically blocked on two fronts. First, qRAM doesn't exist - and even building it requires O(N) quantum routing nodes as hardware, so at 1M vectors you'd need roughly a billion physical qubits just for memory, not search. Second, even with ideal qRAM, Grover runs in O(sqrt(N)) while HNSW already achieves O(log N) classically - so quantum search would still lose on speed for the approximate case that covers most real applications. The honest answer is: the algorithms work, the oracle scaling is verified, but the path to practical quantum vector search requires hardware advances far beyond 'just build qRAM'."
 
 **Q: "Why not test on real IBM hardware?"**
-A: "Two practical reasons: free tier queue times can stretch to hours, making iterative benchmarking impractical, and turnaround is slow. The simulator gives mathematically exact results and is the right tool for establishing correctness. Real hardware would add one interesting data point — the accuracy gap between simulator and real hardware due to physical noise — but that's a future extension, not the core benchmark."
+A: "Two practical reasons: free tier queue times can stretch to hours, making iterative benchmarking impractical, and turnaround is slow. The simulator gives mathematically exact results and is the right tool for establishing correctness. Real hardware would add one interesting data point - the accuracy gap between simulator and real hardware due to physical noise - but that's a future extension, not the core benchmark."
 
 **Q: "What's the single most important number?"**
 A: "MRR comparison between quantum and classical engines. If they match, the algorithms are correct. Everything else follows."

@@ -1,4 +1,4 @@
-"""API router — images, queries, and dual-engine search."""
+"""API router - images, queries, and dual-engine search."""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ from .schemas import (
 api_router = APIRouter(prefix="/api")
 
 # ---------------------------------------------------------------------------
-# GET /api/images — paginated listing of dataset images
+# GET /api/images - paginated listing of dataset images
 # ---------------------------------------------------------------------------
 
 
@@ -59,7 +59,7 @@ def list_images(
 
 
 # ---------------------------------------------------------------------------
-# GET /api/images/{image_id} — serve a single image file
+# GET /api/images/{image_id} - serve a single image file
 # ---------------------------------------------------------------------------
 
 _IMAGE_EXTENSIONS = [".webp", ".jpg", ".jpeg", ".png", ".bmp"]
@@ -75,7 +75,7 @@ def get_image(image_id: str):
 
 
 # ---------------------------------------------------------------------------
-# GET /api/queries — list available ground-truth queries
+# GET /api/queries - list available ground-truth queries
 # ---------------------------------------------------------------------------
 
 
@@ -91,7 +91,7 @@ def list_queries():
 
 
 # ---------------------------------------------------------------------------
-# GET /api/search?query_id=... — run search on both engines, side by side
+# GET /api/search?query_id=... - run search on both engines, side by side
 # ---------------------------------------------------------------------------
 
 

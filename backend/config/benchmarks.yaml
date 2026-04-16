@@ -2,17 +2,17 @@
 # Comment out any entry to skip it without touching Python code.
 # See docs/FAQ.md for a full explanation of every parameter and the trade-offs.
 
-# Classical engines — no shots/layers parameters.
-#   brute_force_cosine  — deterministic cosine similarity (no index, brute-force). Fast baseline.
-#   faiss_flat_l2       — real FAISS IndexFlatL2 index. Production-grade classical search.
+# Classical engines - no shots/layers parameters.
+#   brute_force_cosine  - deterministic cosine similarity (no index, brute-force). Fast baseline.
+#   faiss_flat_l2       - real FAISS IndexFlatL2 index. Production-grade classical search.
 classical_engines:
   - brute_force_cosine
   - faiss_flat_l2
 
-# Quantum engines — accept shots/layers parameters and populate circuit_depth/num_qubits fields.
-#   qiskit_swap_test    — real Qiskit circuit running a swap test on AerSimulator.
+# Quantum engines - accept shots/layers parameters and populate circuit_depth/num_qubits fields.
+#   qiskit_swap_test    - real Qiskit circuit running a swap test on AerSimulator.
 #                         Measures vector similarity via quantum overlap. Slow on large dataset.
-#   qiskit_grover       — Grover's algorithm on AerSimulator. Demonstrates O(√N) oracle scaling.
+#   qiskit_grover       - Grover's algorithm on AerSimulator. Demonstrates O(√N) oracle scaling.
 #                         Hardcoded state prep for toy dataset. See docs/QUANTUM_SEARCH_ANALYSIS.md.
 quantum_engines:
   - qiskit_swap_test
@@ -22,7 +22,7 @@ quantum_engines:
 # output (already L2-normalised). Lower d = fewer qubits + shallower circuit + lower accuracy.
 # Upper bound: 512 for ViT-B/32, 768 for ViT-L/14. Add any value up to that limit here.
 # For qiskit_swap_test on AerSimulator: 64 dims → 13 qubits (6+6+1 ancilla), manageable locally.
-# See docs/FAQ.md — "What do dimensions, shots_values, and layers_values control?"
+# See docs/FAQ.md - "What do dimensions, shots_values, and layers_values control?"
 dimensions:
   - 64
   - 128

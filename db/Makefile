@@ -16,7 +16,7 @@ migrate:
 seed:
 	@bash seed.sh
 
-# Dump all table data into seeds/ — commit to share with the team.
+# Dump all table data into seeds/ - commit to share with the team.
 dump:
 	@bash dump.sh
 

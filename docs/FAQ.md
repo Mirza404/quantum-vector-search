@@ -32,7 +32,7 @@ Algorithms like Grover's use **amplitude amplification** to make the correct ans
 
 CLIP (OpenAI, 2021) learns a shared vector space from ~400M image-caption pairs. Similar images and descriptions end up close together, enabling text-to-image search without manual labelling (**zero-shot transfer**).
 
-**In the code:** `CLIPEmbeddingModel` in `backend/src/pipeline/clip_model.py`. Auto-detects CUDA / MPS / CPU — runs on CPU without a GPU.
+**In the code:** `CLIPEmbeddingModel` in `backend/src/pipeline/clip_model.py`. Auto-detects CUDA / MPS / CPU - runs on CPU without a GPU.
 
 ---
 
@@ -109,7 +109,7 @@ It runs on **AerSimulator**, which classically simulates quantum states using 2^
 
 ### What is MRR?
 
-**Mean Reciprocal Rank** -- average of 1/(rank of first correct result). MRR 1.0 = always first. MRR 0.5 = typically second. Evaluated over top_k results (default 10) — correct result outside top_k counts as 0.
+**Mean Reciprocal Rank** -- average of 1/(rank of first correct result). MRR 1.0 = always first. MRR 0.5 = typically second. Evaluated over top_k results (default 10) - correct result outside top_k counts as 0.
 
 **In the code:** `_mrr()` in `run_benchmarks.py` and `generate_report.py`.
 
@@ -131,7 +131,7 @@ See [BENCHMARK_KPIS.md](BENCHMARK_KPIS.md) for the full KPI specification.
 
 ### What about real IBM hardware?
 
-Not used in this project. The IBM Quantum free tier is publicly accessible and our circuits (13–15 qubits) would technically fit, but two practical obstacles make it unsuitable for controlled benchmarking: queue wait times on the free tier are reported to be multi-hour, and noise beyond roughly 7 qubits is significant enough to obscure the algorithmic signal we are measuring.
+Not used in this project. The IBM Quantum free tier is publicly accessible and our circuits (13–15 qubits) would technically fit, but two practical obstacles make it unsuitable for controlled benchmarking: queue wait times on the free tier are reported to be very long, and noise beyond roughly 7 qubits is significant enough to obscure the algorithmic signal we are measuring.
 
 Running on real hardware is something that could be explored as a follow-up -- the circuits exist and the comparison (simulator vs. hardware accuracy gap) would be interesting -- but it is not a planned deliverable of this project.
 
@@ -149,7 +149,7 @@ Small reductions (512 to 64 or 128) usually preserve rankings well. All engines 
 |---|---|---|
 | `dimensions` | Vector size fed to all engines | All engines |
 | `shots_values` | Circuit executions per comparison | Quantum engines |
-| `layers_values` | Required by harness, ignored by current engines | — |
+| `layers_values` | Required by harness, ignored by current engines | - |
 | `top_k` | Results returned per query | All engines (API + benchmarks) |
 
 Each combination produces a separate row in `benchmark_results`.

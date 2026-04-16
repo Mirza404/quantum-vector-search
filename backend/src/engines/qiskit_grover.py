@@ -20,8 +20,8 @@ class QiskitGroverEngine(SearchEngineStrategy):
     preparation cost which, without qRAM, cannot currently be avoided.
 
     State preparation is hardcoded for the toy dataset (O(N) gate
-    operations).  The benchmark value is in the oracle call count —
-    floor(π√N / 4) — not in end-to-end wall-clock time.
+    operations).  The benchmark value is in the oracle call count -
+    floor(π√N / 4) - not in end-to-end wall-clock time.
     """
 
     def __init__(self, *, backend: AerSimulator | None = None) -> None:
@@ -73,7 +73,7 @@ class QiskitGroverEngine(SearchEngineStrategy):
 
         n_items = len(self._ids)
 
-        # --- Classical pre-computation (O(N) — the step qRAM would replace) ---
+        # --- Classical pre-computation (O(N) - the step qRAM would replace) ---
         similarities = self._vectors @ query
         target_idx = int(np.argmax(similarities))
 

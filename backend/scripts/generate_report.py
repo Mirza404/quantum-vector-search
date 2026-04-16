@@ -165,7 +165,7 @@ def _section_kpi_summary(rows: list[dict]) -> str:
         ])
 
     note = (
-        "> **MRR** (Mean Reciprocal Rank) — 1 / rank of the first correct result, averaged over all queries.\n"
+        "> **MRR** (Mean Reciprocal Rank) - 1 / rank of the first correct result, averaged over all queries.\n"
         "> Higher = the correct image appears closer to position 1.\n"
     )
     return "## Quality KPIs by Engine\n\n" + note + "\n" + _md_table(headers, table_rows)
@@ -196,7 +196,7 @@ def _section_quality_by_dimension(rows: list[dict]) -> str:
                 _fmt(_avg(data[key]), 3),
             ])
 
-    note = "> Quality metric only. Speed is excluded from cross-engine comparisons — see per-engine scaling below.\n"
+    note = "> Quality metric only. Speed is excluded from cross-engine comparisons - see per-engine scaling below.\n"
     return "## Quality by Dimension\n\n" + note + "\n" + _md_table(headers, table_rows)
 
 
@@ -217,7 +217,7 @@ def _section_circuit_complexity(rows: list[dict]) -> str:
     table_rows = []
     for (engine, dim, ds) in sorted(data):
         d = data[(engine, dim, ds)]
-        # These are constant per (engine, dim, dataset_size) — just take the first value.
+        # These are constant per (engine, dim, dataset_size) - just take the first value.
         table_rows.append([
             f"`{engine}`",
             str(dim),
@@ -257,7 +257,7 @@ def _section_speed_scaling(rows: list[dict]) -> str:
             if key not in data:
                 continue
             d = data[key]
-            state_prep = _fmt(_avg(d["state_prep_ms"])) if d.get("state_prep_ms") else "—"
+            state_prep = _fmt(_avg(d["state_prep_ms"])) if d.get("state_prep_ms") else "-"
             table_rows.append([
                 f"`{engine}`",
                 str(dim),
@@ -318,7 +318,7 @@ def _section_operation_count_scaling(rows: list[dict]) -> str:
     calls.  This is the only valid cross-engine "speed" metric because it is
     hardware-independent and directly captures the O(N) vs O(√N) difference.
     """
-    # Group by (engine, dataset_size) — average oracle_calls (should be constant per group)
+    # Group by (engine, dataset_size) - average oracle_calls (should be constant per group)
     data: dict[tuple[str, int], list[int]] = defaultdict(list)
     for r in rows:
         oc = r.get("oracle_calls")
@@ -353,7 +353,7 @@ def _section_operation_count_scaling(rows: list[dict]) -> str:
         "> **Operation count** is the cross-engine scaling KPI.\n"
         "> Classical engines perform N comparisons per query (linear scan).\n"
         "> Grover's algorithm uses floor(π√N/4) oracle calls per query.\n"
-        "> This comparison is hardware-independent — it measures algorithmic efficiency,\n"
+        "> This comparison is hardware-independent - it measures algorithmic efficiency,\n"
         "> not wall-clock time. The divergence between O(N) and O(√N) as N grows is the\n"
         "> entire argument for quantum search at scale.\n"
     )
@@ -379,7 +379,7 @@ def _section_head_to_head(rows: list[dict]) -> str:
                 r = index.get((query, engine, dim))
                 targets = (r["target_ids"] or []) if r else []
                 top = (r["top_ids"] or []) if r else []
-                row_cells.append(_fmt(_mrr(targets, top), 3) if r else "—")
+                row_cells.append(_fmt(_mrr(targets, top), 3) if r else "-")
             table_rows.append(row_cells)
 
     return "## Head-to-Head Quality Comparison\n\n" + _md_table(headers, table_rows)
@@ -439,7 +439,7 @@ def main() -> None:
         out_path = Path(args.out)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text("# Benchmark Report\n\n_No results yet. Run `python3 scripts/run_benchmarks.py` first._\n")
-        print(f"No results found — empty report written to {out_path}")
+        print(f"No results found - empty report written to {out_path}")
         return
 
     out_path = Path(args.out)

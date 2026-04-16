@@ -6,7 +6,7 @@ Quick-reference cheat sheet for every theoretical concept in this project. For f
 
 ## Similarity Metrics
 
-This project **L2-normalises** all vectors first (in `CLIPEmbeddingModel.encode_texts()` and `encode_images()`). Once normalised, cosine similarity, L2 distance, and the swap test's squared inner product all produce **the same ranking** — they are monotonic transforms of each other. Grover's algorithm uses a different mechanism (measurement frequency) and is not directly comparable.
+This project **L2-normalises** all vectors first (in `CLIPEmbeddingModel.encode_texts()` and `encode_images()`). Once normalised, cosine similarity, L2 distance, and the swap test's squared inner product all produce **the same ranking** - they are monotonic transforms of each other. Grover's algorithm uses a different mechanism (measurement frequency) and is not directly comparable.
 
 | Metric | Formula | Engine | File |
 |---|---|---|---|
@@ -41,7 +41,7 @@ A: On normalised vectors, all metrics produce the same ranking, so MRR is direct
 | Training data | ~400M image-caption pairs |
 | Device | Auto-detects CUDA / MPS / CPU |
 
-The project **truncates** to smaller sizes (64, 128) via `_prepare_vectors()` in `run_benchmarks.py`. CLIP auto-detects CUDA / MPS / CPU, so it runs on CPU without a GPU — slower, but correct.
+The project **truncates** to smaller sizes (64, 128) via `_prepare_vectors()` in `run_benchmarks.py`. CLIP auto-detects CUDA / MPS / CPU, so it runs on CPU without a GPU - slower, but correct.
 
 **Self-test**
 
@@ -103,7 +103,7 @@ This is the key difference: classical search is sequential elimination. Grover i
 | 1,000 | 1,000 | 25 |
 | 1,000,000 | 1,000,000 | 785 |
 
-> Note: HNSW achieves O(log N) classically (~20 ops at N=1M) — faster than Grover even with ideal qRAM. This table compares Grover against brute-force exact search only.
+> Note: HNSW achieves O(log N) classically (~20 ops at N=1M) - faster than Grover even with ideal qRAM. This table compares Grover against brute-force exact search only.
 
 **Self-test**
 

@@ -97,11 +97,6 @@ on 8 or 16 numbers simultaneously instead of 1.
 > ||a - b||² = 2 - 2·cos(θ). On normalised vectors, smallest distance = highest cosine.
 > Different ruler, same ranking -- but only because of normalisation.
 
-![L2 / Euclidean distance between two vectors](https://upload.wikimedia.org/wikipedia/commons/5/55/Euclidean_distance_2d.svg)
-
-> ||a - b||² = 2 - 2·cos(θ). On normalised vectors, smallest distance = highest cosine.
-> Different ruler, same ranking.
-
 ### Complexity
 
 **O(N)** -- still checks every vector, but with SIMD doing 8+ at a time the wall-clock
@@ -109,8 +104,10 @@ time is much lower than brute force for large datasets.
 
 ### Role in this project
 
-Production-grade classical reference. This is what a real system would use for exact
-search today. Meta (Facebook) built FAISS and uses it internally at scale.
+Production-grade reference for exact search -- when correctness is non-negotiable
+(deduplication, compliance, offline batch). At scale, production systems switch to
+approximate indexes like HNSW. Meta built FAISS and uses it internally with those
+approximate indexes, not Flat.
 
 ---
 
@@ -219,6 +216,19 @@ The central experiment. We run real Grover circuits on AerSimulator and verify t
 oracle call count follows `floor(π·√N / 4)` empirically across different N values.
 The speedup is real -- we just also explain honestly why it doesn't win in practice yet.
 
+**Important caveat -- the oracle is classically pre-specified.** For Grover to work as
+actual search, the oracle circuit would need to *compute* which vector is closest: load
+all N database vectors into quantum registers simultaneously, evaluate distances to the
+query in superposition, and flip the phase of the minimum. That computation requires
+qRAM to load the N vectors in O(log N) steps -- otherwise loading alone costs O(N) and
+wipes out the speedup.
+
+Since qRAM does not exist, this simulation does the next best thing: find the nearest
+neighbour classically with brute force, then construct an oracle that marks exactly that
+index. The quantum amplitude amplification runs correctly and the oracle call count
+follows the `floor(π·√N / 4)` curve. What is being verified is the *scaling behaviour*
+of the algorithm, not a search that could replace the classical step.
+
 ---
 
 ## 5. HNSW (Planned)
@@ -283,15 +293,3 @@ Planned as the 5th benchmarking engine. The strategy pattern interface is alread
 implementing HNSW requires only adding `build_index()` + `search()`. Its purpose is to
 complete the comparison: not just "quantum vs brute force" but "quantum vs the actual
 production standard."
-
----
-
-## Summary table
-
-| Engine | Complexity | Exact? | Status | Purpose |
-|---|---|---|---|---|
-| Brute Force Cosine | O(N) | Yes | Done | Ground truth for MRR |
-| FAISS Flat L2 | O(N) | Yes | Done | Production classical reference |
-| Qiskit Swap Test | O(N) circuits | Yes (probabilistic) | Done | Shots-to-quality curve |
-| Qiskit Grover Oracle | O(√N) oracle calls | Yes | Done | Central scaling experiment |
-| HNSW | O(log N) | ~95-99% recall | Planned | True classical state-of-the-art |

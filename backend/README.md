@@ -28,13 +28,13 @@ python3 scripts/index_dataset.py
 
 ## Configuration
 
-`config/benchmarks.yaml` — comment out entries to skip without changing code. Each key is explained inline in that file.
+`config/benchmarks.yaml` - comment out entries to skip without changing code. Each key is explained inline in that file.
 
-`config/dataset.yaml` — set `num_images` to control how many Flickr30k images `import_dataset.py` pulls.
+`config/dataset.yaml` - set `num_images` to control how many Flickr30k images `import_dataset.py` pulls.
 
 CLI flags override `benchmarks.yaml` for one-off runs: `--shots-values`, `--layers-values`, `--dimensions`, `--clip-model`, `--device`, `--batch-size`.
 
-MRR is computed over the full ranking — no top_k cutoff. The harness retrieves all dataset images and measures the true rank of the correct result.
+MRR is computed over the full ranking - no top_k cutoff. The harness retrieves all dataset images and measures the true rank of the correct result.
 
 ## Database
 

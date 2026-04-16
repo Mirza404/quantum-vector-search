@@ -64,9 +64,9 @@ Classical search checks items one at a time. Grover's exploits **amplitude ampli
 | 1,000 | 1,000 | 25 | 40x |
 | 1,000,000 | 1,000,000 | 785 | 1,274x |
 
-> Note: this compares Grover against brute-force exact search only. HNSW achieves O(log N) approximate search (~20 ops at N=1M) — faster than Grover even with ideal qRAM.
+> Note: this compares Grover against brute-force exact search only. HNSW achieves O(log N) approximate search (~20 ops at N=1M) - faster than Grover even with ideal qRAM.
 
-**In one sentence:** Grover's uses quantum interference to amplify the correct answer's probability, needing only sqrt(N) iterations instead of N checks — a speedup over brute force, but not over HNSW.
+**In one sentence:** Grover's uses quantum interference to amplify the correct answer's probability, needing only sqrt(N) iterations instead of N checks - a speedup over brute force, but not over HNSW.
 
 **Self-test**
 
@@ -105,7 +105,7 @@ For our use case (512-dim float32 embeddings): each vector = 16,384 bits. The nu
 A: Different architecture entirely. Processor qubits run gate circuits. qRAM needs quantum memory with coherent tree routing.
 
 **Q: How many physical qubits for qRAM at 1M vectors with error correction?**
-A: ~1 billion qRAM routing nodes. IBM Condor has ~1,100 processor qubits — but those are gate-circuit qubits, not qRAM. They're a completely different hardware category. IBM having 1,100 processor qubits says nothing about qRAM capacity; it's like saying "we have transistors, so we're close to RAM." qRAM doesn't exist at any scale.
+A: ~1 billion qRAM routing nodes. IBM Condor has ~1,100 processor qubits - but those are gate-circuit qubits, not qRAM. They're a completely different hardware category. IBM having 1,100 processor qubits says nothing about qRAM capacity; it's like saying "we have transistors, so we're close to RAM." qRAM doesn't exist at any scale.
 
 
 ---
@@ -114,7 +114,7 @@ A: ~1 billion qRAM routing nodes. IBM Condor has ~1,100 processor qubits — but
 
 Theoretically yes. With working qRAM: O(log N) data loading + O(sqrt(N)) search = O(sqrt(N)) total. A real quadratic speedup over classical brute force.
 
-Practically: not a near-term or medium-term prospect, and the requirements are not just "expensive" — the hardware category does not exist.
+Practically: not a near-term or medium-term prospect, and the requirements are not just "expensive" - the hardware category does not exist.
 
 **The hardware requirement:** The most studied qRAM model (bucket-brigade) needs O(N) quantum routing nodes as physical hardware. The O(log N) figure is query *time*, not hardware *size*. With error correction (~1,000 physical qubits per logical qubit):
 
@@ -123,11 +123,11 @@ Practically: not a near-term or medium-term prospect, and the requirements are n
 | 1,000 vectors | ~1,000,000 |
 | 1,000,000 vectors | ~1,000,000,000 |
 
-IBM's aggressive roadmap targets ~100,000 processor qubits by ~2033. Those are gate-circuit qubits — a completely different architecture from qRAM, which needs quantum memory with coherent tree routing. No lab has demonstrated working qRAM at any meaningful scale. This is not "we need a bigger chip." It is a hardware category that does not exist yet and has no clear path to existence.
+IBM's aggressive roadmap targets ~100,000 processor qubits by ~2033. Those are gate-circuit qubits - a completely different architecture from qRAM, which needs quantum memory with coherent tree routing. No lab has demonstrated working qRAM at any meaningful scale. This is not "we need a bigger chip." It is a hardware category that does not exist yet and has no clear path to existence.
 
 **Honest assessment:** The O(sqrt(N)) future is theoretically real. Practically, it is blocked by hardware requirements so extreme that it does not appear on any credible roadmap.
 
-**But even in that hypothetical future, classical still wins.** Grover with ideal qRAM gives O(sqrt(N)) *exact* search. HNSW gives O(log N) *approximate* search — and since log N grows far slower than sqrt(N), HNSW is faster at any interesting dataset size. At N=1M: HNSW ~20 ops, Grover ~785 oracle calls. HNSW wins by ~40x, on a laptop, today, with no exotic hardware. The only domain where Grover would win is *exact* nearest-neighbor search — and in practice, HNSW's 95-99% recall is indistinguishable from exact for virtually every real application. So qRAM would not make quantum vector search the best option; it would just make it viable rather than hopeless.
+**But even in that hypothetical future, classical still wins.** Grover with ideal qRAM gives O(sqrt(N)) *exact* search. HNSW gives O(log N) *approximate* search - and since log N grows far slower than sqrt(N), HNSW is faster at any interesting dataset size. At N=1M: HNSW ~20 ops, Grover ~785 oracle calls. HNSW wins by ~40x, on a laptop, today, with no exotic hardware. The only domain where Grover would win is *exact* nearest-neighbor search - and in practice, HNSW's 95-99% recall is indistinguishable from exact for virtually every real application. So qRAM would not make quantum vector search the best option; it would just make it viable rather than hopeless.
 
 ---
 
@@ -140,13 +140,13 @@ If you have K parallel cores doing K comparisons simultaneously, wall-clock time
 - Classical with K cores: O(N/K) time, requires O(K) hardware
 - Grover with qRAM: O(sqrt(N)) time, requires O(log N) qubits
 
-Grover uses far less *hardware* to achieve sqrt(N) time. That is the real argument — not just fewer operations, but fewer operations with logarithmically fewer hardware units.
+Grover uses far less *hardware* to achieve sqrt(N) time. That is the real argument - not just fewer operations, but fewer operations with logarithmically fewer hardware units.
 
 **But:** qRAM itself requires O(N) hardware nodes. So the hardware efficiency argument collapses. You need O(N) qRAM hardware to run Grover, which means classical with O(N) cores would achieve O(1). Classical wins on both counts once qRAM hardware cost is included.
 
 ### HNSW: the classical algorithm that changes the comparison
 
-HNSW (Hierarchical Navigable Small World) is the standard production vector search algorithm. It builds a multi-layer graph over your vectors. A query navigates the graph — sparse top layers to find the approximate region, denser bottom layers to narrow in. Query time: **O(log N)**. It is approximate (might not always return the exact nearest neighbor), but recall is 95-99%+ in practice. This is what runs behind every production recommendation system at scale.
+HNSW (Hierarchical Navigable Small World) is the standard production vector search algorithm. It builds a multi-layer graph over your vectors. A query navigates the graph - sparse top layers to find the approximate region, denser bottom layers to narrow in. Query time: **O(log N)**. It is approximate (might not always return the exact nearest neighbor), but recall is 95-99%+ in practice. This is what runs behind every production recommendation system at scale.
 
 **Why this matters:**
 
@@ -158,7 +158,7 @@ For N = 1,000,000:
 
 HNSW wins by ~40x. On a laptop. Today.
 
-**Where Grover still wins:** HNSW is approximate. For *exact* nearest neighbor search, no classical sub-linear algorithm exists. Grover with qRAM would be the only known sub-linear exact search method. But in practice, approximate is fine for almost every ML application — the exact nearest neighbor and the approximate nearest neighbor are effectively the same result for a user.
+**Where Grover still wins:** HNSW is approximate. For *exact* nearest neighbor search, no classical sub-linear algorithm exists. Grover with qRAM would be the only known sub-linear exact search method. But in practice, approximate is fine for almost every ML application - the exact nearest neighbor and the approximate nearest neighbor are effectively the same result for a user.
 
 **Summary:**
 
@@ -176,14 +176,14 @@ Grover's niche is exact search at large N. That niche barely exists in practice.
 
 Honest answer: it is a theoretically clean example of quantum speedup, not an active research frontier.
 
-Grover's algorithm is famous because it is one of the only quantum algorithms with a **proven, unconditional speedup** that has not been undone. Many quantum ML algorithms that claimed exponential speedups were "dequantized" — classical algorithms were found that achieve similar performance given the right data access structure (Ewin Tang, 2018). Grover's quadratic speedup is real and provably optimal for quantum unstructured search. It has not been dequantized.
+Grover's algorithm is famous because it is one of the only quantum algorithms with a **proven, unconditional speedup** that has not been undone. Many quantum ML algorithms that claimed exponential speedups were "dequantized" - classical algorithms were found that achieve similar performance given the right data access structure (Ewin Tang, 2018). Grover's quadratic speedup is real and provably optimal for quantum unstructured search. It has not been dequantized.
 
 But for vector search specifically:
 - The speedup requires qRAM, which does not exist
 - Even with qRAM, HNSW beats Grover for the practical use case (approximate search)
 - The only scenario where Grover wins is exact search at very large N, which is rarely needed
 
-Where quantum computing research energy actually goes: quantum chemistry (simulating molecules — exponential speedup, no qRAM needed), Shor's algorithm (breaking RSA — already influencing post-quantum cryptography standards), quantum optimisation (unclear advantage, actively studied). Quantum vector search appears in textbooks as an application of Grover's because it is pedagogically clean, not because it is a research priority.
+Where quantum computing research energy actually goes: quantum chemistry (simulating molecules - exponential speedup, no qRAM needed), Shor's algorithm (breaking RSA - already influencing post-quantum cryptography standards), quantum optimisation (unclear advantage, actively studied). Quantum vector search appears in textbooks as an application of Grover's because it is pedagogically clean, not because it is a research priority.
 
 **In one sentence:** Quantum vector search is interesting because Grover's proven speedup is rare and mathematically elegant, not because it is practically promising.
 

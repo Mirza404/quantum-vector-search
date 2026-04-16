@@ -1,4 +1,4 @@
-/** Thin API client — all fetch calls in one place. */
+/** Thin API client - all fetch calls in one place. */
 
 const BASE = '/api'
 
