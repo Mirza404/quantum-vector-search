@@ -15,7 +15,7 @@ This project **L2-normalises** all vectors first (in `CLIPEmbeddingModel.encode_
 | **Squared inner product** | \|<psi\|phi>\|^2 | `QiskitSwapTestEngine` | `qiskit_swaptest.py` |
 | **Grover measurement frequency** | shots hitting \|target⟩ / total shots, after floor(π√N/4) oracle calls | `QiskitGroverEngine` | `qiskit_grover.py` |
 
-> Three different rulers -- inches, centimetres, and one that squares the reading. Different numbers, same ranking of which objects are closer.
+> Three different rulers - inches, centimetres, and one that squares the reading. Different numbers, same ranking of which objects are closer.
 
 **Why equivalent on unit vectors:** cosine = dot product after normalisation. L2^2 = 2 - 2*cos(theta). All monotonic transforms, so sort order is identical.
 
@@ -70,10 +70,10 @@ similarity = sqrt(max(0, 2*P(0) - 1))
 
 **Self-test**
 
-**Q: Identical vectors (similarity = 1.0) -- what is P(0)?**
+**Q: Identical vectors (similarity = 1.0) - what is P(0)?**
 A: 1.0. Ancilla always measures 0.
 
-**Q: Orthogonal vectors -- what is P(0)?**
+**Q: Orthogonal vectors - what is P(0)?**
 A: 0.5. Fair coin flip.
 
 
@@ -83,15 +83,15 @@ A: 0.5. Fair coin flip.
 
 Finds a marked item in N items using O(sqrt(N)) oracle queries instead of O(N) classical comparisons. Implemented in `QiskitGroverEngine` in `qiskit_grover.py`.
 
-**Intuition -- the maze analogy:**
+**Intuition - the maze analogy:**
 A classical searcher tries maze paths one at a time (O(N) attempts). A quantum searcher sends a copy of themselves down every path simultaneously (superposition). The oracle "marks" the exit by flipping its phase. The diffusion operator then uses interference to cancel out all dead-end copies and amplify the exit copy. After O(sqrt(N)) rounds of oracle + diffusion, measurement collapses to the exit with high probability.
 
-This is the key difference: classical search is sequential elimination. Grover is amplitude amplification -- you do not eliminate wrong answers, you destructively interfere them away.
+This is the key difference: classical search is sequential elimination. Grover is amplitude amplification - you do not eliminate wrong answers, you destructively interfere them away.
 
 **How it works:**
-1. Uniform superposition via Hadamard gates -- all N states explored simultaneously
+1. Uniform superposition via Hadamard gates - all N states explored simultaneously
 2. Repeat floor(pi*sqrt(N)/4) times: oracle (phase flip on target) + diffusion (reflect around mean, amplifying the marked state)
-3. Measure -- target has probability ~1
+3. Measure - target has probability ~1
 
 **Key limitation:** Needs all N items in superposition simultaneously, which requires **qRAM** (doesn't exist). Without qRAM, state preparation costs O(N), cancelling the O(sqrt(N)) search savings.
 
@@ -128,7 +128,7 @@ Swap test needs **two registers** (query + data vector) plus **one ancilla**. Ea
 
 Grover uses log2(N) **index qubits** where N = dataset size (padded to next power of 2).
 
-> Amplitude encoding is extreme compression -- 64 numbers in 6 qubits (2^6 = 64). The catch: preparing the state takes O(64) gates.
+> Amplitude encoding is extreme compression - 64 numbers in 6 qubits (2^6 = 64). The catch: preparing the state takes O(64) gates.
 
 **Self-test**
 
@@ -141,7 +141,7 @@ A: Yes for qubit count. The real bottleneck is circuit depth, not qubits.
 
 ---
 
-## Operation Count -- Cross-Engine Scaling KPI
+## Operation Count - Cross-Engine Scaling KPI
 
 The only valid cross-engine "speed" comparison. Stored in `benchmark_results.oracle_calls`.
 
@@ -151,7 +151,7 @@ The only valid cross-engine "speed" comparison. Stored in `benchmark_results.ora
 | Swap test | N circuit executions | O(N) |
 | Grover | floor(pi*sqrt(N)/4) oracle calls | O(sqrt(N)) |
 
-Plot both curves against N -- the divergence is the argument for quantum search at scale. See [BENCHMARK_KPIS.md](BENCHMARK_KPIS.md) for full KPI definitions.
+Plot both curves against N - the divergence is the argument for quantum search at scale. See [BENCHMARK_KPIS.md](BENCHMARK_KPIS.md) for full KPI definitions.
 
 ---
 

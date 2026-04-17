@@ -731,20 +731,20 @@
         <tbody>
           <tr><td><strong>1</strong></td><td>qRAM doesn't exist - state prep is O(N), speedup cancelled<sup class="ref"><a href="#sources">[10]</a></sup></td><td class="warn">Hard blocker today</td></tr>
           <tr><td><strong>2</strong></td><td>Even if qRAM existed, it requires O(N) quantum nodes - same linear scaling as classical RAM, but at astronomical cost per unit. 1B vectors = ~1 trillion physical qubits of memory.<sup class="ref"><a href="#sources">[11]</a></sup></td><td class="warn">Economic blocker at scale</td></tr>
-          <tr><td><strong>3</strong></td><td>Even ignoring 1 and 2, Grover's O(sqrt(N)) is beaten by HNSW's O(log N) classically. At N=1M: HNSW ~20 ops, Grover ~785 oracle calls.<sup class="ref"><a href="#sources">[5]</a></sup></td><td class="warn">Algorithmic blocker</td></tr>
+          <tr><td><strong>3</strong></td><td>Grover's O(sqrt(N)) is beaten by HNSW's O(log N) classically. At N=1M: HNSW ~20 ops, Grover ~785 oracle calls.<sup class="ref"><a href="#sources">[5]</a></sup></td><td class="warn">Algorithmic blocker</td></tr>
         </tbody>
       </table>
       <div class="callout" style="font-size:.82rem; margin-bottom:6px;">
         <strong>HNSW</strong> needs O(N) classical bits (cheap RAM) + O(log N) search ops.
-        <strong>Grover + qRAM</strong> needs O(N) quantum routing nodes (astronomically more expensive per unit) + O(sqrt(N)) search ops - and O(sqrt(N)) &gt; O(log N).
-        Classical wins on every axis.
+        <strong>Grover + qRAM</strong> needs O(N) quantum routing nodes (more expensive per unit) + O(sqrt(N)) search ops - and O(sqrt(N)) &gt; O(log N).
+        Classical wins.
       </div>
 
       <h3 style="margin-top:8px">Why Grover's speedup still matters</h3>
       <ul class="sm">
         <li>Built for <strong>unstructured search</strong> - no index, no geometry required. Works on any computable condition, not just vector distance.</li>
         <li><strong>Proven optimal</strong>: there is a lower bound showing no quantum algorithm can beat O(√N) for unstructured search. Grover hits it exactly - provably the best possible, not just the best known.<sup class="ref">[7]</sup></li>
-        <li>A building block inside larger quantum algorithms and a long-term cryptographic threat - its value is abstract and future-facing, not in vector search today.</li>
+        <li>A building block inside larger quantum algorithms - its value is abstract and future-facing, not in vector search today.</li>
       </ul>
     </div>
   </div>
@@ -767,25 +767,23 @@
           <li>Grover oracle count will follow the floor(pi * sqrt(N) / 4) curve empirically.</li>
           <li>Swap test will converge to classical MRR at a measurable shot budget (hypothesis: 512-1024 shots).</li>
           <li>Circuit depth and qubit count will grow predictably with dimension.</li>
-          <li>Without qRAM, end-to-end quantum search will not beat classical - consistent with theory.</li>
+          <li>Quantum vector search will not beat classical.</li>
         </ul>
       </div>
       <div class="col">
         <h3>Contribution</h3>
         <ul>
           <li>Working Grover and swap test circuits verified on a real simulator with measured resource costs.</li>
-          <li>Fair, reproducible benchmarking methodology: identical data, identical evaluation, documented assumptions.</li>
-          <li>Empirical oracle count scaling data - measuring theoretical predictions against real circuit behaviour.</li>
-          <li>Honest, documented analysis of where quantum vector search stands and what it would need to be practical.</li>
+          <li>Fair, reproducible benchmarking methodology.</li>
         </ul>
       </div>
     </div>
     <div>
       <h3 style="margin-bottom:7px;">What this project will show</h3>
       <div class="callout green" style="font-size:.84rem; margin:0;">
-        A complete benchmarking platform, empirical verification of quantum circuit behaviour against theory,
-        and a rigorous analysis of exactly where quantum search stands today -
-        including the finding that even ideal qRAM would not make Grover competitive with HNSW for approximate retrieval.
+        A complete benchmarking platform, verification of quantum circuit behaviour against theory,
+        and an analysis of exactly where quantum vector search stands today -
+        including the finding that even ideal qRAM would not make Grover competitive with HNSW.
       </div>
     </div>
   </div>
@@ -804,16 +802,16 @@
     <div class="col">
       <h3>What this project actually is</h3>
       <ul>
-        <li>A rigorous, reproducible benchmarking platform for comparing quantum and classical vector search engines on identical data with well-defined KPIs.</li>
-        <li>An empirical verification that Grover's O(sqrt(N)) oracle scaling holds in practice - measuring theory against real circuit behaviour.</li>
-        <li>An honest, documented analysis of exactly where quantum search stands today and what hardware it would need to become practical.</li>
+        <li>A rigorous, reproducible benchmarking platform for comparing quantum and classical vector search engines.</li>
+        <li>A verification that Grover's O(sqrt(N)) oracle scaling holds in practice - measuring theory against real circuit behaviour.</li>
+        <li>Analysis of where quantum vector search stands and what it would need to be practical.</li>
       </ul>
       <div class="callout green" style="margin-top:10px; font-size:.83rem;">
-        The point is not to prove quantum is better. The point is to measure, with real circuits and real data, exactly why it is not - and under what conditions it could be.
+        Quantum computing isn't powerful because it's faster at everything - it's powerful because for certain problems (like factoring large numbers, simulating quantum systems, and some structured algebraic problems), it uses interference and quantum states to achieve exponential or otherwise unique speedups that classical computers can't match.
       </div>
     </div>
     <div class="col">
-      <h3>What the results show</h3>
+      <h3>What the results will show</h3>
       <ul>
         <li><strong>Quantum swap test:</strong> produces correct similarity estimates at sufficient shot budget, but provides no speedup over classical. Cost: O(N) circuits.</li>
         <li><strong>Grover oracle:</strong> O(sqrt(N)) oracle count is real and empirically verified. But the bottleneck is state preparation - O(N) gates without qRAM that does not exist.</li>
@@ -823,15 +821,9 @@
       <div class="callout amber" style="margin-top:10px; font-size:.83rem;">
         <em>"Quantum computers will be practical for 'big compute' problems on small data, not big data problems." </em><sup class="ref"><a href="#sources">[10]</a></sup><br>
         <span style="font-size:.78rem; margin-top:4px; display:block;">
-          Vector search is a data volume problem, not a computation problem - and loading that volume into superposition is exactly the qRAM blocker above. Quantum wins on small data with massive computation (molecule simulation, cryptography), not dataset scans.
+          Vector search is a data volume problem, not a computation problem. Quantum wins on small data with massive computation (molecule simulation, cryptography).
         </span>
       </div>
-
-      <h3 style="margin-top:10px">Why this analysis matters</h3>
-      <ul class="sm">
-        <li>Quantum hype is common; rigorous negative results are rare and valuable.</li>
-        <li>This platform gives future researchers a reproducible baseline to revisit as hardware evolves.</li>
-      </ul>
     </div>
   </div>
 </section>

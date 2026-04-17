@@ -31,8 +31,8 @@ What this project does:
 Two parts: **accuracy** (does it work?) and **cost** (what does it need?).
 
 Everything runs on **AerSimulator** (Qiskit's noiseless simulator):
-- Accuracy results are the **best-case ceiling** -- real hardware would score lower due to physical noise
-- Circuit depth and qubit counts are **hardware-agnostic** -- properties of the algorithm, not the chip
+- Accuracy results are the **best-case ceiling** - real hardware would score lower due to physical noise
+- Circuit depth and qubit counts are **hardware-agnostic** - properties of the algorithm, not the chip
 
 **What we're NOT asking:** Is quantum faster? (It isn't without qRAM.) Will it beat classical? (Unknown, depends on future hardware.)
 
@@ -41,7 +41,7 @@ Everything runs on **AerSimulator** (Qiskit's noiseless simulator):
 **Self-test**
 
 **Q: Why use a simulator instead of real hardware?**
-A: Two reasons. First, AerSimulator is mathematically exact -- isolates shot noise from hardware noise, giving the best-case accuracy ceiling. Second, real IBM hardware on the free tier has queue times that can stretch to hours, making iterative benchmarking impractical.
+A: Two reasons. First, AerSimulator is mathematically exact - isolates shot noise from hardware noise, giving the best-case accuracy ceiling. Second, real IBM hardware on the free tier has queue times that can stretch to hours, making iterative benchmarking impractical.
 
 **Q: If not claiming quantum is faster, what's the point?**
 A: Establishing a baseline. When qRAM and better hardware arrive, we already know the algorithms work and what they cost.
@@ -80,14 +80,14 @@ A: Theory says the swap test and Grover should work. We verified it empirically 
 | Outcome | Interpretation |
 |---|---|
 | MRR matches | Algorithm is correct at this shot count |
-| MRR significantly lower | Shot noise is scrambling rankings -- need more shots |
+| MRR significantly lower | Shot noise is scrambling rankings - need more shots |
 
 **In one sentence:** Does the quantum engine find the right images, measured by comparing its MRR to the classical ground truth?
 
 **Self-test**
 
 **Q: If Qiskit gets MRR 0.95 and brute-force gets 1.0?**
-A: Quantum is mostly correct -- shot noise causes slight ranking errors. More shots should close the gap.
+A: Quantum is mostly correct - shot noise causes slight ranking errors. More shots should close the gap.
 
 
 ### 2. What hardware resources does it need?
@@ -113,11 +113,11 @@ A: They describe circuit structure (gates, qubits), not how a specific chip exec
 
 **Metric:** MRR at each shots value (configured in `benchmarks.yaml` under `shots_values:`).
 
-Shot noise (1/sqrt(shots)) is identical on simulator and real hardware. Our results are a **lower bound** -- real hardware needs at least this many shots, probably more to compensate for physical noise.
+Shot noise (1/sqrt(shots)) is identical on simulator and real hardware. Our results are a **lower bound** - real hardware needs at least this many shots, probably more to compensate for physical noise.
 
 **Self-test**
 
-**Q: MRR acceptable at 1024 shots on simulator -- what about real hardware?**
+**Q: MRR acceptable at 1024 shots on simulator - what about real hardware?**
 A: At least 1024, probably more. Our number is the floor.
 
 
@@ -129,14 +129,14 @@ A: At least 1024, probably more. Our number is the floor.
 - Grover: floor(pi*sqrt(N)/4) oracle calls per query
 - Stored in `benchmark_results.oracle_calls`, computed by `_oracle_calls()` in `run_benchmarks.py`
 
-Plot both curves against N. The divergence demonstrates the O(N) vs O(sqrt(N)) scaling difference -- the entire argument for quantum search at scale.
+Plot both curves against N. The divergence demonstrates the O(N) vs O(sqrt(N)) scaling difference - the entire argument for quantum search at scale.
 
 ### Bonus: Scaling with dimension
 
 Run at dim=64 and dim=128 to measure:
 - MRR vs. dimension (does accuracy hold at lower dims?)
 - Circuit depth vs. dimension (linear? worse?)
-- Qubit count vs. dimension (should be log2(dim) per register + 1 ancilla -- verify)
+- Qubit count vs. dimension (should be log2(dim) per register + 1 ancilla - verify)
 
 ---
 

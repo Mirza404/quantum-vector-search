@@ -1,9 +1,9 @@
-# Search Engines -- Plain Language Guide
+# Search Engines - Plain Language Guide
 
 Five engines. One job: **given a text description, find the most matching image.**
 
-Every engine receives the same input -- a list of ~512 numbers (a "vector") representing
-your query -- and searches for the most similar vector in the database. They differ in
+Every engine receives the same input - a list of ~512 numbers (a "vector") representing
+your query - and searches for the most similar vector in the database. They differ in
 *how* they search.
 
 ---
@@ -33,17 +33,17 @@ The "score" is the cosine of the angle between two vectors. Think of two arrows
 pointing out from the same origin. A small angle between them = they point in roughly
 the same direction = high similarity. A right angle = completely unrelated.
 
-![Angle between two vectors -- cosine similarity](https://upload.wikimedia.org/wikipedia/commons/7/76/Inner-product-angle.svg)
+![Angle between two vectors - cosine similarity](https://upload.wikimedia.org/wikipedia/commons/7/76/Inner-product-angle.svg)
 
 > cos(0°) = 1.0 (identical direction, perfect match).
 > cos(90°) = 0.0 (perpendicular, no relation).
 
 Because all our vectors are normalised to length 1 first, the denominator of the
-formula disappears and this reduces to a simple dot product -- fast to compute.
+formula disappears and this reduces to a simple dot product - fast to compute.
 
 ### Complexity
 
-**O(N)** -- for N images you do N comparisons. Double the dataset, double the work.
+**O(N)** - for N images you do N comparisons. Double the dataset, double the work.
 
 ### Role in this project
 
@@ -62,10 +62,10 @@ distances at once.
 ### The important distinction
 
 The algorithm is *not* the same as brute force. Brute force computes cosine similarity.
-FAISS Flat L2 computes L2 (Euclidean) distance -- the straight-line distance between
+FAISS Flat L2 computes L2 (Euclidean) distance - the straight-line distance between
 two points in space.
 
-They happen to produce **identical rankings** on our data -- but only because all
+They happen to produce **identical rankings** on our data - but only because all
 vectors are normalised to length 1 before storage. On unit-length vectors, minimising
 L2 distance is mathematically the same as maximising cosine similarity:
 
@@ -80,14 +80,14 @@ property of the two metrics.
 
 ### The analogy
 
-Same library as before -- you still check every book. But you are now measuring
+Same library as before - you still check every book. But you are now measuring
 "physical distance between two summaries on a page" rather than "the angle they make."
 On this particular library's shelves (where everything is normalised), the closest book
 by distance is always the same as the most aligned book by angle. Different ruler, same
-answer -- here.
+answer - here.
 
 The other difference: your eyes can read 8 blurbs at once. This is SIMD (Single
-Instruction, Multiple Data) -- modern CPUs (AVX2/AVX-512) perform the same arithmetic
+Instruction, Multiple Data) - modern CPUs (AVX2/AVX-512) perform the same arithmetic
 on 8 or 16 numbers simultaneously instead of 1.
 
 ### How similarity is measured
@@ -95,16 +95,16 @@ on 8 or 16 numbers simultaneously instead of 1.
 ![L2 / Euclidean distance between two vectors](https://upload.wikimedia.org/wikipedia/commons/5/55/Euclidean_distance_2d.svg)
 
 > ||a - b||² = 2 - 2·cos(θ). On normalised vectors, smallest distance = highest cosine.
-> Different ruler, same ranking -- but only because of normalisation.
+> Different ruler, same ranking - but only because of normalisation.
 
 ### Complexity
 
-**O(N)** -- still checks every vector, but with SIMD doing 8+ at a time the wall-clock
+**O(N)** - still checks every vector, but with SIMD doing 8+ at a time the wall-clock
 time is much lower than brute force for large datasets.
 
 ### Role in this project
 
-Production-grade reference for exact search -- when correctness is non-negotiable
+Production-grade reference for exact search - when correctness is non-negotiable
 (deduplication, compliance, offline batch). At scale, production systems switch to
 approximate indexes like HNSW. Meta built FAISS and uses it internally with those
 approximate indexes, not Flat.
@@ -118,7 +118,7 @@ running a probabilistic experiment many times and averaging the results.
 
 ### The analogy
 
-You have two buckets of paint -- one from image A, one from your query. You want to
+You have two buckets of paint - one from image A, one from your query. You want to
 know how similar the colours are without permanently mixing them. Your method: scoop a
 tiny sample from each bucket, combine them for a moment in a test tube, shake, and
 look. If the colour comes out uniform, they were similar. If it looks streaky, they
@@ -130,9 +130,9 @@ similarity. More shots = more accurate estimate.
 ### How the circuit works
 
 The circuit has three parts:
-- Two **registers** -- each holds one vector encoded as quantum amplitudes
+- Two **registers** - each holds one vector encoded as quantum amplitudes
   (log₂(dim) qubits per register; at dim=64 that's 6 qubits per register)
-- One **ancilla qubit** -- the "referee"
+- One **ancilla qubit** - the "referee"
 - The sequence: Hadamard on ancilla → controlled-SWAP between registers → Hadamard →
   measure ancilla
 
@@ -148,7 +148,7 @@ That fraction tells you the overlap between the two vectors.
 
 ### Complexity
 
-**O(N) circuits** -- you still run one circuit per candidate image. No speedup over
+**O(N) circuits** - you still run one circuit per candidate image. No speedup over
 classical. The swap test is a similarity *estimator*, not a search algorithm.
 
 ### Role in this project
@@ -162,9 +162,9 @@ to be useful? We also verify the circuit produces the mathematically correct ove
 ## 4. Qiskit Grover Oracle
 
 **One sentence:** Use quantum superposition and interference to find the best match in
-O(√N) steps instead of O(N) -- the central quantum speedup this project studies.
+O(√N) steps instead of O(N) - the central quantum speedup this project studies.
 
-### The analogy -- the maze
+### The analogy - the maze
 
 A room with 1,000 locked doors. One door leads to the prize.
 
@@ -173,7 +173,7 @@ try 500 doors before finding the prize.
 
 **Grover's search:**
 1. Quantum mechanics lets you "be in front of all 1,000 doors at once" (superposition).
-2. A special oracle marks the prize door with a phase flip -- like secretly painting it
+2. A special oracle marks the prize door with a phase flip - like secretly painting it
    red without you being able to see it yet.
 3. A diffusion step uses quantum interference to cancel out all the non-prize doors
    (they destructively interfere) and amplify the prize door (constructive interference).
@@ -185,10 +185,10 @@ try 500 doors before finding the prize.
 
 1. **Hadamard gates** put all N states into equal superposition
 2. **Oracle** flips the phase of the target state (the closest matching vector)
-3. **Diffusion operator** reflects all amplitudes around their average -- this amplifies
+3. **Diffusion operator** reflects all amplitudes around their average - this amplifies
    the marked state and suppresses everything else
 4. Repeat steps 2+3 for `floor(π·√N / 4)` iterations
-5. **Measure** -- target state has probability close to 1
+5. **Measure** - target state has probability close to 1
 
 ![Grover's algorithm circuit](https://upload.wikimedia.org/wikipedia/commons/a/ae/Grovers_algorithm.svg)
 
@@ -205,7 +205,7 @@ try 500 doors before finding the prize.
 ### The critical catch: qRAM
 
 Grover needs all N vectors loaded into superposition simultaneously. Loading them from
-classical memory takes O(N) operations -- wiping out the speedup. The solution would be
+classical memory takes O(N) operations - wiping out the speedup. The solution would be
 **qRAM** (quantum RAM that can load N items in O(log N) steps), but this hardware does
 not exist. See `QUANTUM_INTUITION.md` and `QUANTUM_SEARCH_ANALYSIS.md` for the full
 story.
@@ -214,13 +214,13 @@ story.
 
 The central experiment. We run real Grover circuits on AerSimulator and verify the
 oracle call count follows `floor(π·√N / 4)` empirically across different N values.
-The speedup is real -- we just also explain honestly why it doesn't win in practice yet.
+The speedup is real - we just also explain honestly why it doesn't win in practice yet.
 
-**Important caveat -- the oracle is classically pre-specified.** For Grover to work as
+**Important caveat - the oracle is classically pre-specified.** For Grover to work as
 actual search, the oracle circuit would need to *compute* which vector is closest: load
 all N database vectors into quantum registers simultaneously, evaluate distances to the
 query in superposition, and flip the phase of the minimum. That computation requires
-qRAM to load the N vectors in O(log N) steps -- otherwise loading alone costs O(N) and
+qRAM to load the N vectors in O(log N) steps - otherwise loading alone costs O(N) and
 wipes out the speedup.
 
 Since qRAM does not exist, this simulation does the next best thing: find the nearest
@@ -234,14 +234,14 @@ of the algorithm, not a search that could replace the classical step.
 ## 5. HNSW (Planned)
 
 **One sentence:** Navigate a multi-layer map from coarse to fine, reaching the nearest
-neighbour in O(log N) hops -- no quantum hardware required.
+neighbour in O(log N) hops - no quantum hardware required.
 
 ### The analogy
 
 Finding a specific address in an unfamiliar city.
 
 - **Brute force:** Check every house on every street in the city.
-- **HNSW:** Start at the airport (top layer -- a handful of landmarks far apart). Drive
+- **HNSW:** Start at the airport (top layer - a handful of landmarks far apart). Drive
   to the landmark nearest your destination. Zoom into the neighbourhood map (middle
   layer). Walk street by street (bottom layer) to the exact address.
 
@@ -251,8 +251,8 @@ close to your target. You never need to scan the whole city.
 ### How it actually works
 
 The dataset is organised as a multi-layer graph:
-- **Top layers:** few nodes, long-range connections -- fast coarse navigation
-- **Bottom layer:** all nodes, short-range connections -- precise local search
+- **Top layers:** few nodes, long-range connections - fast coarse navigation
+- **Bottom layer:** all nodes, short-range connections - precise local search
 - **Query:** enter at the top, greedily move toward the query vector, drop to the next
   layer when you can't get closer, repeat until you reach the bottom
 
@@ -282,7 +282,7 @@ O(log N) grows slower than O(√N). At N = 1,000,000:
 
 **HNSW wins by ~40x on a standard laptop today, with zero exotic hardware.**
 
-This is not a knock against quantum computing in general -- it is a specific statement
+This is not a knock against quantum computing in general - it is a specific statement
 about this problem at this point in hardware history. Grover's speedup is real and
 proven. The issue is that classical algorithms for approximate nearest-neighbour search
 have already reached O(log N), which Grover cannot beat even with ideal conditions.

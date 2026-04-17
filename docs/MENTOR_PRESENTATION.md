@@ -46,7 +46,7 @@ This is where you demonstrate actual understanding. Most people who talk about q
 ### 4. The honest limitations
 - Without qRAM: O(N) loading cancels O(sqrt(N)) search, total is still O(N)
 - Even with qRAM: HNSW (the standard production algorithm) achieves O(log N) approximate search, which beats Grover's O(sqrt(N)) exact search
-- qRAM hardware would need ~1 billion physical qubits for 1M vectors -- not on any credible roadmap
+- qRAM hardware would need ~1 billion physical qubits for 1M vectors - not on any credible roadmap
 
 Mentors will respect this honesty. It shows you understand the field, not just your own code.
 

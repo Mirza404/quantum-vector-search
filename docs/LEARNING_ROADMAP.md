@@ -1,12 +1,12 @@
 # Learning Roadmap
 
-Everything you need to understand this project, from basic math to quantum circuits to the thesis argument. Read straight through -- each part builds on the last.
+Everything you need to understand this project, from basic math to quantum circuits to the thesis argument. Read straight through - each part builds on the last.
 
 **Who this is for:** You can write code but have never studied quantum physics.
 
 ---
 
-## Part 1 -- Vectors and Similarity
+## Part 1 - Vectors and Similarity
 
 ### Vectors
 
@@ -31,7 +31,7 @@ Multiply matching components and add them up: `a . b = a1*b1 + a2*b2 + ... + an*
 
 ### Cosine similarity
 
-`cos(theta) = (a . b) / (||a|| * ||b||)` -- ranges from -1 (opposite) to +1 (identical).
+`cos(theta) = (a . b) / (||a|| * ||b||)` - ranges from -1 (opposite) to +1 (identical).
 
 On unit vectors this is just the dot product. The swap test computes |a . b|^2 (same thing, squared). The squaring can't tell +0.8 from -0.8, but CLIP vectors cluster on the positive side so this doesn't matter.
 
@@ -40,7 +40,7 @@ On unit vectors this is just the dot product. The swap test computes |a . b|^2 (
 **Self-test**
 
 **Q: Why normalise before comparing?**
-A: So cosine, dot product, and L2 all give the same ranking -- and so vectors satisfy the quantum requirement that amplitudes squared sum to 1.
+A: So cosine, dot product, and L2 all give the same ranking - and so vectors satisfy the quantum requirement that amplitudes squared sum to 1.
 
 **Q: Cosine similarity of a unit vector with itself?**
 A: 1.0.
@@ -48,7 +48,7 @@ A: 1.0.
 
 ---
 
-## Part 2 -- Classical Search
+## Part 2 - Classical Search
 
 ### The problem
 
@@ -58,8 +58,8 @@ Given a query vector q and N database vectors, find the most similar ones. This 
 
 Compare q against every single vector. N dot products, sort, return the top K.
 - **Cost:** O(N) per query
-- **Accuracy:** Perfect -- always finds the true nearest neighbours
-- **In the code:** `BruteForceCosineEngine` in `backend/src/engines/brute_force_cosine.py` -- does `self._matrix @ query` (one giant matrix multiply)
+- **Accuracy:** Perfect - always finds the true nearest neighbours
+- **In the code:** `BruteForceCosineEngine` in `backend/src/engines/brute_force_cosine.py` - does `self._matrix @ query` (one giant matrix multiply)
 
 > Like finding the tallest person by measuring everyone. Guaranteed correct, but slow in a crowd.
 
@@ -73,7 +73,7 @@ Same brute-force logic but using Facebook's FAISS library (hardware-optimised). 
 For millions of vectors, brute force is too slow. **HNSW** (Hierarchical Navigable Small World) builds a multi-layer graph for O(log N) lookup. Trade-off: might miss the exact nearest neighbour.
 - pgvector uses HNSW for `image_vectors` (see `db/migrations/up/1_initial_schema.sql`). For ~20 images brute force is fine; HNSW matters at thousands+
 
-> Like looking up a word in a dictionary -- you jump to roughly the right section, then narrow down.
+> Like looking up a word in a dictionary - you jump to roughly the right section, then narrow down.
 
 **In one sentence:** Classical search either checks every vector (brute force, O(N)) or uses an index (HNSW, O(log N)) to skip most of them.
 
@@ -88,7 +88,7 @@ A: Yes, planned. HNSW (O(log N) approximate) is the most relevant classical comp
 
 ---
 
-## Part 3 -- CLIP and Embeddings
+## Part 3 - CLIP and Embeddings
 
 ### What is an embedding?
 
@@ -123,7 +123,7 @@ A: Some accuracy loss (fewer features captured), but fewer qubits needed (6 per 
 
 ---
 
-## Part 4 -- Quantum Computing Essentials
+## Part 4 - Quantum Computing Essentials
 
 ### Qubits
 
@@ -132,7 +132,7 @@ A classical bit is 0 or 1. A **qubit** can be in **superposition**: both 0 and 1
 `|psi> = alpha|0> + beta|1>`, where |alpha|^2 + |beta|^2 = 1
 
 - **Measuring** gives 0 with probability |alpha|^2, or 1 with probability |beta|^2
-- Before measurement, amplitudes can **interfere** -- this is what makes quantum algorithms work
+- Before measurement, amplitudes can **interfere** - this is what makes quantum algorithms work
 
 > A classical bit is a light switch (on or off). A qubit is a dial on a sphere. When you look (measure), it snaps to on or off based on where the dial was pointing.
 
@@ -170,7 +170,7 @@ Gates are reversible operations on qubits:
 ### Circuit depth and NISQ
 
 - **Circuit depth** = number of sequential gate layers
-- Real qubits lose coherence over time (**decoherence**) -- deeper circuits = more error
+- Real qubits lose coherence over time (**decoherence**) - deeper circuits = more error
 - **NISQ** (Noisy Intermediate-Scale Quantum) = current hardware era. Reliable depth: ~100 layers
 
 This project tracks circuit depth in `benchmark_results.circuit_depth` because it directly predicts whether real hardware can run the circuit.
@@ -188,7 +188,7 @@ A: Circuit depth. NISQ devices handle ~100 gate layers before noise dominates.
 
 ---
 
-## Part 5 -- Amplitude Encoding and the Swap Test
+## Part 5 - Amplitude Encoding and the Swap Test
 
 This is the core quantum technique in the project.
 
@@ -199,7 +199,7 @@ To use a quantum circuit, vectors must become quantum states. **Amplitude encodi
 `|psi_v> = v1|00...0> + v2|00...1> + ... + vn|11...1>`
 
 - **Compression:** 64 dims = 6 qubits (2^6 = 64)
-- **Cost:** Preparing an arbitrary state takes O(n) gates -- this is the bottleneck that cancels Grover's speedup (see Part 6)
+- **Cost:** Preparing an arbitrary state takes O(n) gates - this is the bottleneck that cancels Grover's speedup (see Part 6)
 
 > Storing a 64-page book in a 6-digit code. Incredibly compact, but writing the code takes as long as reading the book.
 
@@ -207,7 +207,7 @@ To use a quantum circuit, vectors must become quantum states. **Amplitude encodi
 
 ### The swap test circuit
 
-Estimates |<psi|phi>|^2 -- the squared cosine similarity of two unit vectors.
+Estimates |<psi|phi>|^2 - the squared cosine similarity of two unit vectors.
 
 **How it works:**
 1. Encode query vector and database vector into two quantum registers (amplitude encoding)
@@ -245,18 +245,18 @@ For reference, standard error in P(0) = 1/sqrt(shots). At 512 shots that's ~0.04
 A: (1 + 1) / 2 = 1.0. The ancilla always measures 0.
 
 **Q: If two vectors are orthogonal (similarity = 0)?**
-A: (1 + 0) / 2 = 0.5. The ancilla is a fair coin -- maximum uncertainty.
+A: (1 + 0) / 2 = 0.5. The ancilla is a fair coin - maximum uncertainty.
 
 
 ---
 
-## Part 6 -- Grover's Algorithm
+## Part 6 - Grover's Algorithm
 
 ### The promise
 
 Find one matching item in an unsorted database of N items:
-- **Classical:** O(N) -- check every item
-- **Grover's (1996):** O(sqrt(N)) -- provably optimal
+- **Classical:** O(N) - check every item
+- **Grover's (1996):** O(sqrt(N)) - provably optimal
 
 For 1,000,000 items: classical ~1,000,000 checks, Grover's ~785.
 
@@ -265,22 +265,22 @@ For 1,000,000 items: classical ~1,000,000 checks, Grover's ~785.
 1. **Initialise:** Hadamard on all index qubits -> uniform superposition over all N items
 2. **Repeat floor(pi*sqrt(N)/4) times:**
    - **Oracle:** Flips the phase of the target item's amplitude (marks it)
-   - **Diffusion:** Reflects all amplitudes around the mean -- the marked item bounces above everyone else
+   - **Diffusion:** Reflects all amplitudes around the mean - the marked item bounces above everyone else
 3. **Measure:** Target now has probability ~1
 
-> Everyone standing at the same height on a trampoline. The oracle pushes the target below the surface. Diffusion flips the trampoline -- the pushed person is now highest. Repeat until they tower over everyone.
+> Everyone standing at the same height on a trampoline. The oracle pushes the target below the surface. Diffusion flips the trampoline - the pushed person is now highest. Repeat until they tower over everyone.
 
 **In the code:** `QiskitGroverEngine` in `backend/src/engines/qiskit_grover.py`. The oracle is `_apply_oracle()` (phase flip via X gates + MCX). The diffusion operator is `_apply_diffusion()` (H, X, MCX, X, H).
 
 ### Why it doesn't give us a speedup today
 
-Grover's needs all N vectors in superposition *simultaneously*. This requires **qRAM** -- theoretical hardware that loads N vectors in O(log N) steps. **qRAM does not exist.**
+Grover's needs all N vectors in superposition *simultaneously*. This requires **qRAM** - theoretical hardware that loads N vectors in O(log N) steps. **qRAM does not exist.**
 
-Without qRAM, loading each vector costs O(n) gates. Loading all N = O(N) -- the same cost as classical search. The O(sqrt(N)) search savings are wiped out by the O(N) loading cost.
+Without qRAM, loading each vector costs O(n) gates. Loading all N = O(N) - the same cost as classical search. The O(sqrt(N)) search savings are wiped out by the O(N) loading cost.
 
 **What the Grover engine actually does:** Pre-computes the closest match classically (the O(N) step that qRAM would replace), then runs the Grover circuit to find it in O(sqrt(N)) iterations. This isolates the search step so we can measure oracle call counts and verify O(sqrt(N)) scaling.
 
-**In one sentence:** Grover's could search in sqrt(N) time, but needs qRAM to load data -- so we benchmark the search step alone and document the qRAM bottleneck.
+**In one sentence:** Grover's could search in sqrt(N) time, but needs qRAM to load data - so we benchmark the search step alone and document the qRAM bottleneck.
 
 **Self-test**
 
@@ -293,11 +293,11 @@ A: To build the oracle (which marks the correct item). Without qRAM, there's no 
 
 ---
 
-## Part 7 -- The qRAM Problem
+## Part 7 - The qRAM Problem
 
 ### What qRAM would do
 
-**qRAM** would take a superposition of indices and return a superposition of the corresponding data -- loading the entire database in O(log N) steps. Combined with Grover's: O(sqrt(N)) total search.
+**qRAM** would take a superposition of indices and return a superposition of the corresponding data - loading the entire database in O(log N) steps. Combined with Grover's: O(sqrt(N)) total search.
 
 Without it: encoding each vector = O(n) gates. All N vectors = O(N) total. No speedup.
 
@@ -314,7 +314,7 @@ Without it: encoding each vector = O(n) gates. All N vectors = O(N) total. No sp
 
 The algorithm works (we prove it). The bottleneck is data loading. We measure per-circuit resource cost (depth, qubits, shots) to establish exactly what's needed when qRAM arrives.
 
-We use **AerSimulator** (Qiskit's noiseless simulator) -- mathematically exact, same statistics as a perfect quantum chip. The only noise is shot noise (from finite measurements), which also exists on real hardware. Results are the best-case accuracy ceiling.
+We use **AerSimulator** (Qiskit's noiseless simulator) - mathematically exact, same statistics as a perfect quantum chip. The only noise is shot noise (from finite measurements), which also exists on real hardware. Results are the best-case accuracy ceiling.
 
 **In one sentence:** qRAM would unlock quantum speedup but doesn't exist; we measure everything else so the baseline is ready.
 
@@ -324,12 +324,12 @@ We use **AerSimulator** (Qiskit's noiseless simulator) -- mathematically exact, 
 A: Those are processor qubits for gate circuits. qRAM needs a completely different architecture (quantum memory with tree routing). Like having transistors but needing capacitors.
 
 **Q: Why are simulator results meaningful?**
-A: Mathematically exact -- same statistics as a perfect chip. Shot noise is real. Results are the best-case ceiling.
+A: Mathematically exact - same statistics as a perfect chip. Shot noise is real. Results are the best-case ceiling.
 
 
 ---
 
-## Part 8 -- Engines and Metrics
+## Part 8 - Engines and Metrics
 
 ### The five engines
 
@@ -358,7 +358,7 @@ The main quality metric. Each query has one correct image. The engine ranks all 
 
 The harness computes MRR over the top_k results (`top_k=selection.top_k`, default 10, in `run_benchmarks.py`). If the correct image isn't in the top 10, MRR = 0 for that query. Each query maps to one correct image via `BenchmarkQuery.target_id`.
 
-### Operation count -- the cross-engine scaling KPI
+### Operation count - the cross-engine scaling KPI
 
 - Classical engines: N comparisons per query
 - Grover: floor(pi*sqrt(N)/4) oracle calls per query
@@ -382,12 +382,12 @@ A: Quantum engine timing reflects CPU simulation overhead, not real quantum hard
 
 ---
 
-## Part 9 -- The Thesis Argument
+## Part 9 - The Thesis Argument
 
 The full argument, end to end:
 
-1. **Grover's algorithm** gives O(sqrt(N)) quantum search -- a proven quadratic speedup
-2. Applying it to vector search requires **amplitude encoding**, which costs **O(n) gates per vector** -- same as classical. Speedup cancelled without qRAM
+1. **Grover's algorithm** gives O(sqrt(N)) quantum search - a proven quadratic speedup
+2. Applying it to vector search requires **amplitude encoding**, which costs **O(n) gates per vector** - same as classical. Speedup cancelled without qRAM
 3. **qRAM** could fix this (load all vectors in O(log N)). qRAM doesn't exist
 4. The **swap test** accurately estimates cosine similarity on AerSimulator, matching classical MRR with enough shots
 5. The **Grover engine** demonstrates O(sqrt(N)) oracle scaling on the search step, verified empirically
@@ -407,5 +407,5 @@ A: Quantum swap test and Grover's algorithm correctly perform vector search on a
 A: (1) Empirical proof both swap test and Grover work, (2) measured circuit depth, qubit counts, and oracle scaling, (3) a complete benchmarking framework ready for future hardware.
 
 **Q: Most common examiner misconception?**
-A: That the project claims quantum is faster. It doesn't -- it measures correctness and cost.
+A: That the project claims quantum is faster. It doesn't - it measures correctness and cost.
 
