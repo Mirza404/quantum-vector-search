@@ -12,11 +12,11 @@ Quantum vector search is two separate steps, and confusing them causes all the m
 
 ### Step 1: Loading data into superposition (broken)
 
-To get any quantum speedup, all N database vectors need to be in quantum superposition simultaneously. This requires **qRAM** (Quantum Random Access Memory) -- hardware that can load N classical data items into superposition in O(log N) time.
+To get any quantum speedup, all N database vectors need to be in quantum superposition simultaneously. This requires **qRAM** (Quantum Random Access Memory) - hardware that can load N classical data items into superposition in O(log N) time.
 
 **qRAM does not exist.** Not on IBM's machines, not anywhere.
 
-Without qRAM, loading vectors requires O(N) gate operations -- the same as classical linear scan. The speedup is erased before search even starts.
+Without qRAM, loading vectors requires O(N) gate operations - the same as classical linear scan. The speedup is erased before search even starts.
 
 ### Step 2: Searching (works)
 
@@ -49,10 +49,10 @@ A: The O(N) loading cost dominates. O(N) + O(sqrt(N)) = O(N).
 
 Classical search checks items one at a time. Grover's exploits **amplitude amplification**:
 
-1. **Start in uniform superposition** -- all N items have equal amplitude 1/sqrt(N)
-2. **Oracle** -- flips the phase of the correct answer from +1/sqrt(N) to -1/sqrt(N). Invisible to measurement (probability is amplitude *squared*), but it *marks* the answer
-3. **Diffusion operator** -- reflects all amplitudes around the mean. Since the marked answer pulled the mean down slightly, reflecting pushes the correct answer *up* and everything else *down*
-4. **Repeat** -- each iteration amplifies the correct answer. After floor(pi*sqrt(N)/4) iterations, measuring gives the right answer with probability ~1
+1. **Start in uniform superposition** - all N items have equal amplitude 1/sqrt(N)
+2. **Oracle** - flips the phase of the correct answer from +1/sqrt(N) to -1/sqrt(N). Invisible to measurement (probability is amplitude *squared*), but it *marks* the answer
+3. **Diffusion operator** - reflects all amplitudes around the mean. Since the marked answer pulled the mean down slightly, reflecting pushes the correct answer *up* and everything else *down*
+4. **Repeat** - each iteration amplifies the correct answer. After floor(pi*sqrt(N)/4) iterations, measuring gives the right answer with probability ~1
 
 **Why sqrt(N)?** The amplitude of the correct answer after k iterations follows sin((2k+1) * arcsin(1/sqrt(N))). This peaks at k ~ pi*sqrt(N)/4.
 
@@ -71,7 +71,7 @@ Classical search checks items one at a time. Grover's exploits **amplitude ampli
 **Self-test**
 
 **Q: What does the oracle do?**
-A: Flips the phase (sign) of the correct answer's amplitude. Doesn't change its probability directly -- the diffusion step converts the phase difference into amplitude difference.
+A: Flips the phase (sign) of the correct answer's amplitude. Doesn't change its probability directly - the diffusion step converts the phase difference into amplitude difference.
 
 **Q: What happens if you run too many iterations?**
 A: The amplitude overshoots and the probability of the correct answer starts *decreasing*. The optimal number is floor(pi*sqrt(N)/4).
@@ -81,9 +81,9 @@ A: The amplitude overshoots and the probability of the correct answer starts *de
 
 ## How Much qRAM Would We Need?
 
-The most studied model (bucket-brigade qRAM) requires **O(N) quantum routing nodes** as hardware -- not O(log N). The log N is query *time*, not hardware *size*.
+The most studied model (bucket-brigade qRAM) requires **O(N) quantum routing nodes** as hardware - not O(log N). The log N is query *time*, not hardware *size*.
 
-**Important:** qRAM is memory hardware, not a quantum processor. IBM's processors run circuits. qRAM would store data. They are completely different devices -- like CPU vs RAM in a laptop. IBM having ~1,100 processor qubits says nothing about qRAM; qRAM doesn't exist at any scale.
+**Important:** qRAM is memory hardware, not a quantum processor. IBM's processors run circuits. qRAM would store data. They are completely different devices - like CPU vs RAM in a laptop. IBM having ~1,100 processor qubits says nothing about qRAM; qRAM doesn't exist at any scale.
 
 | Dataset size | Classical RAM needed | qRAM nodes needed | With error correction |
 |---|---|---|---|
@@ -229,11 +229,11 @@ We are **not** demonstrating a real end-to-end quantum speedup. That requires qR
 
 What we deliver:
 
-1. **Classical infrastructure** -- production-quality vector search pipeline (CLIP embeddings, PostgreSQL + pgvector, FastAPI, React frontend) with pluggable quantum backend
-2. **Working Grover oracle** -- verified on simulator, demonstrates O(sqrt(N)) oracle scaling (`qiskit_grover.py`)
-3. **Working swap test** -- matches classical MRR with enough shots (`qiskit_swaptest.py`)
-4. **Empirical scaling data** -- oracle calls plotted against N for classical and Grover
-5. **Honest qRAM documentation** -- where the bottleneck is, what it takes to remove it, and what happens when it's gone
+1. **Classical infrastructure** - production-quality vector search pipeline (CLIP embeddings, PostgreSQL + pgvector, FastAPI, React frontend) with pluggable quantum backend
+2. **Working Grover oracle** - verified on simulator, demonstrates O(sqrt(N)) oracle scaling (`qiskit_grover.py`)
+3. **Working swap test** - matches classical MRR with enough shots (`qiskit_swaptest.py`)
+4. **Empirical scaling data** - oracle calls plotted against N for classical and Grover
+5. **Honest qRAM documentation** - where the bottleneck is, what it takes to remove it, and what happens when it's gone
 
 ### The defensible claim
 

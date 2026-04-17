@@ -38,7 +38,7 @@ CLIP (OpenAI, 2021) learns a shared vector space from ~400M image-caption pairs.
 
 ### What is the swap test?
 
-A quantum circuit that estimates |<psi|phi>|^2 -- the squared cosine similarity of two amplitude-encoded vectors. Uses Hadamard + CSWAP gates on an ancilla qubit. The measurement probability encodes the similarity.
+A quantum circuit that estimates |<psi|phi>|^2 - the squared cosine similarity of two amplitude-encoded vectors. Uses Hadamard + CSWAP gates on an ancilla qubit. The measurement probability encodes the similarity.
 
 **In the code:** `QiskitSwapTestEngine._run_swap_test()` in `backend/src/engines/qiskit_swaptest.py`.
 
@@ -46,7 +46,7 @@ A quantum circuit that estimates |<psi|phi>|^2 -- the squared cosine similarity 
 
 ### What is amplitude encoding?
 
-Maps an n-dimensional vector to the amplitudes of log2(n) qubits -- extreme compression (64 dims into 6 qubits). But preparing an arbitrary state takes O(n) gates -- the same cost as classical search. This is why quantum search can't be faster without **qRAM**.
+Maps an n-dimensional vector to the amplitudes of log2(n) qubits - extreme compression (64 dims into 6 qubits). But preparing an arbitrary state takes O(n) gates - the same cost as classical search. This is why quantum search can't be faster without **qRAM**.
 
 **In the code:** `_encode()` normalises and pads to power of 2, then `circuit.initialize()` does state preparation.
 
@@ -101,7 +101,7 @@ It runs on **AerSimulator**, which classically simulates quantum states using 2^
 
 ### What is FAISS?
 
-**Facebook AI Similarity Search** -- a library with SIMD/BLAS-optimised vector operations. `IndexFlatL2` is its exact brute-force L2 index. Used as the production-grade classical baseline.
+**Facebook AI Similarity Search** - a library with SIMD/BLAS-optimised vector operations. `IndexFlatL2` is its exact brute-force L2 index. Used as the production-grade classical baseline.
 
 **In the code:** `FaissFlatEngine` in `backend/src/engines/faiss_flat.py`.
 
@@ -109,7 +109,7 @@ It runs on **AerSimulator**, which classically simulates quantum states using 2^
 
 ### What is MRR?
 
-**Mean Reciprocal Rank** -- average of 1/(rank of first correct result). MRR 1.0 = always first. MRR 0.5 = typically second. Evaluated over top_k results (default 10) - correct result outside top_k counts as 0.
+**Mean Reciprocal Rank** - average of 1/(rank of first correct result). MRR 1.0 = always first. MRR 0.5 = typically second. Evaluated over top_k results (default 10) - correct result outside top_k counts as 0.
 
 **In the code:** `_mrr()` in `run_benchmarks.py` and `generate_report.py`.
 
@@ -125,7 +125,7 @@ See [BENCHMARK_KPIS.md](BENCHMARK_KPIS.md) for the full KPI specification.
 
 ### Are simulator results meaningful?
 
-**Yes.** AerSimulator is mathematically exact -- same measurement statistics as a perfect noiseless chip. The only noise is **shot noise** (from finite measurements), which exists on real hardware too. Results represent the best-case accuracy ceiling.
+**Yes.** AerSimulator is mathematically exact - same measurement statistics as a perfect noiseless chip. The only noise is **shot noise** (from finite measurements), which exists on real hardware too. Results represent the best-case accuracy ceiling.
 
 ---
 
@@ -133,7 +133,7 @@ See [BENCHMARK_KPIS.md](BENCHMARK_KPIS.md) for the full KPI specification.
 
 Not used in this project. The IBM Quantum free tier is publicly accessible and our circuits (13–15 qubits) would technically fit, but two practical obstacles make it unsuitable for controlled benchmarking: queue wait times on the free tier are reported to be very long, and noise beyond roughly 7 qubits is significant enough to obscure the algorithmic signal we are measuring.
 
-Running on real hardware is something that could be explored as a follow-up -- the circuits exist and the comparison (simulator vs. hardware accuracy gap) would be interesting -- but it is not a planned deliverable of this project.
+Running on real hardware is something that could be explored as a follow-up - the circuits exist and the comparison (simulator vs. hardware accuracy gap) would be interesting - but it is not a planned deliverable of this project.
 
 ---
 
