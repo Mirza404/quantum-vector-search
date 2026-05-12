@@ -17,10 +17,11 @@ if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
 from benchmark import BenchmarkResult, DatabaseStorage, load_benchmark_queries
+from engines.brute_force_cosine import BruteForceCosineEngine
 from engines.faiss_flat import FaissFlatEngine
+from engines.faiss_hnsw import FaissHNSWEngine
 from engines.qiskit_grover import QiskitGroverEngine
 from engines.qiskit_swaptest import QiskitSwapTestEngine
-from engines.brute_force_cosine import BruteForceCosineEngine
 from pipeline import CLIPEmbeddingModel
 
 
@@ -60,12 +61,15 @@ def _oracle_calls(engine_name: str, dataset_size: int) -> int | None:
     """Derive oracle/comparison count from engine type and dataset size.
 
     Classical engines: N comparisons (linear scan).
-    Swap test:        N circuit executions (one per vector - quantum brute force).
-    Grover:           floor(π√N / 4) oracle calls.
-    Mock:             N (simulates classical + noise).
+    HNSW:              O(log N) comparisons (approximate, indexed).
+    Swap test:         N circuit executions (one per vector - quantum brute force).
+    Grover:            floor(π√N / 4) oracle calls.
+    Mock:              N (simulates classical + noise).
     """
     if engine_name in ("brute_force_cosine", "faiss_flat_l2", "qiskit_swap_test"):
         return dataset_size
+    if engine_name == "faiss_hnsw_l2":
+        return max(1, int(math.log2(dataset_size)) + 1)
     if engine_name == "qiskit_grover":
         n_padded = max(2, 1 << (dataset_size - 1).bit_length())
         return max(1, int(math.pi / 4 * math.sqrt(n_padded)))
@@ -76,6 +80,7 @@ def _engine_factories(seed: int | None, dimension: int) -> dict[str, Callable[[]
     return {
         "brute_force_cosine": lambda: BruteForceCosineEngine(),
         "faiss_flat_l2": lambda: FaissFlatEngine(dimension=dimension),
+        "faiss_hnsw_l2": lambda: FaissHNSWEngine(dimension=dimension),
         "qiskit_grover": lambda: QiskitGroverEngine(),
         "qiskit_swap_test": lambda: QiskitSwapTestEngine(),
     }

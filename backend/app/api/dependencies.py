@@ -41,6 +41,7 @@ from benchmark.models import BenchmarkQuery
 from engines import (
     BruteForceCosineEngine,
     FaissFlatEngine,
+    FaissHNSWEngine,
     QiskitSwapTestEngine,
     SearchEngineStrategy,
 )
@@ -151,6 +152,7 @@ def _make_engine(name: str, dimension: int) -> SearchEngineStrategy:
     factories = {
         "brute_force_cosine": lambda: BruteForceCosineEngine(),
         "faiss_flat_l2": lambda: FaissFlatEngine(dimension=dimension),
+        "faiss_hnsw_l2": lambda: FaissHNSWEngine(dimension=dimension),
         "qiskit_swap_test": lambda: QiskitSwapTestEngine(),
     }
     if name not in factories:

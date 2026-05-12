@@ -4,10 +4,12 @@
 
 # Classical engines - no shots/layers parameters.
 #   brute_force_cosine  - deterministic cosine similarity (no index, brute-force). Fast baseline.
-#   faiss_flat_l2       - real FAISS IndexFlatL2 index. Production-grade classical search.
+#   faiss_flat_l2       - real FAISS IndexFlatL2 index. Exact classical search.
+#   faiss_hnsw_l2       - HNSW (Hierarchical Navigable Small World) approximate search. Production algorithm (Meta, Spotify, Google).
 classical_engines:
   - brute_force_cosine
   - faiss_flat_l2
+  - faiss_hnsw_l2
 
 # Quantum engines - accept shots/layers parameters and populate circuit_depth/num_qubits fields.
 #   qiskit_swap_test    - real Qiskit circuit running a swap test on AerSimulator.
