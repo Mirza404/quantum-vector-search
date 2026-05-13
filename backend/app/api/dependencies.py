@@ -41,6 +41,8 @@ from benchmark.models import BenchmarkQuery
 from engines import (
     BruteForceCosineEngine,
     FaissFlatEngine,
+    QiskitGroverEngine,
+    QiskitGroverQuantumPrepEngine,
     QiskitSwapTestEngine,
     SearchEngineStrategy,
 )
@@ -152,6 +154,8 @@ def _make_engine(name: str, dimension: int) -> SearchEngineStrategy:
         "brute_force_cosine": lambda: BruteForceCosineEngine(),
         "faiss_flat_l2": lambda: FaissFlatEngine(dimension=dimension),
         "qiskit_swap_test": lambda: QiskitSwapTestEngine(),
+        "qiskit_grover": lambda: QiskitGroverEngine(),
+        "qiskit_grover_quantum_prep": lambda: QiskitGroverQuantumPrepEngine(),
     }
     if name not in factories:
         raise ValueError(
