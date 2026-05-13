@@ -3,8 +3,9 @@ import { runSearch, type QueryItem, type SearchResponse } from './api'
 import ImageBrowser from './components/ImageBrowser'
 import QueryPicker from './components/QueryPicker'
 import SearchResults from './components/SearchResults'
+import BenchmarkResults from './components/BenchmarkResults'
 
-type View = 'browse' | 'search'
+type View = 'browse' | 'search' | 'benchmarks'
 
 function App() {
   const [view, setView] = useState<View>('browse')
@@ -37,7 +38,6 @@ function App() {
   return (
     <div className="flex-1 px-4 pb-12 pt-8 md:px-10 lg:px-12">
       <header className="mb-8 text-center">
-        <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Prototype</p>
         <h1 className="text-4xl font-semibold text-slate-900 md:text-5xl">Quantum Vector Search</h1>
         <p className="mt-2 text-base text-slate-500">Classical vs. quantum image search - side by side</p>
       </header>
@@ -48,6 +48,9 @@ function App() {
         </button>
         <button className={tabClass('search')} onClick={() => setView('search')}>
           Search
+        </button>
+        <button className={tabClass('benchmarks')} onClick={() => setView('benchmarks')}>
+          Benchmarks
         </button>
       </nav>
 
@@ -69,6 +72,8 @@ function App() {
       )}
 
       {view === 'browse' && <ImageBrowser />}
+
+      {view === 'benchmarks' && <BenchmarkResults />}
     </div>
   )
 }
