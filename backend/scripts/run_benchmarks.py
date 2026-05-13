@@ -20,9 +20,11 @@ from benchmark import BenchmarkResult, DatabaseStorage, load_benchmark_queries  
 from engines.faiss_flat import FaissFlatEngine  # noqa: E402
 from engines.faiss_hnsw import FaissHnswEngine  # noqa: E402
 from engines.qiskit_grover import QiskitGroverEngine  # noqa: E402
+from engines.qiskit_grover_quantum_prep import QiskitGroverQuantumPrepEngine  # noqa: E402
 from engines.qiskit_swaptest import QiskitSwapTestEngine  # noqa: E402
 from engines.brute_force_cosine import BruteForceCosineEngine  # noqa: E402
 from pipeline import CLIPEmbeddingModel  # noqa: E402
+
 
 
 @dataclass(frozen=True)
@@ -72,6 +74,9 @@ def _oracle_calls(engine_name: str, dataset_size: int) -> int | None:
     if engine_name == "qiskit_grover":
         n_padded = max(2, 1 << (dataset_size - 1).bit_length())
         return max(1, int(math.pi / 4 * math.sqrt(n_padded)))
+    if engine_name == "qiskit_grover_quantum_prep":
+        n_padded = max(2, 1 << (dataset_size - 1).bit_length())
+        return max(1, int(math.pi / 4 * math.sqrt(n_padded)))
     return None
 
 
@@ -82,6 +87,7 @@ def _engine_factories(seed: int | None, dimension: int) -> dict[str, Callable[[]
         "faiss_hnsw_l2": lambda: FaissHnswEngine(dimension=dimension),
         "qiskit_grover": lambda: QiskitGroverEngine(),
         "qiskit_swap_test": lambda: QiskitSwapTestEngine(),
+        "qiskit_grover_quantum_prep": lambda: QiskitGroverQuantumPrepEngine(),
     }
 
 

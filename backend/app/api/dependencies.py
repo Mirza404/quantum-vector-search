@@ -42,6 +42,8 @@ from engines import (  # noqa: E402
     BruteForceCosineEngine,
     FaissFlatEngine,
     FaissHnswEngine,
+    QiskitGroverEngine,
+    QiskitGroverQuantumPrepEngine,
     QiskitSwapTestEngine,
     SearchEngineStrategy,
 )
@@ -154,6 +156,8 @@ def _make_engine(name: str, dimension: int) -> SearchEngineStrategy:
         "faiss_flat_l2": lambda: FaissFlatEngine(dimension=dimension),
         "faiss_hnsw_l2": lambda: FaissHnswEngine(dimension=dimension),
         "qiskit_swap_test": lambda: QiskitSwapTestEngine(),
+        "qiskit_grover": lambda: QiskitGroverEngine(),
+        "qiskit_grover_quantum_prep": lambda: QiskitGroverQuantumPrepEngine(),
     }
     if name not in factories:
         raise ValueError(

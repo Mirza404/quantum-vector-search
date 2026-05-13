@@ -1,6 +1,7 @@
 import type { EngineResult, SearchResponse } from '../api'
 
 function EnginePanel({ result, label }: { result: EngineResult; label: string }) {
+  const limitedResults = result.results.slice(0, 6)
   return (
     <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -28,7 +29,7 @@ function EnginePanel({ result, label }: { result: EngineResult; label: string })
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        {result.results.map((item, i) => (
+        {limitedResults.map((item, i) => (
           <div
             key={item.image_id}
             className={[
@@ -46,9 +47,8 @@ function EnginePanel({ result, label }: { result: EngineResult; label: string })
               className="mb-3 h-40 w-full rounded-xl object-cover"
             />
             <div className="flex items-center justify-between text-xs text-slate-500">
-              <span className="font-mono">{item.image_id}</span>
-              <span className="font-semibold text-slate-700">
-                {item.score.toFixed(3)}
+              <span className="font-semibold">
+                Probability: {item.score.toFixed(3)}
               </span>
             </div>
             {item.is_target && (
@@ -58,6 +58,34 @@ function EnginePanel({ result, label }: { result: EngineResult; label: string })
             )}
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+function PlaceholderPanel({ title, label }: { title: string; label: string }) {
+  return (
+    <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-card">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{label}</p>
+          <h3 className="text-xl font-semibold text-slate-900">{title}</h3>
+        </div>
+        <div className="flex flex-col text-right text-sm text-slate-500">
+          <span>
+            MRR <span className="font-semibold text-slate-900">--</span>
+          </span>
+          <span>
+            Rank <span className="font-semibold text-slate-900">--</span>
+          </span>
+          <span>
+            Time <span className="font-semibold text-slate-900">-- ms</span>
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-6 flex h-48 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6">
+        <p className="text-center text-sm text-slate-400">Results will appear here</p>
       </div>
     </div>
   )
@@ -76,9 +104,12 @@ export default function SearchResults({ data }: Props) {
           {data.target_image_id}
         </code>
       </p>
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 grid-cols-2">
         <EnginePanel result={data.classical} label="Classical" />
         <EnginePanel result={data.quantum} label="Quantum" />
+        <PlaceholderPanel title="FAISS Flat L2" label="Vector DB" />
+        <PlaceholderPanel title="Quantum Mock Sampler" label="Quantum" />
+        <PlaceholderPanel title="Qiskit Grover Oracle" label="Quantum" />
       </div>
     </div>
   )

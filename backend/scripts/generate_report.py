@@ -372,7 +372,7 @@ def _section_operation_count_scaling(rows: list[dict]) -> str:
             if key not in data:
                 continue
             ops = data[key][0]
-            if engine == "qiskit_grover":
+            if engine in {"qiskit_grover", "qiskit_grover_quantum_prep"}:
                 complexity = "O(√N)"
             elif engine == "faiss_hnsw_l2":
                 complexity = "O(log N) approximate"

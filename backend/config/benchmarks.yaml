@@ -12,13 +12,16 @@ classical_engines:
   - faiss_hnsw_l2
 
 # Quantum engines - accept shots/layers parameters and populate circuit_depth/num_qubits fields.
-#   qiskit_swap_test    - real Qiskit circuit running a swap test on AerSimulator.
-#                         Measures vector similarity via quantum overlap. Slow on large dataset.
-#   qiskit_grover       - Grover's algorithm on AerSimulator. Demonstrates O(√N) oracle scaling.
-#                         Hardcoded state prep for toy dataset. See docs/QUANTUM_SEARCH_ANALYSIS.md.
+#   qiskit_swap_test         - real Qiskit circuit running a swap test on AerSimulator.
+#                              Measures vector similarity via quantum overlap. Slow on large dataset.
+#   qiskit_grover            - Grover's algorithm on AerSimulator. Demonstrates O(√N) oracle scaling.
+#                              Hardcoded state prep for toy dataset. See docs/QUANTUM_SEARCH_ANALYSIS.md.
+#   qiskit_grover_quantum_prep - Grover's algorithm with quantum state preparation. Uses StatePreparation
+#                                gates to encode vectors and quantum measurements for target determination.
 quantum_engines:
   - qiskit_swap_test
   - qiskit_grover
+  - qiskit_grover_quantum_prep
 
 # Vector dimensions to benchmark. Vectors are truncated to the first d components of the CLIP
 # output (already L2-normalised). Lower d = fewer qubits + shallower circuit + lower accuracy.

@@ -3,12 +3,52 @@ import { fetchImages, type PaginatedImages } from '../api'
 
 export default function ImageBrowser() {
   const [data, setData] = useState<PaginatedImages | null>(null)
-  const [page, setPage] = useState(1)
-  const perPage = 20
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchImages(page, perPage).then(setData).catch(console.error)
-  }, [page])
+    const loadAllImages = async () => {
+      try {
+        const allImages: typeof PaginatedImages.prototype.images = []
+        let page = 1
+        let totalFetched = 0
+        let total = 0
+
+        // Fetch first page to get total count
+        const firstPage = await fetchImages(1, 100)
+        total = firstPage.total
+        allImages.push(...firstPage.images)
+        totalFetched = firstPage.images.length
+
+        // Fetch remaining pages if needed
+        while (totalFetched < total) {
+          page++
+          const nextPage = await fetchImages(page, 100)
+          allImages.push(...nextPage.images)
+          totalFetched += nextPage.images.length
+        }
+
+        // Set data with all images
+        setData({
+          images: allImages,
+          page: 1,
+          per_page: totalFetched,
+          total: total,
+        })
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load images')
+        console.error(err)
+      }
+    }
+
+    loadAllImages()
+  }, [])
+
+  if (error)
+    return (
+      <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-8 text-center text-sm text-red-600 shadow-inner">
+        Error loading images: {error}
+      </p>
+    )
 
   if (!data)
     return (
@@ -16,8 +56,6 @@ export default function ImageBrowser() {
         Loading images...
       </p>
     )
-
-  const totalPages = Math.ceil(data.total / perPage)
 
   return (
     <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-card">
@@ -27,11 +65,7 @@ export default function ImageBrowser() {
           <h2 className="text-2xl font-semibold text-slate-900">
             {data.total.toLocaleString()} images
           </h2>
-          <p className="text-sm text-slate-500">Page {page} of {totalPages}</p>
         </div>
-        <span className="rounded-full bg-slate-100 px-4 py-1 text-xs font-semibold text-slate-600">
-          {perPage} per page
-        </span>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -54,26 +88,6 @@ export default function ImageBrowser() {
             </figcaption>
           </figure>
         ))}
-      </div>
-
-      <div className="mt-6 flex items-center justify-center gap-4 text-sm font-semibold text-slate-600">
-        <button
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={page <= 1}
-          className="rounded-full border border-slate-200 px-4 py-2 text-xs uppercase tracking-wide text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Prev
-        </button>
-        <span className="text-slate-500">
-          {page} / {totalPages}
-        </span>
-        <button
-          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          disabled={page >= totalPages}
-          className="rounded-full border border-slate-200 px-4 py-2 text-xs uppercase tracking-wide text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Next
-        </button>
       </div>
     </section>
   )
