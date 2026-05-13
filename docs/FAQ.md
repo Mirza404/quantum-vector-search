@@ -6,7 +6,7 @@ Quick answers to the most likely exam questions. For full explanations: [LEARNIN
 
 ### What is this project?
 
-A text-to-image search system. You type "a dog on a beach", it finds matching images using vector similarity. Both text and images are converted to 512-dim vectors by CLIP, and the system finds the closest matches. We benchmark **four** search engines (two classical, two quantum) side-by-side to compare accuracy and cost.
+A text-to-image search system. You type "a dog on a beach", it finds matching images using vector similarity. Both text and images are converted to 512-dim vectors by CLIP, and the system finds the closest matches. We benchmark **five** search engines (three classical, two quantum) side-by-side to compare accuracy and cost.
 
 ---
 
@@ -82,12 +82,13 @@ Number of sequential gate layers. Deeper circuits take longer and accumulate mor
 
 ---
 
-### What's the difference between the four engines?
+### What's the difference between the five engines?
 
 | Engine | File | How it works | Speed |
 |---|---|---|---|
 | `brute_force_cosine` | `brute_force_cosine.py` | NumPy dot products | Fast. **Ground truth** |
 | `faiss_flat_l2` | `faiss_flat.py` | FAISS L2 index | Fast. Production-grade |
+| `faiss_hnsw_l2` | `faiss_hnsw.py` | FAISS HNSW graph index | Approximate O(log N) classical baseline |
 | `qiskit_swap_test` | `qiskit_swaptest.py` | Real swap test circuit on simulator | Slow (simulation overhead) |
 | `qiskit_grover` | `qiskit_grover.py` | Grover's algorithm on simulator | Slow. O(sqrt(N)) oracle scaling |
 
@@ -105,6 +106,14 @@ It runs on **AerSimulator**, which classically simulates quantum states using 2^
 
 **In the code:** `FaissFlatEngine` in `backend/src/engines/faiss_flat.py`.
 
+### What is HNSW?
+
+**Hierarchical Navigable Small World** - a graph index for approximate nearest-neighbour search. It is the standard production-style classical baseline for large vector datasets: O(log N) expected query cost, with a recall trade-off that usually appears only at larger scales.
+
+**In the code:** `FaissHnswEngine` in `backend/src/engines/faiss_hnsw.py`, wrapping `faiss.IndexHNSWFlat`.
+
+**Benchmark caveat:** on the current 20-image dataset, HNSW is expected to match the exact FAISS L2 ranking and MRR. The approximation behaviour only becomes meaningful at thousands of vectors and above.
+
 ---
 
 ### What is MRR?
@@ -117,7 +126,7 @@ It runs on **AerSimulator**, which classically simulates quantum states using 2^
 
 ### What is the operation count KPI?
 
-The **only valid cross-engine speed comparison**. Classical engines do N comparisons per query. Grover does floor(pi*sqrt(N)/4) oracle calls. Stored in `benchmark_results.oracle_calls`. The divergence between O(N) and O(sqrt(N)) as N grows is the argument for quantum search.
+The **only valid cross-engine speed comparison**. Exact classical engines do N comparisons per query, HNSW uses an approximate O(log N) graph traversal, and Grover does floor(pi*sqrt(N)/4) oracle calls. Stored in `benchmark_results.oracle_calls`.
 
 See [BENCHMARK_KPIS.md](BENCHMARK_KPIS.md) for the full KPI specification.
 

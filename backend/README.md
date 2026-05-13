@@ -7,7 +7,7 @@ Benchmarking harness for classical and quantum-inspired search engines. For setu
 ```
 src/
 ├── benchmark/   # dataclasses, storage strategies, DatabaseStorage
-├── engines/     # SearchEngineStrategy base + all four engine implementations
+├── engines/     # SearchEngineStrategy base + all five engine implementations
 ├── pipeline/    # EmbeddingGenerator interface, CLIPEmbeddingModel, mock
 └── repository/  # DataLoader interface, DirectoryDataLoader
 ```

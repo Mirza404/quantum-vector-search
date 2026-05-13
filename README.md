@@ -53,6 +53,7 @@ For the full theory, design decisions, and Q&A see the [`docs/`](docs/) folder.
    ```bash
    python3 scripts/generate_report.py
    ```
+   The report is generated at `backend/reports/benchmark_report.md`.
 
 ## Database
 

@@ -231,7 +231,7 @@ of the algorithm, not a search that could replace the classical step.
 
 ---
 
-## 5. HNSW (Planned)
+## 5. HNSW
 
 **One sentence:** Navigate a multi-layer map from coarse to fine, reaching the nearest
 neighbour in O(log N) hops - no quantum hardware required.
@@ -289,7 +289,11 @@ have already reached O(log N), which Grover cannot beat even with ideal conditio
 
 ### Role in this project
 
-Planned as the 5th benchmarking engine. The strategy pattern interface is already ready:
-implementing HNSW requires only adding `build_index()` + `search()`. Its purpose is to
+Implemented as the 5th benchmarking engine: `FaissHnswEngine` in
+`backend/src/engines/faiss_hnsw.py`, wrapping FAISS `IndexHNSWFlat`. Its purpose is to
 complete the comparison: not just "quantum vs brute force" but "quantum vs the actual
 production standard."
+
+On the current 20-image dataset, HNSW is expected to match the exact FAISS L2 ranking
+and MRR. The graph is too small to expose the approximation trade-off; that only becomes
+meaningful at thousands of vectors and above.

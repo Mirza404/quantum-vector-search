@@ -147,7 +147,8 @@ The only valid cross-engine "speed" comparison. Stored in `benchmark_results.ora
 
 | Engine | Operations per query | Complexity |
 |---|---|---|
-| Classical (brute force, FAISS) | N comparisons | O(N) |
+| Exact classical (brute force, FAISS flat) | N comparisons | O(N) |
+| HNSW | Approximate graph traversal | O(log N) |
 | Swap test | N circuit executions | O(N) |
 | Grover | floor(pi*sqrt(N)/4) oracle calls | O(sqrt(N)) |
 

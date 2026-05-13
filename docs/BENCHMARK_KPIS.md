@@ -24,10 +24,13 @@ The number of times the core operation runs per query - literally the loop itera
 |---|---|---|
 | `brute_force_cosine` | Yes - one comparison per vector | O(N) |
 | `faiss_flat_l2` | Yes - one comparison per vector | O(N) |
+| `faiss_hnsw_l2` | No - approximate graph traversal | **O(log N)** |
 | `qiskit_swap_test` | Yes - one circuit per vector | O(N) |
 | `qiskit_grover` | No - floor(π√N/4) oracle cycles | **O(√N)** |
 
 This is why you can't compare wall-clock time across engines - one runs on a CPU, one on a simulator, one eventually on quantum hardware. Iteration count is the only fair comparison.
+
+On the current 20-image dataset, HNSW's approximate behaviour is not meaningfully tested: the graph is so small that `faiss_hnsw_l2` should match the exact FAISS L2 ranking and MRR. The HNSW recall trade-off appears at thousands of vectors and above.
 
 Stored in `benchmark_results.oracle_calls`, computed by `_oracle_calls()` in `run_benchmarks.py`.
 
