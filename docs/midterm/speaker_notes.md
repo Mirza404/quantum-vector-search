@@ -63,7 +63,7 @@ the comparison fair.
 
 If asked about pgvector and HNSW: pgvector (our storage layer) uses HNSW internally
 as a database index to speed up vector lookups from PostgreSQL. This is unrelated to
-the HNSW benchmarking engine we plan to add in Phase 4. One is a storage optimization;
+the HNSW benchmarking engine. One is a storage optimization;
 the other is a search algorithm we benchmark directly.
 
 ---
@@ -94,9 +94,9 @@ the nearest neighbour classically first, then build an oracle that marks that sp
 The amplitude amplification and the sqrt(N) scaling are fully real and verified. What we're
 measuring is the scaling property of the algorithm, not a search that replaces the classical step.
 
-HNSW: multi-layer proximity graph. O(log N), 95-99%+ recall. Not yet implemented but the
-architecture is ready (strategy pattern). This is the most important comparison point - see
-slide 11 for why.
+HNSW: multi-layer proximity graph. O(log N), 95-99%+ recall. Implemented as
+`faiss_hnsw_l2` using FAISS `IndexHNSWFlat`. This is the most important comparison
+point - see slide 11 for why.
 
 Point to the complexity callout: the progression brute force O(N) → Grover O(√N) → HNSW O(log N)
 is the central story of the project.

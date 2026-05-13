@@ -6,7 +6,7 @@ Quick answers to the most likely exam questions. For full explanations: [LEARNIN
 
 ### What is this project?
 
-A text-to-image search system. You type "a dog on a beach", it finds matching images using vector similarity. Both text and images are converted to 512-dim vectors by CLIP, and the system finds the closest matches. We benchmark **four** search engines (two classical, two quantum) side-by-side to compare accuracy and cost.
+A text-to-image search system. You type "a dog on a beach", it finds matching images using vector similarity. Both text and images are converted to 512-dim vectors by CLIP, and the system finds the closest matches. We benchmark **five** search engines (three classical, two quantum) side-by-side to compare accuracy and cost.
 
 ---
 
@@ -82,12 +82,13 @@ Number of sequential gate layers. Deeper circuits take longer and accumulate mor
 
 ---
 
-### What's the difference between the four engines?
+### What's the difference between the five engines?
 
 | Engine | File | How it works | Speed |
 |---|---|---|---|
 | `brute_force_cosine` | `brute_force_cosine.py` | NumPy dot products | Fast. **Ground truth** |
 | `faiss_flat_l2` | `faiss_flat.py` | FAISS L2 index | Fast. Production-grade |
+| `faiss_hnsw_l2` | `faiss_hnsw.py` | FAISS HNSW graph index | Approximate O(log N) classical baseline |
 | `qiskit_swap_test` | `qiskit_swaptest.py` | Real swap test circuit on simulator | Slow (simulation overhead) |
 | `qiskit_grover` | `qiskit_grover.py` | Grover's algorithm on simulator | Slow. O(sqrt(N)) oracle scaling |
 
@@ -105,6 +106,14 @@ It runs on **AerSimulator**, which classically simulates quantum states using 2^
 
 **In the code:** `FaissFlatEngine` in `backend/src/engines/faiss_flat.py`.
 
+### What is HNSW?
+
+**Hierarchical Navigable Small World** - a graph index for approximate nearest-neighbour search. It is the standard production-style classical baseline for large vector datasets: O(log N) expected query cost, with a recall trade-off that usually appears only at larger scales.
+
+**In the code:** `FaissHnswEngine` in `backend/src/engines/faiss_hnsw.py`, wrapping `faiss.IndexHNSWFlat`.
+
+**Benchmark caveat:** on the current 20-image dataset, HNSW is expected to match the exact FAISS L2 ranking and MRR. The approximation behaviour only becomes meaningful at thousands of vectors and above.
+
 ---
 
 ### What is MRR?
@@ -117,9 +126,23 @@ It runs on **AerSimulator**, which classically simulates quantum states using 2^
 
 ### What is the operation count KPI?
 
-The **only valid cross-engine speed comparison**. Classical engines do N comparisons per query. Grover does floor(pi*sqrt(N)/4) oracle calls. Stored in `benchmark_results.oracle_calls`. The divergence between O(N) and O(sqrt(N)) as N grows is the argument for quantum search.
+The **only valid cross-engine speed comparison**. Exact classical engines do N comparisons per query, HNSW uses an approximate O(log N) graph traversal, and Grover does floor(pi*sqrt(N)/4) oracle calls. Stored in `benchmark_results.oracle_calls`.
 
 See [BENCHMARK_KPIS.md](BENCHMARK_KPIS.md) for the full KPI specification.
+
+---
+
+### Do Grover benchmarks include state-preparation overhead?
+
+No - the main Grover KPI isolates the **search step**. `qiskit_grover` pre-computes the target classically, then measures Grover's O(sqrt(N)) oracle scaling. `qiskit_grover_quantum_prep` adds quantum state-preparation circuits for target selection, but it still runs on a simulator and is not a scalable qRAM implementation.
+
+This is intentional: the benchmark proves the Grover search subroutine behaves correctly, while the docs separately state the end-to-end limitation. Without qRAM, loading/preparing all N vectors costs O(N), which cancels the apparent O(sqrt(N)) search advantage.
+
+---
+
+### How do reruns avoid repeating completed benchmarks?
+
+Each result is keyed by `(query_id, engine_name, dimension, shots, layers)`. Before a run, `run_benchmarks.py` checks `DatabaseStorage.has_record(...)`; if the row already exists, it prints `already in DB` and skips that combination. The database also enforces the same unique run key.
 
 ---
 

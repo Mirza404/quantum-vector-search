@@ -16,13 +16,14 @@ SRC_PATH = BACKEND_ROOT / "src"
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
-from benchmark import BenchmarkResult, DatabaseStorage, load_benchmark_queries
-from engines.faiss_flat import FaissFlatEngine
-from engines.qiskit_grover import QiskitGroverEngine
-from engines.qiskit_swaptest import QiskitSwapTestEngine
-from engines.brute_force_cosine import BruteForceCosineEngine
-from engines.qiskit_grover_quantum_prep import QiskitGroverQuantumPrepEngine
-from pipeline import CLIPEmbeddingModel
+from benchmark import BenchmarkResult, DatabaseStorage, load_benchmark_queries  # noqa: E402
+from engines.faiss_flat import FaissFlatEngine  # noqa: E402
+from engines.faiss_hnsw import FaissHnswEngine  # noqa: E402
+from engines.qiskit_grover import QiskitGroverEngine  # noqa: E402
+from engines.qiskit_grover_quantum_prep import QiskitGroverQuantumPrepEngine  # noqa: E402
+from engines.qiskit_swaptest import QiskitSwapTestEngine  # noqa: E402
+from engines.brute_force_cosine import BruteForceCosineEngine  # noqa: E402
+from pipeline import CLIPEmbeddingModel  # noqa: E402
 
 
 
@@ -61,13 +62,15 @@ def _prepare_vectors(matrix: np.ndarray, dimension: int) -> List[List[float]]:
 def _oracle_calls(engine_name: str, dataset_size: int) -> int | None:
     """Derive oracle/comparison count from engine type and dataset size.
 
-    Classical engines: N comparisons (linear scan).
-    Swap test:        N circuit executions (one per vector - quantum brute force).
-    Grover:           floor(π√N / 4) oracle calls.
-    Mock:             N (simulates classical + noise).
+    Exact classical engines: N comparisons (linear scan).
+    HNSW:                    ceil(log2(N)) approximate graph steps.
+    Swap test:               N circuit executions (one per vector - quantum brute force).
+    Grover:                  floor(π√N / 4) oracle calls.
     """
     if engine_name in ("brute_force_cosine", "faiss_flat_l2", "qiskit_swap_test"):
         return dataset_size
+    if engine_name == "faiss_hnsw_l2":
+        return max(1, math.ceil(math.log2(max(2, dataset_size))))
     if engine_name == "qiskit_grover":
         n_padded = max(2, 1 << (dataset_size - 1).bit_length())
         return max(1, int(math.pi / 4 * math.sqrt(n_padded)))
@@ -81,6 +84,7 @@ def _engine_factories(seed: int | None, dimension: int) -> dict[str, Callable[[]
     return {
         "brute_force_cosine": lambda: BruteForceCosineEngine(),
         "faiss_flat_l2": lambda: FaissFlatEngine(dimension=dimension),
+        "faiss_hnsw_l2": lambda: FaissHnswEngine(dimension=dimension),
         "qiskit_grover": lambda: QiskitGroverEngine(),
         "qiskit_swap_test": lambda: QiskitSwapTestEngine(),
         "qiskit_grover_quantum_prep": lambda: QiskitGroverQuantumPrepEngine(),
@@ -197,7 +201,6 @@ def main() -> None:
     shots_values = args.shots_values or selection.shots_values
     layers_values = args.layers_values or selection.layers_values
 
-    dataset_dir = Path(args.dataset_dir).resolve()
     ground_truth_path = (
         Path(args.ground_truth).resolve()
         if args.ground_truth

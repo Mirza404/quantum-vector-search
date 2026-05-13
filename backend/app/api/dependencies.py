@@ -36,17 +36,18 @@ if str(SRC_PATH) not in sys.path:
 
 BENCHMARK_CONFIG_PATH = BACKEND_ROOT / "config" / "benchmarks.yaml"
 
-from benchmark import DatabaseStorage, load_benchmark_queries
-from benchmark.models import BenchmarkQuery
-from engines import (
+from benchmark import DatabaseStorage, load_benchmark_queries  # noqa: E402
+from benchmark.models import BenchmarkQuery  # noqa: E402
+from engines import (  # noqa: E402
     BruteForceCosineEngine,
     FaissFlatEngine,
+    FaissHnswEngine,
     QiskitGroverEngine,
     QiskitGroverQuantumPrepEngine,
     QiskitSwapTestEngine,
     SearchEngineStrategy,
 )
-from pipeline import CLIPEmbeddingModel
+from pipeline import CLIPEmbeddingModel  # noqa: E402
 
 
 @dataclass(frozen=True)
@@ -153,6 +154,7 @@ def _make_engine(name: str, dimension: int) -> SearchEngineStrategy:
     factories = {
         "brute_force_cosine": lambda: BruteForceCosineEngine(),
         "faiss_flat_l2": lambda: FaissFlatEngine(dimension=dimension),
+        "faiss_hnsw_l2": lambda: FaissHnswEngine(dimension=dimension),
         "qiskit_swap_test": lambda: QiskitSwapTestEngine(),
         "qiskit_grover": lambda: QiskitGroverEngine(),
         "qiskit_grover_quantum_prep": lambda: QiskitGroverQuantumPrepEngine(),

@@ -71,6 +71,7 @@ Same brute-force logic but using Facebook's FAISS library (hardware-optimised). 
 ### HNSW (approximate)
 
 For millions of vectors, brute force is too slow. **HNSW** (Hierarchical Navigable Small World) builds a multi-layer graph for O(log N) lookup. Trade-off: might miss the exact nearest neighbour.
+- **In the code:** `FaissHnswEngine` in `backend/src/engines/faiss_hnsw.py`, wraps `faiss.IndexHNSWFlat`
 - pgvector uses HNSW for `image_vectors` (see `db/migrations/up/1_initial_schema.sql`). For ~20 images brute force is fine; HNSW matters at thousands+
 
 > Like looking up a word in a dictionary - you jump to roughly the right section, then narrow down.
@@ -82,8 +83,8 @@ For millions of vectors, brute force is too slow. **HNSW** (Hierarchical Navigab
 **Q: Why include both `brute_force_cosine` and `faiss_flat_l2`?**
 A: Brute-force is a transparent baseline. FAISS demonstrates a production-grade implementation. Both are exact.
 
-**Q: Will HNSW be added as a benchmark engine?**
-A: Yes, planned. HNSW (O(log N) approximate) is the most relevant classical comparison for the quantum question - it beats Grover even with ideal qRAM. Adding it as an engine would complete the picture: brute force (O(N) exact), FAISS (O(N) exact, optimised), HNSW (O(log N) approximate), and quantum.
+**Q: Why include HNSW as a benchmark engine?**
+A: HNSW (O(log N) approximate) is the most relevant classical comparison for the quantum question - it beats Grover even with ideal qRAM for practical approximate search. It completes the picture: brute force (O(N) exact), FAISS flat (O(N) exact, optimised), HNSW (O(log N) approximate), and quantum.
 
 
 ---
@@ -339,10 +340,11 @@ All implement `SearchEngineStrategy` (`build_index()` + `search()`) in `backend/
 |---|---|---|---|
 | `brute_force_cosine` | `brute_force_cosine.py` | NumPy dot products. Exact. **Ground truth** | O(N) |
 | `faiss_flat_l2` | `faiss_flat.py` | FAISS L2 search. Exact. Production-grade | O(N) |
+| `faiss_hnsw_l2` | `faiss_hnsw.py` | FAISS HNSW graph search. Approximate classical baseline | O(log N) |
 | `qiskit_swap_test` | `qiskit_swaptest.py` | Real swap test on AerSimulator | O(N) |
 | `qiskit_grover` | `qiskit_grover.py` | Grover's algorithm on AerSimulator | O(sqrt(N)) oracle calls |
 
-> Four chefs cooking the same dish. Two use standard recipes (classical). One uses a quantum oven for similarity only (swap test). One uses the quantum oven with Grover's shortcut (Grover). We taste-test all four.
+> Five chefs cooking the same dish. Three use classical recipes: transparent brute force, optimised exact FAISS, and approximate HNSW. Two use quantum circuits: swap test similarity and Grover search. We taste-test all five.
 
 ### MRR (Mean Reciprocal Rank)
 
@@ -360,7 +362,8 @@ The harness computes MRR over the top_k results (`top_k=selection.top_k`, defaul
 
 ### Operation count - the cross-engine scaling KPI
 
-- Classical engines: N comparisons per query
+- Exact classical engines: N comparisons per query
+- HNSW: approximate O(log N) graph traversal
 - Grover: floor(pi*sqrt(N)/4) oracle calls per query
 - Stored in `benchmark_results.oracle_calls`
 - This is the **only valid cross-engine speed comparison** (hardware-independent)
@@ -408,4 +411,3 @@ A: (1) Empirical proof both swap test and Grover work, (2) measured circuit dept
 
 **Q: Most common examiner misconception?**
 A: That the project claims quantum is faster. It doesn't - it measures correctness and cost.
-

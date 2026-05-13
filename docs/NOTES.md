@@ -43,12 +43,13 @@ We do **not** compare raw speed - the quantum engine runs on a classical simulat
 
 ### Phase 3: Search Engines
 
-Four engines implementing `SearchEngineStrategy` (`build_index()` + `search()`) in `backend/src/engines/base.py`:
+Five engines implementing `SearchEngineStrategy` (`build_index()` + `search()`) in `backend/src/engines/base.py`:
 
 | Engine | Class | File | Purpose |
 |---|---|---|---|
 | `brute_force_cosine` | `BruteForceCosineEngine` | `brute_force_cosine.py` | NumPy dot products. Exact. **Ground truth** |
 | `faiss_flat_l2` | `FaissFlatEngine` | `faiss_flat.py` | FAISS L2. Exact. Production-grade |
+| `faiss_hnsw_l2` | `FaissHnswEngine` | `faiss_hnsw.py` | FAISS HNSW. Approximate O(log N) classical baseline |
 | `qiskit_swap_test` | `QiskitSwapTestEngine` | `qiskit_swaptest.py` | Real swap test on AerSimulator |
 | `qiskit_grover` | `QiskitGroverEngine` | `qiskit_grover.py` | Grover's algorithm. O(sqrt(N)) oracle scaling |
 
@@ -74,7 +75,7 @@ Results go to PostgreSQL via `DatabaseStorage` in `backend/src/benchmark/db_stor
 | `target_ids` / `top_ids` | JSONB | Ground truth / ranked results |
 | `search_ms` / `state_prep_ms` / `total_ms` | FLOAT | Timing |
 | `circuit_depth` / `num_qubits` | INTEGER | NULL for classical |
-| `oracle_calls` | INTEGER | N for classical, floor(pi*sqrt(N)/4) for Grover |
+| `oracle_calls` | INTEGER | N for exact classical/swap test, ceil(log2(N)) for HNSW, floor(pi*sqrt(N)/4) for Grover |
 
 **Run key:** `(query_id, engine_name, dimension, shots, layers)` - unique constraint. Same config = upsert, new config = append.
 
@@ -101,7 +102,7 @@ Results go to PostgreSQL via `DatabaseStorage` in `backend/src/benchmark/db_stor
 
 | Section | Controls | Example values |
 |---|---|---|
-| `classical_engines` | Which classical engines run | `brute_force_cosine`, `faiss_flat_l2` |
+| `classical_engines` | Which classical engines run | `brute_force_cosine`, `faiss_flat_l2`, `faiss_hnsw_l2` |
 | `quantum_engines` | Which quantum engines run | `qiskit_swap_test`, `qiskit_grover` |
 | `dimensions` | Vector sizes to test | 64, 128, 256, 512 |
 | `shots_values` | Shots per comparison (quantum) | 512, 1024, 2048 |
@@ -136,4 +137,3 @@ A: `(query_id, engine_name, dimension, shots, layers)`. Ensures one row per conf
 
 **Q: Where are CLIP embeddings stored?**
 A: `image_vectors` table. Stored by `index_dataset.py`, loaded by `run_benchmarks.py` via `storage.load_image_vectors()`.
-

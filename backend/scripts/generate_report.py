@@ -3,7 +3,7 @@
 
 Usage (from repo root):
     python3 backend/scripts/generate_report.py
-    python3 backend/scripts/generate_report.py --out docs/report.md
+    python3 backend/scripts/generate_report.py --out backend/reports/report.md
 
 KPIs
 ----
@@ -16,7 +16,8 @@ the quantum engine runs on a classical simulator, so its timing reflects
 circuit-simulation overhead rather than real quantum hardware latency.
 
 Cross-engine scaling comparison:
-  - Operation count    : Classical engines use N comparisons per query.
+  - Operation count    : Exact classical engines use N comparisons per query.
+                         HNSW uses an approximate O(log N) graph traversal.
                          Grover uses floor(π√N/4) oracle calls per query.
                          This is the only valid cross-engine "speed" metric.
 
@@ -40,6 +41,11 @@ if str(SRC_PATH) not in sys.path:
 from benchmark.db_storage import _bootstrap_env  # noqa: E402
 
 _bootstrap_env()
+
+GENERATED_REPORT_NOTICE = (
+    "<!-- AUTO-GENERATED FILE. Do not edit manually. "
+    "Run `python3 backend/scripts/generate_report.py` to regenerate. -->\n"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -200,6 +206,31 @@ def _section_quality_by_dimension(rows: list[dict]) -> str:
     return "## Quality by Dimension\n\n" + note + "\n" + _md_table(headers, table_rows)
 
 
+def _section_hnsw_small_dataset_note(rows: list[dict]) -> str:
+    engines = {r["engine_name"] for r in rows}
+    if "faiss_hnsw_l2" not in engines:
+        return ""
+    dataset_sizes = sorted(
+        {r["dataset_size"] for r in rows if r.get("dataset_size") is not None}
+    )
+    if not dataset_sizes or max(dataset_sizes) >= 1000:
+        return ""
+    size_label = (
+        f"N={dataset_sizes[0]}"
+        if len(dataset_sizes) == 1
+        else "N values " + ", ".join(str(size) for size in dataset_sizes)
+    )
+
+    return (
+        "## HNSW Small-Dataset Note\n\n"
+        "> HNSW is an approximate O(log N) graph index, but this benchmark "
+        "dataset is too small to expose the approximation trade-off. "
+        f"With {size_label}, the graph has so few nodes that `faiss_hnsw_l2` "
+        "is expected to match the exact FAISS L2 ranking and MRR. HNSW recall "
+        "differences become meaningful at thousands of vectors and above.\n"
+    )
+
+
 def _section_circuit_complexity(rows: list[dict]) -> str:
     """Quantum circuit resource usage broken down by dimension and dataset size."""
     quantum_rows = [r for r in rows if r.get("circuit_depth") is not None]
@@ -314,9 +345,9 @@ def _section_shots_to_quality(rows: list[dict]) -> str:
 def _section_operation_count_scaling(rows: list[dict]) -> str:
     """Cross-engine scaling comparison: operation count vs dataset size.
 
-    Classical engines use N comparisons.  Grover uses floor(π√N/4) oracle
-    calls.  This is the only valid cross-engine "speed" metric because it is
-    hardware-independent and directly captures the O(N) vs O(√N) difference.
+    Exact classical engines use N comparisons. HNSW uses an approximate O(log N)
+    graph traversal. Grover uses floor(π√N/4) oracle calls. This is the only
+    valid cross-engine "speed" metric because it is hardware-independent.
     """
     # Group by (engine, dataset_size) - average oracle_calls (should be constant per group)
     data: dict[tuple[str, int], list[int]] = defaultdict(list)
@@ -341,7 +372,12 @@ def _section_operation_count_scaling(rows: list[dict]) -> str:
             if key not in data:
                 continue
             ops = data[key][0]
-            complexity = "O(√N)" if engine == "qiskit_grover" else "O(N)"
+            if engine in {"qiskit_grover", "qiskit_grover_quantum_prep"}:
+                complexity = "O(√N)"
+            elif engine == "faiss_hnsw_l2":
+                complexity = "O(log N) approximate"
+            else:
+                complexity = "O(N)"
             table_rows.append([
                 f"`{engine}`",
                 str(ds),
@@ -351,13 +387,14 @@ def _section_operation_count_scaling(rows: list[dict]) -> str:
 
     note = (
         "> **Operation count** is the cross-engine scaling KPI.\n"
-        "> Classical engines perform N comparisons per query (linear scan).\n"
+        "> Exact classical engines perform N comparisons per query (linear scan).\n"
+        "> HNSW performs an approximate graph traversal with O(log N) expected "
+        "query cost.\n"
         "> Grover's algorithm uses floor(π√N/4) oracle calls per query.\n"
         "> This comparison is hardware-independent - it measures algorithmic efficiency,\n"
-        "> not wall-clock time. The divergence between O(N) and O(√N) as N grows is the\n"
-        "> entire argument for quantum search at scale.\n"
+        "> not wall-clock time.\n"
     )
-    return "## Operation Count Scaling (O(N) vs O(√N))\n\n" + note + "\n" + _md_table(headers, table_rows)
+    return "## Operation Count Scaling\n\n" + note + "\n" + _md_table(headers, table_rows)
 
 
 def _section_head_to_head(rows: list[dict]) -> str:
@@ -423,8 +460,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Generate a Markdown benchmark report from the database.")
     parser.add_argument(
         "--out",
-        default=str(BACKEND_ROOT / "docs" / "benchmark_report.md"),
-        help="Output path for the report (default: backend/docs/benchmark_report.md)",
+        default=str(BACKEND_ROOT / "reports" / "benchmark_report.md"),
+        help="Output path for the report (default: backend/reports/benchmark_report.md)",
     )
     args = parser.parse_args()
 
@@ -438,7 +475,11 @@ def main() -> None:
     if not rows:
         out_path = Path(args.out)
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text("# Benchmark Report\n\n_No results yet. Run `python3 scripts/run_benchmarks.py` first._\n")
+        out_path.write_text(
+            GENERATED_REPORT_NOTICE
+            + "# Benchmark Report\n\n"
+            + "_No results yet. Run `python3 scripts/run_benchmarks.py` first._\n"
+        )
         print(f"No results found - empty report written to {out_path}")
         return
 
@@ -446,6 +487,7 @@ def main() -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     sections = [
+        GENERATED_REPORT_NOTICE,
         "# Benchmark Report\n",
         "_Generated by `backend/scripts/generate_report.py`_\n",
         _section_overview(rows),
@@ -455,6 +497,8 @@ def main() -> None:
         _section_kpi_summary(rows),
         "",
         _section_quality_by_dimension(rows),
+        "",
+        _section_hnsw_small_dataset_note(rows),
         "",
         _section_operation_count_scaling(rows),
         "",
