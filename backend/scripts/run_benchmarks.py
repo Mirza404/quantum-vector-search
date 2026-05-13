@@ -21,7 +21,9 @@ from engines.faiss_flat import FaissFlatEngine
 from engines.qiskit_grover import QiskitGroverEngine
 from engines.qiskit_swaptest import QiskitSwapTestEngine
 from engines.brute_force_cosine import BruteForceCosineEngine
+from engines.qiskit_grover_quantum_prep import QiskitGroverQuantumPrepEngine
 from pipeline import CLIPEmbeddingModel
+
 
 
 @dataclass(frozen=True)
@@ -69,6 +71,9 @@ def _oracle_calls(engine_name: str, dataset_size: int) -> int | None:
     if engine_name == "qiskit_grover":
         n_padded = max(2, 1 << (dataset_size - 1).bit_length())
         return max(1, int(math.pi / 4 * math.sqrt(n_padded)))
+    if engine_name == "qiskit_grover_quantum_prep":
+        n_padded = max(2, 1 << (dataset_size - 1).bit_length())
+        return max(1, int(math.pi / 4 * math.sqrt(n_padded)))
     return None
 
 
@@ -78,6 +83,7 @@ def _engine_factories(seed: int | None, dimension: int) -> dict[str, Callable[[]
         "faiss_flat_l2": lambda: FaissFlatEngine(dimension=dimension),
         "qiskit_grover": lambda: QiskitGroverEngine(),
         "qiskit_swap_test": lambda: QiskitSwapTestEngine(),
+        "qiskit_grover_quantum_prep": lambda: QiskitGroverQuantumPrepEngine(),
     }
 
 
