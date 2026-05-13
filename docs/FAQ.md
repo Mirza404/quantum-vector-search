@@ -132,6 +132,20 @@ See [BENCHMARK_KPIS.md](BENCHMARK_KPIS.md) for the full KPI specification.
 
 ---
 
+### Do Grover benchmarks include state-preparation overhead?
+
+No - the main Grover KPI isolates the **search step**. `qiskit_grover` pre-computes the target classically, then measures Grover's O(sqrt(N)) oracle scaling. `qiskit_grover_quantum_prep` adds quantum state-preparation circuits for target selection, but it still runs on a simulator and is not a scalable qRAM implementation.
+
+This is intentional: the benchmark proves the Grover search subroutine behaves correctly, while the docs separately state the end-to-end limitation. Without qRAM, loading/preparing all N vectors costs O(N), which cancels the apparent O(sqrt(N)) search advantage.
+
+---
+
+### How do reruns avoid repeating completed benchmarks?
+
+Each result is keyed by `(query_id, engine_name, dimension, shots, layers)`. Before a run, `run_benchmarks.py` checks `DatabaseStorage.has_record(...)`; if the row already exists, it prints `already in DB` and skips that combination. The database also enforces the same unique run key.
+
+---
+
 ### Are simulator results meaningful?
 
 **Yes.** AerSimulator is mathematically exact - same measurement statistics as a perfect noiseless chip. The only noise is **shot noise** (from finite measurements), which exists on real hardware too. Results represent the best-case accuracy ceiling.
