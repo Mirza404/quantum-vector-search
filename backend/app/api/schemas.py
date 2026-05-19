@@ -48,5 +48,4 @@ class SearchResponse(BaseModel):
     query_id: str
     query_text: str
     target_image_id: str
-    classical: EngineResult
-    quantum: EngineResult
+    engines: List[EngineResult]

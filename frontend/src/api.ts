@@ -39,8 +39,7 @@ export interface SearchResponse {
   query_id: string
   query_text: string
   target_image_id: string
-  classical: EngineResult
-  quantum: EngineResult
+  engines: EngineResult[]
 }
 
 export async function fetchImages(page = 1, perPage = 20): Promise<PaginatedImages> {
