@@ -6,7 +6,7 @@ Quick answers to the most likely exam questions. For full explanations: [LEARNIN
 
 ### What is this project?
 
-A text-to-image search system. You type "a dog on a beach", it finds matching images using vector similarity. Both text and images are converted to 512-dim vectors by CLIP, and the system finds the closest matches. We benchmark **five** search engines (three classical, two quantum) side-by-side to compare accuracy and cost.
+A text-to-image search system. You type "a dog on a beach", it finds matching images using vector similarity. Both text and images are converted to 512-dim vectors by CLIP, and the system finds the closest matches. We benchmark classical, quantum, and hybrid search engines side-by-side to compare accuracy and cost.
 
 ---
 
@@ -82,13 +82,15 @@ Number of sequential gate layers. Deeper circuits take longer and accumulate mor
 
 ---
 
-### What's the difference between the five engines?
+### What's the difference between the engines?
 
 | Engine | File | How it works | Speed |
 |---|---|---|---|
 | `brute_force_cosine` | `brute_force_cosine.py` | NumPy dot products | Fast. **Ground truth** |
 | `faiss_flat_l2` | `faiss_flat.py` | FAISS L2 index | Fast. Production-grade |
 | `faiss_hnsw_l2` | `faiss_hnsw.py` | FAISS HNSW graph index | Approximate O(log N) classical baseline |
+| `hybrid_hnsw_swap_test` | `hybrid_hnsw_swaptest.py` | HNSW prefilter + swap-test rerank | Hybrid O(log N + M) |
+| `hybrid_hnsw_swap_test_ibm` | `hybrid_hnsw_swaptest.py` + IBM Runtime | Same hybrid engine on IBM hardware | Real-hardware smoke test |
 | `qiskit_swap_test` | `qiskit_swaptest.py` | Real swap test circuit on simulator | Slow (simulation overhead) |
 | `qiskit_grover` | `qiskit_grover.py` | Grover's algorithm on simulator | Slow. O(sqrt(N)) oracle scaling |
 
@@ -154,9 +156,11 @@ Each result is keyed by `(query_id, engine_name, dimension, shots, layers)`. Bef
 
 ### What about real IBM hardware?
 
-Not used in this project. The IBM Quantum free tier is publicly accessible and our circuits (13–15 qubits) would technically fit, but two practical obstacles make it unsuitable for controlled benchmarking: queue wait times on the free tier are reported to be very long, and noise beyond roughly 7 qubits is significant enough to obscure the algorithmic signal we are measuring.
+Used only for an explicit real-hardware smoke test, not normal frontend search or full benchmarks. The IBM path is `hybrid_hnsw_swap_test_ibm`: classical HNSW selects a tiny candidate set, then IBM hardware runs swap-test circuits to rerank those candidates.
 
-Running on real hardware is something that could be explored as a follow-up - the circuits exist and the comparison (simulator vs. hardware accuracy gap) would be interesting - but it is not a planned deliverable of this project.
+We do not run Grover on IBM for the main demo. Grover is best used here to prove oracle-call scaling on a simulator; its target is classically precomputed, and the circuit depth/noise/free-quota cost makes it a poor real-hardware demo. The hybrid swap test is smaller, safer, and demonstrates a practical quantum subroutine on real hardware.
+
+The IBM validation was deliberately small: 20 queries, dimension 2, 2 candidates, and 32 shots. It consumed 80 seconds from a 600-second Open Plan quota and achieved MRR 0.125. This gives real-hardware evidence without risking the full quota or making normal frontend searches depend on IBM queue availability.
 
 ---
 

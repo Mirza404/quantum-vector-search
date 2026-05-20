@@ -1,6 +1,6 @@
 # Search Engines - Plain Language Guide
 
-Five engines. One job: **given a text description, find the most matching image.**
+Six engines. One job: **given a text description, find the most matching image.**
 
 Every engine receives the same input - a list of ~512 numbers (a "vector") representing
 your query - and searches for the most similar vector in the database. They differ in
@@ -13,7 +13,7 @@ your query - and searches for the most similar vector in the database. They diff
 When CLIP processes the text "a dog on the beach", it outputs a list of 512 numbers,
 something like `[0.12, -0.84, 0.03, ...]`. An image of a dog on a beach gets a similar
 list. The closer those two lists "point in the same direction", the more semantically
-similar they are. This closeness is what all five engines measure.
+similar they are. This closeness is what all engines measure.
 
 ---
 

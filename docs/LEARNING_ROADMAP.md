@@ -332,7 +332,7 @@ A: Mathematically exact - same statistics as a perfect chip. Shot noise is real.
 
 ## Part 8 - Engines and Metrics
 
-### The five engines
+### The engines
 
 All implement `SearchEngineStrategy` (`build_index()` + `search()`) in `backend/src/engines/base.py`:
 
@@ -341,10 +341,11 @@ All implement `SearchEngineStrategy` (`build_index()` + `search()`) in `backend/
 | `brute_force_cosine` | `brute_force_cosine.py` | NumPy dot products. Exact. **Ground truth** | O(N) |
 | `faiss_flat_l2` | `faiss_flat.py` | FAISS L2 search. Exact. Production-grade | O(N) |
 | `faiss_hnsw_l2` | `faiss_hnsw.py` | FAISS HNSW graph search. Approximate classical baseline | O(log N) |
+| `hybrid_hnsw_swap_test` | `hybrid_hnsw_swaptest.py` | HNSW prefilter plus swap-test reranking | O(log N + M) |
 | `qiskit_swap_test` | `qiskit_swaptest.py` | Real swap test on AerSimulator | O(N) |
 | `qiskit_grover` | `qiskit_grover.py` | Grover's algorithm on AerSimulator | O(sqrt(N)) oracle calls |
 
-> Five chefs cooking the same dish. Three use classical recipes: transparent brute force, optimised exact FAISS, and approximate HNSW. Two use quantum circuits: swap test similarity and Grover search. We taste-test all five.
+> Multiple engines cooking the same dish. Classical engines retrieve candidates, quantum engines estimate similarity or amplify a marked state, and the hybrid engine combines both ideas.
 
 ### MRR (Mean Reciprocal Rank)
 
@@ -364,6 +365,7 @@ The harness computes MRR over the top_k results (`top_k=selection.top_k`, defaul
 
 - Exact classical engines: N comparisons per query
 - HNSW: approximate O(log N) graph traversal
+- Hybrid HNSW + swap test: O(log N + M), where M is the candidate pool reranked quantumly
 - Grover: floor(pi*sqrt(N)/4) oracle calls per query
 - Stored in `benchmark_results.oracle_calls`
 - This is the **only valid cross-engine speed comparison** (hardware-independent)
@@ -372,7 +374,7 @@ The harness computes MRR over the top_k results (`top_k=selection.top_k`, defaul
 
 The quantum engines run on a classical simulator. Their timing reflects simulating 2^n amplitudes on a CPU, not real quantum hardware speed. MRR is valid across engines. Speed is only valid *within* one engine across dimensions.
 
-**In one sentence:** Five interchangeable engines let us compare quantum accuracy against classical, with oracle count as the scaling KPI and MRR as the quality KPI.
+**In one sentence:** Interchangeable engines let us compare classical, quantum, and hybrid accuracy, with oracle count as the scaling KPI and MRR as the quality KPI.
 
 **Self-test**
 

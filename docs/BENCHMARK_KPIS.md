@@ -25,6 +25,7 @@ The number of times the core operation runs per query - literally the loop itera
 | `brute_force_cosine` | Yes - one comparison per vector | O(N) |
 | `faiss_flat_l2` | Yes - one comparison per vector | O(N) |
 | `faiss_hnsw_l2` | No - approximate graph traversal | **O(log N)** |
+| `hybrid_hnsw_swap_test` | HNSW prefilter plus M swap tests | **O(log N + M)** |
 | `qiskit_swap_test` | Yes - one circuit per vector | O(N) |
 | `qiskit_grover` | No - floor(π√N/4) oracle cycles | **O(√N)** |
 
@@ -51,6 +52,8 @@ Stored in `benchmark_results.circuit_depth`, `num_qubits`.
 ## What We Don't Report (and why)
 
 **Wall-clock time is never compared across engines.** Classical runs on CPU, quantum runs on a simulator that uses exponentially more CPU to fake quantum states. Comparing their runtimes would just show "simulation is slow" - not anything about the quantum algorithm itself. Simulator wall-clock is stored in the DB but excluded from report graphs.
+
+IBM hardware rows are also treated separately. The saved IBM validation uses intentionally tiny settings (dimension 2, two candidates, 32 shots) to stay within free Open Plan quota, so it is evidence that the hardware path works, not a like-for-like benchmark against simulator runs.
 
 ---
 
