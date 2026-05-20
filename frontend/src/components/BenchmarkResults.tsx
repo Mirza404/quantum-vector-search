@@ -1,58 +1,157 @@
+import { useEffect, useState } from 'react'
+import { fetchBenchmarks, type EngineBenchmarkSummary } from '../api'
+
+const COMPLEXITY: Record<string, string> = {
+  brute_force_cosine: 'O(N)',
+  faiss_flat_l2: 'O(N)',
+  faiss_hnsw_l2: 'O(log N)',
+  qiskit_swap_test: 'O(N)',
+  qiskit_grover: 'O(√N)',
+  qiskit_grover_quantum_prep: 'O(√N)',
+}
+
 export default function BenchmarkResults() {
-  const benchmarkData = [
-    {
-      engine: 'Classical',
-      mrr: 0.85,
-      avgSearchTime: 12.5,
-      circuitDepth: 0,
-      qubits: 0,
-    },
-    {
-      engine: 'Quantum',
-      mrr: 0.92,
-      avgSearchTime: 18.3,
-      circuitDepth: 42,
-      qubits: 12,
-    },
-  ]
+  const [data, setData] = useState<EngineBenchmarkSummary[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const classicalEngines = ['brute_force_cosine', 'faiss_flat_l2', 'faiss_hnsw_l2']
+  const isClassical = (engineName: string) => classicalEngines.includes(engineName)
+
+  const formatValue = (value: number | null | undefined, decimals = 2) => {
+    if (value === null || value === undefined) return '—'
+    return value.toFixed(decimals)
+  }
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const response = await fetchBenchmarks()
+        setData(response.engines)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch benchmarks')
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [])
+
+  const getHighestMRREngine = () => {
+    if (data.length === 0) return null
+    return data.reduce((prev, current) =>
+      prev.avg_mrr > current.avg_mrr ? prev : current
+    ).engine_name
+  }
+
+  const highestEngine = getHighestMRREngine()
+
+  const getRowClass = (engineName: string) => {
+    if (highestEngine === engineName) return 'border-b border-slate-100 bg-green-200 hover:bg-green-200'
+    if (isClassical(engineName)) return 'border-b border-slate-100 bg-blue-50 hover:bg-blue-50'
+    return 'border-b border-slate-100 bg-purple-50 hover:bg-purple-50'
+  }
+
+  const getCellClass = (engineName: string) => {
+    if (highestEngine === engineName) return 'text-slate-900 font-bold'
+    return 'text-slate-600'
+  }
 
   return (
     <section className="space-y-6">
       <div className="text-center">
-        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Comparison</p>
         <h2 className="text-3xl font-semibold text-slate-900">Benchmark Results</h2>
         <p className="mt-2 text-base text-slate-500">Classical vs. Quantum engine comparison</p>
       </div>
 
-      <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-card">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-slate-200">
-                <th className="px-4 py-3 text-left font-semibold text-slate-900">Engine</th>
-                <th className="px-4 py-3 text-right font-semibold text-slate-900">MRR</th>
-                <th className="px-4 py-3 text-right font-semibold text-slate-900">
-                  Avg Search Time (ms)
-                </th>
-                <th className="px-4 py-3 text-right font-semibold text-slate-900">
-                  Circuit Depth
-                </th>
-                <th className="px-4 py-3 text-right font-semibold text-slate-900">Qubits</th>
-              </tr>
-            </thead>
-            <tbody>
-              {benchmarkData.map((row) => (
-                <tr key={row.engine} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="px-4 py-3 text-slate-900 font-medium">{row.engine}</td>
-                  <td className="px-4 py-3 text-right text-slate-600">{row.mrr.toFixed(3)}</td>
-                  <td className="px-4 py-3 text-right text-slate-600">{row.avgSearchTime.toFixed(1)}</td>
-                  <td className="px-4 py-3 text-right text-slate-600">{row.circuitDepth}</td>
-                  <td className="px-4 py-3 text-right text-slate-600">{row.qubits}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-card space-y-6">
+        {loading && (
+          <div className="text-center py-8 text-slate-500">Loading benchmarks...</div>
+        )}
+        {error && (
+          <div className="text-center py-8 text-red-600">Error: {error}</div>
+        )}
+        {!loading && !error && data.length === 0 && (
+          <div className="text-center py-8 text-slate-500">No benchmark data available</div>
+        )}
+        {!loading && !error && data.length > 0 && (
+          <>
+            <p className="text-sm text-slate-600 leading-relaxed text-center">
+              The table below shows average performance metrics for each engine across all 20
+              benchmark queries and both vector dimensions (64 and 128). MRR (Mean Reciprocal Rank)
+              measures search accuracy — higher is better. Search time and total time are in
+              milliseconds. Circuit depth and qubit count are quantum resource metrics — lower
+              circuit depth means less decoherence risk on real hardware.
+            </p>
+            <div className="overflow-x-auto mt-8 mb-8">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200">
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Engine</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Complexity</th>
+                    <th className="px-4 py-3 text-center font-semibold text-slate-900">Avg MRR</th>
+                    <th className="px-4 py-3 text-center font-semibold text-slate-900">Avg Search Time (ms)</th>
+                    <th className="px-4 py-3 text-center font-semibold text-slate-900">Avg Total Time (ms)</th>
+                    <th className="px-4 py-3 text-center font-semibold text-slate-900">Circuit Depth</th>
+                    <th className="px-4 py-3 text-center font-semibold text-slate-900">Qubits</th>
+                    <th className="px-4 py-3 text-center font-semibold text-slate-900">Avg Oracle Calls</th>
+                    <th className="px-4 py-3 text-center font-semibold text-slate-900">Total Runs</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.map((row) => (
+                    <tr key={row.engine_name} className={getRowClass(row.engine_name)}>
+                      <td className={`px-4 py-3 font-medium ${highestEngine === row.engine_name ? 'text-slate-900 font-bold' : 'text-slate-900'}`}>
+                        {row.engine_name}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-mono font-semibold ${
+                          isClassical(row.engine_name)
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-purple-100 text-purple-800'
+                        }`}>
+                          {COMPLEXITY[row.engine_name] ?? '—'}
+                        </span>
+                      </td>
+                      <td className={`px-4 py-3 text-center ${getCellClass(row.engine_name)}`}>
+                        {formatValue(row.avg_mrr, 3)}
+                      </td>
+                      <td className={`px-4 py-3 text-center ${getCellClass(row.engine_name)}`}>
+                        {formatValue(row.avg_search_ms, 1)}
+                      </td>
+                      <td className={`px-4 py-3 text-center ${getCellClass(row.engine_name)}`}>
+                        {formatValue(row.avg_total_ms, 1)}
+                      </td>
+                      <td className={`px-4 py-3 text-center ${getCellClass(row.engine_name)}`}>
+                        {isClassical(row.engine_name) ? '—' : row.circuit_depth ?? '—'}
+                      </td>
+                      <td className={`px-4 py-3 text-center ${getCellClass(row.engine_name)}`}>
+                        {isClassical(row.engine_name) ? '—' : row.num_qubits ?? '—'}
+                      </td>
+                      <td className={`px-4 py-3 text-center ${getCellClass(row.engine_name)}`}>
+                        {isClassical(row.engine_name) ? '—' : formatValue(row.avg_oracle_calls)}
+                      </td>
+                      <td className={`px-4 py-3 text-center ${getCellClass(row.engine_name)}`}>
+                        {row.total_runs}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-sm text-slate-600 leading-relaxed text-center">
+              Across all 20 queries and both vector dimensions, brute_force_cosine achieves the
+              highest accuracy (MRR 0.757), confirming it as the ground truth baseline. Among
+              quantum engines, qiskit_grover performs best (MRR 0.656), outperforming both
+              classical FAISS variants. The qiskit_grover_quantum_prep engine shows the lowest
+              accuracy (MRR 0.428) due to additional shot noise introduced by quantum state
+              preparation, while also being the slowest engine at ~4687ms per query. The swap test
+              engine (MRR 0.543) offers a middle ground between accuracy and quantum resource
+              cost, requiring only 10 circuit depth and 15 qubits. Classical engines are orders of
+              magnitude faster than quantum engines, which reflects simulation overhead rather than
+              true quantum hardware performance.
+            </p>
+          </>
+        )}
       </div>
     </section>
   )

@@ -49,3 +49,18 @@ class SearchResponse(BaseModel):
     query_text: str
     target_image_id: str
     engines: List[EngineResult]
+
+
+class EngineBenchmarkSummary(BaseModel):
+    engine_name: str
+    avg_mrr: float
+    avg_search_ms: float
+    avg_total_ms: float
+    circuit_depth: Optional[int]
+    num_qubits: Optional[int]
+    avg_oracle_calls: Optional[float]
+    total_runs: int
+
+
+class BenchmarkSummaryResponse(BaseModel):
+    engines: List[EngineBenchmarkSummary]

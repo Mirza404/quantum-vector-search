@@ -76,10 +76,7 @@ export default function SearchResults({ data }: Props) {
   return (
     <div className="space-y-6">
       <p className="text-center text-sm text-slate-600">
-        Query: <span className="font-medium text-slate-900">{data.query_text}</span> | target{' '}
-        <code className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
-          {data.target_image_id}
-        </code>
+        Query: <span className="font-medium text-slate-900">{data.query_text}</span>
       </p>
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Classical Engines Column */}

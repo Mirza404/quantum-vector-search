@@ -38,8 +38,9 @@ function App() {
   return (
     <div className="flex-1 px-4 pb-12 pt-8 md:px-10 lg:px-12">
       <header className="mb-8 text-center">
-        <h1 className="text-4xl font-semibold text-slate-900 md:text-5xl">Quantum Vector Search</h1>
-        <p className="mt-2 text-base text-slate-500">Classical vs. quantum image search - side by side</p>
+        <h1 className="text-4xl font-semibold text-slate-900 md:text-5xl">Classical vs. Quantum Image Search</h1>
+        <p className="mt-2 text-base text-slate-500">Cross-modal retrieval using CLIP embeddings — benchmarked across 6 engines</p>
+        <p className="mt-1 text-xs text-slate-400">IUS Graduation Project, 2026</p>
       </header>
 
       <nav className="mb-8 flex flex-col gap-3 sm:flex-row">

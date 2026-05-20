@@ -25,8 +25,10 @@ from .dependencies import (
     get_storage,
 )
 from .schemas import (
+    BenchmarkSummaryResponse,
     EngineResult,
     EngineResultItem,
+    EngineBenchmarkSummary,
     ImageItem,
     PaginatedImages,
     QueriesResponse,
@@ -89,6 +91,31 @@ def list_queries():
             for q in queries
         ]
     )
+
+
+# ---------------------------------------------------------------------------
+# GET /api/benchmarks - benchmark summary statistics
+# ---------------------------------------------------------------------------
+
+
+@api_router.get("/benchmarks", response_model=BenchmarkSummaryResponse)
+def get_benchmarks(query_id: str | None = Query(None)):
+    storage = get_storage()
+    rows = storage.load_benchmark_summary(query_id=query_id)
+    engines = [
+        EngineBenchmarkSummary(
+            engine_name=row["engine_name"],
+            avg_mrr=float(row["avg_mrr"]),
+            avg_search_ms=float(row["avg_search_ms"]),
+            avg_total_ms=float(row["avg_total_ms"]),
+            circuit_depth=row["circuit_depth"],
+            num_qubits=row["num_qubits"],
+            avg_oracle_calls=float(row["avg_oracle_calls"]) if row["avg_oracle_calls"] else None,
+            total_runs=int(row["total_runs"]),
+        )
+        for row in rows
+    ]
+    return BenchmarkSummaryResponse(engines=engines)
 
 
 # ---------------------------------------------------------------------------
