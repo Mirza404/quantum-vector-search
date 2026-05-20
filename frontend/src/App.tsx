@@ -5,6 +5,23 @@ import QueryPicker from './components/QueryPicker'
 import SearchResults from './components/SearchResults'
 import BenchmarkResults from './components/BenchmarkResults'
 
+function SearchLoading() {
+  return (
+    <div className="rounded-2xl border border-violet-100 bg-violet-50/70 px-5 py-6 text-center shadow-card">
+      <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-white shadow-sm">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
+      </div>
+      <p className="text-sm font-semibold text-slate-900">Running search engines</p>
+      <p className="mt-1 text-xs text-slate-500">
+        Building indexes, embedding the query, and comparing classical, quantum, and hybrid results.
+      </p>
+      <div className="mx-auto mt-4 h-1.5 max-w-sm overflow-hidden rounded-full bg-white">
+        <div className="h-full w-1/3 animate-[loading-bar_1.4s_ease-in-out_infinite] rounded-full bg-violet-500" />
+      </div>
+    </div>
+  )
+}
+
 type View = 'browse' | 'search' | 'benchmarks'
 
 function App() {
@@ -39,7 +56,7 @@ function App() {
     <div className="flex-1 px-4 pb-12 pt-8 md:px-10 lg:px-12">
       <header className="mb-8 text-center">
         <h1 className="text-4xl font-semibold text-slate-900 md:text-5xl">Classical vs. Quantum Image Search</h1>
-        <p className="mt-2 text-base text-slate-500">Cross-modal retrieval using CLIP embeddings — benchmarked across 6 engines</p>
+        <p className="mt-2 text-base text-slate-500">Cross-modal retrieval using CLIP embeddings — benchmarked across 7 engines</p>
         <p className="mt-1 text-xs text-slate-400">IUS Graduation Project, 2026</p>
       </header>
 
@@ -58,11 +75,7 @@ function App() {
       {view === 'search' && (
         <section className="space-y-4">
           <QueryPicker onSelect={handleQuery} disabled={loading} />
-          {loading && (
-            <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm text-slate-600">
-              Searching...
-            </p>
-          )}
+          {loading && <SearchLoading />}
           {error && (
             <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-medium text-red-600">
               {error}

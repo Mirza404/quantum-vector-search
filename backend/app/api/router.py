@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from time import perf_counter
 from typing import List
 
@@ -17,11 +16,9 @@ from .dependencies import (
     SEARCH_SHOTS,
     SEARCH_TOP_K,
     get_all_engines,
-    get_classical_engine,
     get_clip_model,
     get_image_ids,
     get_queries,
-    get_quantum_engine,
     get_storage,
 )
 from .schemas import (
@@ -129,6 +126,7 @@ def list_engines():
         "brute_force_cosine",
         "faiss_flat_l2", 
         "faiss_hnsw_l2",
+        "hybrid_hnsw_swap_test",
         "qiskit_swap_test",
         "qiskit_grover",
         "qiskit_grover_quantum_prep",

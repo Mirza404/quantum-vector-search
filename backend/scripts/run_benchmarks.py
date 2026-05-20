@@ -10,6 +10,7 @@ from typing import Callable, List
 import sys
 
 import numpy as np
+from qiskit_aer import AerSimulator
 
 BACKEND_ROOT = Path(__file__).resolve().parent.parent
 SRC_PATH = BACKEND_ROOT / "src"
@@ -19,6 +20,8 @@ if str(SRC_PATH) not in sys.path:
 from benchmark import BenchmarkResult, DatabaseStorage, load_benchmark_queries  # noqa: E402
 from engines.faiss_flat import FaissFlatEngine  # noqa: E402
 from engines.faiss_hnsw import FaissHnswEngine  # noqa: E402
+from engines.hybrid_hnsw_swaptest import HybridHnswSwapTestEngine  # noqa: E402
+from engines.ibm_backend import load_ibm_backend_from_env  # noqa: E402
 from engines.qiskit_grover import QiskitGroverEngine  # noqa: E402
 from engines.qiskit_grover_quantum_prep import QiskitGroverQuantumPrepEngine  # noqa: E402
 from engines.qiskit_swaptest import QiskitSwapTestEngine  # noqa: E402
@@ -71,6 +74,8 @@ def _oracle_calls(engine_name: str, dataset_size: int) -> int | None:
         return dataset_size
     if engine_name == "faiss_hnsw_l2":
         return max(1, math.ceil(math.log2(max(2, dataset_size))))
+    if engine_name in {"hybrid_hnsw_swap_test", "hybrid_hnsw_swap_test_ibm"}:
+        return max(1, math.ceil(math.log2(max(2, dataset_size)))) + min(5, dataset_size)
     if engine_name == "qiskit_grover":
         n_padded = max(2, 1 << (dataset_size - 1).bit_length())
         return max(1, int(math.pi / 4 * math.sqrt(n_padded)))
@@ -81,13 +86,26 @@ def _oracle_calls(engine_name: str, dataset_size: int) -> int | None:
 
 
 def _engine_factories(seed: int | None, dimension: int) -> dict[str, Callable[[], object]]:
+    def _simulator() -> AerSimulator:
+        return AerSimulator(seed_simulator=seed) if seed is not None else AerSimulator()
+
     return {
         "brute_force_cosine": lambda: BruteForceCosineEngine(),
         "faiss_flat_l2": lambda: FaissFlatEngine(dimension=dimension),
         "faiss_hnsw_l2": lambda: FaissHnswEngine(dimension=dimension),
-        "qiskit_grover": lambda: QiskitGroverEngine(),
-        "qiskit_swap_test": lambda: QiskitSwapTestEngine(),
-        "qiskit_grover_quantum_prep": lambda: QiskitGroverQuantumPrepEngine(),
+        "hybrid_hnsw_swap_test": lambda: HybridHnswSwapTestEngine(
+            dimension=dimension,
+            backend=_simulator(),
+        ),
+        "hybrid_hnsw_swap_test_ibm": lambda: HybridHnswSwapTestEngine(
+            dimension=dimension,
+            backend=load_ibm_backend_from_env(
+                min_qubits=1 + 2 * max(1, math.ceil(math.log2(dimension)))
+            ),
+        ),
+        "qiskit_grover": lambda: QiskitGroverEngine(backend=_simulator()),
+        "qiskit_swap_test": lambda: QiskitSwapTestEngine(backend=_simulator()),
+        "qiskit_grover_quantum_prep": lambda: QiskitGroverQuantumPrepEngine(backend=_simulator()),
     }
 
 
@@ -293,7 +311,7 @@ def main() -> None:
                         mrr = _mrr([query.target_id], result.ids)
                         parameters: dict = {"dimension": dimension}
                         if is_quantum:
-                            parameters.update({"shots": shots, "layers": layers})
+                            parameters.update({"shots": shots, "layers": layers, "quantum_seed": args.quantum_seed})
 
                         storage.append(
                             BenchmarkResult(

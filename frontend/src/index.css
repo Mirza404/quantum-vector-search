@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes loading-bar {
+  0% {
+    transform: translateX(-120%);
+  }
+  55% {
+    transform: translateX(90%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
 @layer base {
   :root {
     color-scheme: light;

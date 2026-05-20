@@ -231,6 +231,28 @@ def _section_hnsw_small_dataset_note(rows: list[dict]) -> str:
     )
 
 
+def _section_ibm_validation_note(rows: list[dict]) -> str:
+    ibm_rows = [r for r in rows if r["engine_name"] == "hybrid_hnsw_swap_test_ibm"]
+    if not ibm_rows:
+        return ""
+
+    mrr_values = [_mrr(r["target_ids"] or [], r["top_ids"] or []) for r in ibm_rows]
+    dimensions = sorted({r["dimension"] for r in ibm_rows})
+    shots = sorted({(r["parameters"] or {}).get("shots") for r in ibm_rows})
+    candidates = sorted({(r["parameters"] or {}).get("candidate_pool_size") for r in ibm_rows})
+
+    return (
+        "## IBM Hardware Validation\n\n"
+        "> `hybrid_hnsw_swap_test_ibm` is a real IBM Quantum validation run, not a full benchmark.\n"
+        "> It is intentionally isolated from frontend search and default benchmarks because IBM Open Plan QPU time is limited and queue/API availability is variable.\n"
+        f"> Saved rows: {len(ibm_rows)} queries; dimensions: {', '.join(map(str, dimensions))}; "
+        f"shots: {', '.join(map(str, shots))}; candidates: {', '.join(map(str, candidates))}; "
+        f"average MRR: {_fmt(_avg(mrr_values), 3)}.\n"
+        "> The validation run consumed 80 seconds from a 600-second Open Plan quota. "
+        "These rows prove the hardware path works, but should not be compared directly with full simulator/classical runs.\n"
+    )
+
+
 def _section_circuit_complexity(rows: list[dict]) -> str:
     """Quantum circuit resource usage broken down by dimension and dataset size."""
     quantum_rows = [r for r in rows if r.get("circuit_depth") is not None]
@@ -374,6 +396,8 @@ def _section_operation_count_scaling(rows: list[dict]) -> str:
             ops = data[key][0]
             if engine in {"qiskit_grover", "qiskit_grover_quantum_prep"}:
                 complexity = "O(√N)"
+            elif engine == "hybrid_hnsw_swap_test":
+                complexity = "O(log N + M)"
             elif engine == "faiss_hnsw_l2":
                 complexity = "O(log N) approximate"
             else:
@@ -499,6 +523,8 @@ def main() -> None:
         _section_quality_by_dimension(rows),
         "",
         _section_hnsw_small_dataset_note(rows),
+        "",
+        _section_ibm_validation_note(rows),
         "",
         _section_operation_count_scaling(rows),
         "",

@@ -5,6 +5,8 @@ const COMPLEXITY: Record<string, string> = {
   brute_force_cosine: 'O(N)',
   faiss_flat_l2: 'O(N)',
   faiss_hnsw_l2: 'O(log N)',
+  hybrid_hnsw_swap_test: 'O(log N + M)',
+  hybrid_hnsw_swap_test_ibm: 'IBM QPU',
   qiskit_swap_test: 'O(N)',
   qiskit_grover: 'O(√N)',
   qiskit_grover_quantum_prep: 'O(√N)',
@@ -16,8 +18,15 @@ export default function BenchmarkResults() {
   const [error, setError] = useState<string | null>(null)
 
   const classicalEngines = ['brute_force_cosine', 'faiss_flat_l2', 'faiss_hnsw_l2']
-  const quantumEngines = ['qiskit_swap_test', 'qiskit_grover', 'qiskit_grover_quantum_prep']
+  const quantumEngines = [
+    'hybrid_hnsw_swap_test',
+    'hybrid_hnsw_swap_test_ibm',
+    'qiskit_swap_test',
+    'qiskit_grover',
+    'qiskit_grover_quantum_prep',
+  ]
   const isClassical = (engineName: string) => classicalEngines.includes(engineName)
+  const isIbm = (engineName: string) => engineName === 'hybrid_hnsw_swap_test_ibm'
 
   const formatValue = (value: number | null | undefined, decimals = 2) => {
     if (value === null || value === undefined) return '—'
@@ -81,6 +90,7 @@ export default function BenchmarkResults() {
   const getRowClass = (engineName: string) => {
     if (highestEngine === engineName) return 'border-b border-slate-100 bg-green-200 hover:bg-green-200'
     if (isClassical(engineName)) return 'border-b border-slate-100 bg-blue-50 hover:bg-blue-50'
+    if (isIbm(engineName)) return 'border-b border-slate-100 bg-amber-50 hover:bg-amber-50'
     return 'border-b border-slate-100 bg-purple-50 hover:bg-purple-50'
   }
 
@@ -109,11 +119,10 @@ export default function BenchmarkResults() {
         {!loading && !error && data.length > 0 && (
           <>
             <p className="text-sm text-slate-600 leading-relaxed text-center">
-              The table below shows average performance metrics for each engine across all 20
-              benchmark queries and both vector dimensions (64 and 128). MRR (Mean Reciprocal Rank)
-              measures search accuracy — higher is better. Search time and total time are in
-              milliseconds. Circuit depth and qubit count are quantum resource metrics — lower
-              circuit depth means less decoherence risk on real hardware.
+              The table below shows average performance metrics for each engine. Simulator and
+              classical rows use the configured benchmark dimensions; the IBM hardware row is a
+              separate validation run with dimension 2, 2 candidates, and 32 shots to stay within
+              free QPU quota. MRR (Mean Reciprocal Rank) measures search accuracy — higher is better.
             </p>
             <div className="overflow-x-auto mt-8 mb-8">
               <table className="w-full border-collapse text-sm">
@@ -138,7 +147,9 @@ export default function BenchmarkResults() {
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-mono font-semibold ${
-                          isClassical(row.engine_name)
+                          isIbm(row.engine_name)
+                            ? 'bg-amber-100 text-amber-800'
+                            : isClassical(row.engine_name)
                             ? 'bg-blue-100 text-blue-800'
                             : 'bg-purple-100 text-purple-800'
                         }`}>

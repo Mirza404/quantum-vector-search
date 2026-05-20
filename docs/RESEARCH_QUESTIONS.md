@@ -10,7 +10,7 @@ This is a bachelor's graduation project. It is **not** discovering a new algorit
 
 What this project does:
 
-1. **Engineering:** Builds a complete, working system - CLIP embedding pipeline, five search engines (three classical, two quantum), PostgreSQL storage, FastAPI backend, React frontend. This is non-trivial and demonstrates real software engineering capability.
+1. **Engineering:** Builds a complete, working system - CLIP embedding pipeline, classical/quantum/hybrid search engines, PostgreSQL storage, FastAPI backend, React frontend. This is non-trivial and demonstrates real software engineering capability.
 
 2. **Empirical verification:** Theory says Grover's algorithm scales as O(sqrt(N)). We actually ran it, measured oracle calls at multiple dataset sizes, and verified the curve. That is a real empirical contribution, not just reading a textbook.
 

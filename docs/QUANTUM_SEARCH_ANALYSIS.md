@@ -213,6 +213,50 @@ Those are real findings, but they're a single experiment, not the core benchmark
 | **Simulator** | All scaling benchmarks, all O(N) vs O(sqrt(N)) comparisons |
 | **IBM hardware** | One noise/accuracy demonstration on a toy dataset |
 
+### Why IBM runs the hybrid swap-test engine, not Grover
+
+The real-hardware IBM path uses `hybrid_hnsw_swap_test_ibm`: classical HNSW first
+selects a small candidate set, then IBM hardware runs swap-test circuits to rerank
+those candidates.
+
+We intentionally do **not** run `qiskit_grover` on IBM hardware for the main demo:
+
+- Grover in this project isolates oracle scaling, but its oracle target is selected
+  classically first. That is useful for theory, but less convincing as a real-hardware
+  retrieval demo.
+- Grover circuits become deeper because each iteration applies an oracle plus diffusion.
+  On noisy free-tier hardware, depth hurts reliability quickly.
+- A full Grover benchmark would consume limited QPU quota and queue time without adding
+  much beyond what the simulator already proves: the O(sqrt(N)) oracle count.
+- The hybrid swap-test circuit is smaller and directly validates a useful quantum
+  subroutine: quantum similarity estimation after classical candidate retrieval.
+
+So the simulator remains the source of the full benchmark data, while IBM hardware is
+used as a controlled validation that the quantum reranking component can execute on a
+real QPU.
+
+### IBM validation result
+
+We ran one explicit IBM hardware validation, separate from the normal benchmark suite:
+
+| Setting | Value |
+|---|---|
+| Engine | `hybrid_hnsw_swap_test_ibm` |
+| Queries | 20 |
+| Vector dimension | 2 |
+| Candidate pool | 2 |
+| Shots | 32 |
+| QPU quota used | 80 seconds |
+| Open Plan quota after run | 516 / 600 seconds remaining |
+| Average MRR | 0.125 |
+| Hit rate | 15% |
+
+This is intentionally a **validation experiment**, not a full benchmark. We reduced
+dimension, candidate count, and shots to avoid burning the free IBM Open Plan quota.
+The result proves the real-hardware path works and gives a small noise-affected data
+point, but it should not be compared directly against simulator/classical runs that use
+higher dimensions and more complete candidate rankings.
+
 ---
 
 ## Why Wall-Clock Speed Is Not a KPI

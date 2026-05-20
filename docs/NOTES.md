@@ -43,13 +43,14 @@ We do **not** compare raw speed - the quantum engine runs on a classical simulat
 
 ### Phase 3: Search Engines
 
-Five engines implementing `SearchEngineStrategy` (`build_index()` + `search()`) in `backend/src/engines/base.py`:
+Engines implementing `SearchEngineStrategy` (`build_index()` + `search()`) in `backend/src/engines/base.py`:
 
 | Engine | Class | File | Purpose |
 |---|---|---|---|
 | `brute_force_cosine` | `BruteForceCosineEngine` | `brute_force_cosine.py` | NumPy dot products. Exact. **Ground truth** |
 | `faiss_flat_l2` | `FaissFlatEngine` | `faiss_flat.py` | FAISS L2. Exact. Production-grade |
 | `faiss_hnsw_l2` | `FaissHnswEngine` | `faiss_hnsw.py` | FAISS HNSW. Approximate O(log N) classical baseline |
+| `hybrid_hnsw_swap_test` | `HybridHnswSwapTestEngine` | `hybrid_hnsw_swaptest.py` | HNSW prefilter plus swap-test reranking |
 | `qiskit_swap_test` | `QiskitSwapTestEngine` | `qiskit_swaptest.py` | Real swap test on AerSimulator |
 | `qiskit_grover` | `QiskitGroverEngine` | `qiskit_grover.py` | Grover's algorithm. O(sqrt(N)) oracle scaling |
 

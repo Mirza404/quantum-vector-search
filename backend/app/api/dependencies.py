@@ -42,6 +42,7 @@ from engines import (  # noqa: E402
     BruteForceCosineEngine,
     FaissFlatEngine,
     FaissHnswEngine,
+    HybridHnswSwapTestEngine,
     QiskitGroverEngine,
     QiskitGroverQuantumPrepEngine,
     QiskitSwapTestEngine,
@@ -155,6 +156,7 @@ def _make_engine(name: str, dimension: int) -> SearchEngineStrategy:
         "brute_force_cosine": lambda: BruteForceCosineEngine(),
         "faiss_flat_l2": lambda: FaissFlatEngine(dimension=dimension),
         "faiss_hnsw_l2": lambda: FaissHnswEngine(dimension=dimension),
+        "hybrid_hnsw_swap_test": lambda: HybridHnswSwapTestEngine(dimension=dimension),
         "qiskit_swap_test": lambda: QiskitSwapTestEngine(),
         "qiskit_grover": lambda: QiskitGroverEngine(),
         "qiskit_grover_quantum_prep": lambda: QiskitGroverQuantumPrepEngine(),
@@ -207,10 +209,16 @@ def get_quantum_engine() -> SearchEngineStrategy:
 
 
 def get_all_engines() -> list[tuple[SearchEngineStrategy, bool]]:
+    """Engines used by live API search.
+
+    IBM hardware is intentionally excluded here. It is exposed only through
+    explicit scripts because QPU queue time and Open Plan quota are limited.
+    """
     all_engines = [
         ("brute_force_cosine", False),
         ("faiss_flat_l2", False),
         ("faiss_hnsw_l2", False),
+        ("hybrid_hnsw_swap_test", True),
         ("qiskit_swap_test", True),
         ("qiskit_grover", True),
         ("qiskit_grover_quantum_prep", True),

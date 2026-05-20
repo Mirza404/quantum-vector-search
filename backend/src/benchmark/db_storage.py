@@ -22,7 +22,7 @@ def _load_env_file(path: Path) -> None:
 
 
 def _bootstrap_env() -> None:
-    env_path = Path(__file__).resolve().parents[3] / ".env"  # backend/.env
+    env_path = Path(__file__).resolve().parents[2] / ".env"  # backend/.env
     if env_path.exists():
         _load_env_file(env_path)
 

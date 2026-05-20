@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchImages, fetchQueries, type PaginatedImages, type QueryItem } from '../api'
+import { fetchImages, fetchQueries, type ImageItem, type PaginatedImages, type QueryItem } from '../api'
 
 export default function ImageBrowser() {
   const [data, setData] = useState<PaginatedImages | null>(null)
@@ -14,7 +14,7 @@ export default function ImageBrowser() {
         setQueries(queriesList)
 
         // Fetch all images
-        const allImages: typeof PaginatedImages.prototype.images = []
+        const allImages: ImageItem[] = []
         let page = 1
         let totalFetched = 0
         let total = 0

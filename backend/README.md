@@ -7,7 +7,7 @@ Benchmarking harness for classical and quantum-inspired search engines. For setu
 ```
 src/
 ├── benchmark/   # dataclasses, storage strategies, DatabaseStorage
-├── engines/     # SearchEngineStrategy base + all five engine implementations
+├── engines/     # SearchEngineStrategy base + engine implementations
 ├── pipeline/    # EmbeddingGenerator interface, CLIPEmbeddingModel, mock
 └── repository/  # DataLoader interface, DirectoryDataLoader
 ```
@@ -35,6 +35,28 @@ python3 scripts/index_dataset.py
 CLI flags override `benchmarks.yaml` for one-off runs: `--shots-values`, `--layers-values`, `--dimensions`, `--clip-model`, `--device`, `--batch-size`.
 
 MRR is computed over the full ranking - no top_k cutoff. The harness retrieves all dataset images and measures the true rank of the correct result.
+
+## IBM Quantum smoke test
+
+Set `IBM_QUANTUM_TOKEN` in `backend/.env` first. Keep `IBM_QUANTUM_ALLOW_PAID=false`.
+
+```bash
+python3 scripts/run_ibm_smoke.py
+```
+
+This runs one tiny 3-qubit hybrid HNSW + swap-test rerank on IBM hardware.
+
+IBM hardware is intentionally isolated from frontend search and default benchmarks. It should be run only as an explicit validation because QPU queue time and free Open Plan quota are limited.
+
+For a one-time report dataset, run:
+
+```bash
+python3 scripts/run_ibm_validation.py
+```
+
+This writes `hybrid_hnsw_swap_test_ibm` rows to the database for 20 queries at dimension 2, 2 candidates, and 32 shots. Existing rows are skipped.
+
+Current saved IBM validation data used 80 seconds of Open Plan QPU time and produced average MRR 0.125. Treat it as a hardware validation data point, not as a like-for-like comparison with full simulator benchmarks.
 
 ## Database
 
