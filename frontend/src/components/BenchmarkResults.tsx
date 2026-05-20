@@ -16,6 +16,7 @@ export default function BenchmarkResults() {
   const [error, setError] = useState<string | null>(null)
 
   const classicalEngines = ['brute_force_cosine', 'faiss_flat_l2', 'faiss_hnsw_l2']
+  const quantumEngines = ['qiskit_swap_test', 'qiskit_grover', 'qiskit_grover_quantum_prep']
   const isClassical = (engineName: string) => classicalEngines.includes(engineName)
 
   const formatValue = (value: number | null | undefined, decimals = 2) => {
@@ -40,10 +41,42 @@ export default function BenchmarkResults() {
     if (data.length === 0) return null
     return data.reduce((prev, current) =>
       prev.avg_mrr > current.avg_mrr ? prev : current
-    ).engine_name
+    )
   }
 
-  const highestEngine = getHighestMRREngine()
+  const getBestQuantumEngine = () => {
+    const quantum = data.filter(e => quantumEngines.includes(e.engine_name))
+    if (quantum.length === 0) return null
+    return quantum.reduce((prev, current) =>
+      prev.avg_mrr > current.avg_mrr ? prev : current
+    )
+  }
+
+  const getWorstEngine = () => {
+    if (data.length === 0) return null
+    return data.reduce((prev, current) =>
+      prev.avg_mrr < current.avg_mrr ? prev : current
+    )
+  }
+
+  const bestEngine = getHighestMRREngine()
+  const bestQuantum = getBestQuantumEngine()
+  const worstEngine = getWorstEngine()
+  const highestEngine = bestEngine?.engine_name ?? null
+
+  const generateConclusion = () => {
+    if (!bestEngine || !bestQuantum || !worstEngine) return null
+    const swapTest = data.find(e => e.engine_name === 'qiskit_swap_test')
+    return (
+      `Across all benchmark queries and both vector dimensions, ${bestEngine.engine_name} achieves the highest accuracy ` +
+      `(MRR ${bestEngine.avg_mrr.toFixed(3)}), confirming it as the ground truth baseline. ` +
+      `Among quantum engines, ${bestQuantum.engine_name} performs best (MRR ${bestQuantum.avg_mrr.toFixed(3)}). ` +
+      `The ${worstEngine.engine_name} engine shows the lowest accuracy (MRR ${worstEngine.avg_mrr.toFixed(3)}). ` +
+      (swapTest ? `The swap test engine (MRR ${swapTest.avg_mrr.toFixed(3)}) requires ` +
+      `${swapTest.circuit_depth ?? '—'} circuit depth and ${swapTest.num_qubits ?? '—'} qubits. ` : '') +
+      `Classical engines are orders of magnitude faster than quantum engines, which reflects simulation overhead rather than true quantum hardware performance.`
+    )
+  }
 
   const getRowClass = (engineName: string) => {
     if (highestEngine === engineName) return 'border-b border-slate-100 bg-green-200 hover:bg-green-200'
@@ -139,16 +172,7 @@ export default function BenchmarkResults() {
               </table>
             </div>
             <p className="text-sm text-slate-600 leading-relaxed text-center">
-              Across all 20 queries and both vector dimensions, brute_force_cosine achieves the
-              highest accuracy (MRR 0.757), confirming it as the ground truth baseline. Among
-              quantum engines, qiskit_grover performs best (MRR 0.656), outperforming both
-              classical FAISS variants. The qiskit_grover_quantum_prep engine shows the lowest
-              accuracy (MRR 0.428) due to additional shot noise introduced by quantum state
-              preparation, while also being the slowest engine at ~4687ms per query. The swap test
-              engine (MRR 0.543) offers a middle ground between accuracy and quantum resource
-              cost, requiring only 10 circuit depth and 15 qubits. Classical engines are orders of
-              magnitude faster than quantum engines, which reflects simulation overhead rather than
-              true quantum hardware performance.
+              {generateConclusion()}
             </p>
           </>
         )}
