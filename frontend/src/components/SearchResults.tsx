@@ -1,12 +1,11 @@
 import type { EngineResult, SearchResponse } from '../api'
 
-function EnginePanel({ result, label }: { result: EngineResult; label: string }) {
+function EnginePanel({ result }: { result: EngineResult }) {
   const limitedResults = result.results.slice(0, 6)
   return (
     <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{label}</p>
           <h3 className="text-xl font-semibold text-slate-900">{result.engine_name}</h3>
         </div>
         <div className="flex flex-col text-right text-sm text-slate-500">
@@ -63,53 +62,46 @@ function EnginePanel({ result, label }: { result: EngineResult; label: string })
   )
 }
 
-function PlaceholderPanel({ title, label }: { title: string; label: string }) {
-  return (
-    <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-card">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{label}</p>
-          <h3 className="text-xl font-semibold text-slate-900">{title}</h3>
-        </div>
-        <div className="flex flex-col text-right text-sm text-slate-500">
-          <span>
-            MRR <span className="font-semibold text-slate-900">--</span>
-          </span>
-          <span>
-            Rank <span className="font-semibold text-slate-900">--</span>
-          </span>
-          <span>
-            Time <span className="font-semibold text-slate-900">-- ms</span>
-          </span>
-        </div>
-      </div>
-
-      <div className="mt-6 flex h-48 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6">
-        <p className="text-center text-sm text-slate-400">Results will appear here</p>
-      </div>
-    </div>
-  )
-}
-
 interface Props {
   data: SearchResponse
 }
 
 export default function SearchResults({ data }: Props) {
+  const classicalEngineNames = ['brute_force_cosine', 'faiss_flat_l2', 'faiss_hnsw_l2']
+  const quantumEngineNames = ['qiskit_swap_test', 'qiskit_grover', 'qiskit_grover_quantum_prep']
+
+  const classicalEngines = data.engines.filter((e) => classicalEngineNames.includes(e.engine_name))
+  const quantumEngines = data.engines.filter((e) => quantumEngineNames.includes(e.engine_name))
+
   return (
     <div className="space-y-6">
       <p className="text-center text-sm text-slate-600">
-        Query: <span className="font-medium text-slate-900">{data.query_text}</span> | target{' '}
-        <code className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
-          {data.target_image_id}
-        </code>
+        Query: <span className="font-medium text-slate-900">{data.query_text}</span>
       </p>
-      <div className="grid gap-6 grid-cols-2">
-        <EnginePanel result={data.classical} label="Classical" />
-        <EnginePanel result={data.quantum} label="Quantum" />
-        <PlaceholderPanel title="FAISS Flat L2" label="Vector DB" />
-        <PlaceholderPanel title="Quantum Mock Sampler" label="Quantum" />
-        <PlaceholderPanel title="Qiskit Grover Oracle" label="Quantum" />
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Classical Engines Column */}
+        <div className="rounded-2xl border-2 border-blue-300 p-4 space-y-4">
+          <div className="rounded-2xl bg-blue-50 border border-blue-200 px-4 py-3">
+            <p className="text-center text-sm font-semibold uppercase tracking-wide text-blue-900">Classical Engines</p>
+          </div>
+          <div className="space-y-4">
+            {classicalEngines.map((engine) => (
+              <EnginePanel key={engine.engine_name} result={engine} />
+            ))}
+          </div>
+        </div>
+
+        {/* Quantum Engines Column */}
+        <div className="rounded-2xl border-2 border-purple-300 p-4 space-y-4">
+          <div className="rounded-2xl bg-purple-50 border border-purple-200 px-4 py-3">
+            <p className="text-center text-sm font-semibold uppercase tracking-wide text-purple-900">Quantum Engines</p>
+          </div>
+          <div className="space-y-4">
+            {quantumEngines.map((engine) => (
+              <EnginePanel key={engine.engine_name} result={engine} />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )

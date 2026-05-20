@@ -39,8 +39,22 @@ export interface SearchResponse {
   query_id: string
   query_text: string
   target_image_id: string
-  classical: EngineResult
-  quantum: EngineResult
+  engines: EngineResult[]
+}
+
+export interface EngineBenchmarkSummary {
+  engine_name: string
+  avg_mrr: number
+  avg_search_ms: number
+  avg_total_ms: number
+  circuit_depth: number | null
+  num_qubits: number | null
+  avg_oracle_calls: number | null
+  total_runs: number
+}
+
+export interface BenchmarkSummaryResponse {
+  engines: EngineBenchmarkSummary[]
 }
 
 export async function fetchImages(page = 1, perPage = 20): Promise<PaginatedImages> {
@@ -59,5 +73,12 @@ export async function fetchQueries(): Promise<QueryItem[]> {
 export async function runSearch(queryId: string): Promise<SearchResponse> {
   const res = await fetch(`${BASE}/search?query_id=${encodeURIComponent(queryId)}`)
   if (!res.ok) throw new Error(`Search failed: ${res.status}`)
+  return res.json()
+}
+
+export async function fetchBenchmarks(queryId?: string): Promise<BenchmarkSummaryResponse> {
+  const url = queryId ? `/api/benchmarks?query_id=${encodeURIComponent(queryId)}` : '/api/benchmarks'
+  const res = await fetch(url)
+  if (!res.ok) throw new Error('Failed to fetch benchmarks')
   return res.json()
 }

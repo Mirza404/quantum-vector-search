@@ -16,6 +16,7 @@ from .dependencies import (
     SEARCH_LAYERS,
     SEARCH_SHOTS,
     SEARCH_TOP_K,
+    get_all_engines,
     get_classical_engine,
     get_clip_model,
     get_image_ids,
@@ -24,8 +25,10 @@ from .dependencies import (
     get_storage,
 )
 from .schemas import (
+    BenchmarkSummaryResponse,
     EngineResult,
     EngineResultItem,
+    EngineBenchmarkSummary,
     ImageItem,
     PaginatedImages,
     QueriesResponse,
@@ -91,6 +94,48 @@ def list_queries():
 
 
 # ---------------------------------------------------------------------------
+# GET /api/benchmarks - benchmark summary statistics
+# ---------------------------------------------------------------------------
+
+
+@api_router.get("/benchmarks", response_model=BenchmarkSummaryResponse)
+def get_benchmarks(query_id: str | None = Query(None)):
+    storage = get_storage()
+    rows = storage.load_benchmark_summary(query_id=query_id)
+    engines = [
+        EngineBenchmarkSummary(
+            engine_name=row["engine_name"],
+            avg_mrr=float(row["avg_mrr"]),
+            avg_search_ms=float(row["avg_search_ms"]),
+            avg_total_ms=float(row["avg_total_ms"]),
+            circuit_depth=row["circuit_depth"],
+            num_qubits=row["num_qubits"],
+            avg_oracle_calls=float(row["avg_oracle_calls"]) if row["avg_oracle_calls"] else None,
+            total_runs=int(row["total_runs"]),
+        )
+        for row in rows
+    ]
+    return BenchmarkSummaryResponse(engines=engines)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/engines - list available search engines
+# ---------------------------------------------------------------------------
+
+
+@api_router.get("/engines")
+def list_engines():
+    return {"engines": [
+        "brute_force_cosine",
+        "faiss_flat_l2", 
+        "faiss_hnsw_l2",
+        "qiskit_swap_test",
+        "qiskit_grover",
+        "qiskit_grover_quantum_prep",
+    ]}
+
+
+# ---------------------------------------------------------------------------
 # GET /api/search?query_id=... - run search on both engines, side by side
 # ---------------------------------------------------------------------------
 
@@ -144,13 +189,11 @@ def _run_engine(
 
 @api_router.get("/search", response_model=SearchResponse)
 def search(query_id: str = Query(..., description="ID from /api/queries")):
-    # Find the query
     queries = get_queries()
     query = next((q for q in queries if q.id == query_id), None)
     if query is None:
         raise HTTPException(status_code=404, detail=f"Query '{query_id}' not found")
 
-    # Load image vectors from DB
     storage = get_storage()
     stored = storage.load_image_vectors()
     if not stored:
@@ -158,27 +201,20 @@ def search(query_id: str = Query(..., description="ID from /api/queries")):
 
     dataset_ids = list(stored.keys())
     full_matrix = np.array([stored[id_] for id_ in dataset_ids], dtype=np.float32)
-
-    # Truncate to configured dimension
     vectors = full_matrix[:, :SEARCH_DIMENSION].tolist()
 
-    # Encode query text with CLIP and truncate
     clip = get_clip_model()
     query_vector = clip.encode_texts([query.text])[0]
     query_vector = query_vector[:SEARCH_DIMENSION].astype(np.float32).tolist()
 
-    # Run both engines
-    classical = _run_engine(
-        get_classical_engine(), query_vector, dataset_ids, vectors, query.target_id, is_quantum=False
-    )
-    quantum = _run_engine(
-        get_quantum_engine(), query_vector, dataset_ids, vectors, query.target_id, is_quantum=True
-    )
+    engine_results = []
+    for engine, is_quantum in get_all_engines():
+        result = _run_engine(engine, query_vector, dataset_ids, vectors, query.target_id, is_quantum=is_quantum)
+        engine_results.append(result)
 
     return SearchResponse(
         query_id=query.id,
         query_text=query.text,
         target_image_id=query.target_id,
-        classical=classical,
-        quantum=quantum,
+        engines=engine_results,
     )

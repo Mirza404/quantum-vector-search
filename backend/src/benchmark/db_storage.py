@@ -153,6 +153,45 @@ class DatabaseStorage(BaseBenchmarkStorage):
             cursor.execute(sql)
             return {row[0]: row[1].tolist() for row in cursor.fetchall()}
 
+    def load_benchmark_summary(self, query_id: str | None = None) -> list[dict]:
+        if query_id:
+            where = "WHERE query_id = %s"
+            params = (query_id,)
+        else:
+            where = ""
+            params = ()
+        sql = f"""
+            SELECT
+                engine_name,
+                AVG(
+                    CASE
+                        WHEN top_ids::jsonb @> target_ids::jsonb THEN
+                            1.0 / (
+                                SELECT idx
+                                FROM jsonb_array_elements_text(top_ids::jsonb) WITH ORDINALITY arr(val, idx)
+                                WHERE val = (target_ids::jsonb ->> 0)
+                                LIMIT 1
+                            )
+                        ELSE 0.0
+                    END
+                ) as avg_mrr,
+                AVG(search_ms) as avg_search_ms,
+                AVG(state_prep_ms) as avg_state_prep_ms,
+                AVG(total_ms) as avg_total_ms,
+                MAX(circuit_depth) as circuit_depth,
+                MAX(num_qubits) as num_qubits,
+                AVG(oracle_calls) as avg_oracle_calls,
+                COUNT(*) as total_runs
+            FROM benchmark_results
+            {where}
+            GROUP BY engine_name
+            ORDER BY engine_name
+        """
+        with self._conn.cursor() as cursor:
+            cursor.execute(sql, params)
+            columns = [desc[0] for desc in cursor.description]
+            return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
     def close(self) -> None:
         self._conn.close()
 

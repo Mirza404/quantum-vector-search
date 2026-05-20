@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react'
-import { fetchImages, type PaginatedImages } from '../api'
+import { fetchImages, fetchQueries, type PaginatedImages, type QueryItem } from '../api'
 
 export default function ImageBrowser() {
   const [data, setData] = useState<PaginatedImages | null>(null)
+  const [queries, setQueries] = useState<QueryItem[]>([])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const loadAllImages = async () => {
+    const loadData = async () => {
       try {
+        // Fetch queries
+        const queriesList = await fetchQueries()
+        setQueries(queriesList)
+
+        // Fetch all images
         const allImages: typeof PaginatedImages.prototype.images = []
         let page = 1
         let totalFetched = 0
@@ -40,8 +46,15 @@ export default function ImageBrowser() {
       }
     }
 
-    loadAllImages()
+    loadData()
   }, [])
+
+  const getQueryText = (imageId: string): string | null => {
+    const query = queries.find((q) => q.target_image_id === imageId)
+    if (!query) return null
+    const text = query.text.slice(0, 37)
+    return text.length < query.text.length ? text + '...' : text
+  }
 
   if (error)
     return (
@@ -69,25 +82,27 @@ export default function ImageBrowser() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {data.images.map((img) => (
-          <figure
-            key={img.id}
-            className="group rounded-2xl border border-slate-100 bg-slate-50 p-3 transition hover:-translate-y-1 hover:shadow-lg"
-          >
-            <img
-              src={img.url}
-              alt={img.id}
-              loading="lazy"
-              className="mb-3 h-36 w-full rounded-xl object-cover"
-            />
-            <figcaption className="flex items-center justify-between text-xs text-slate-500">
-              <span className="font-mono text-[11px] tracking-wide">{img.id}</span>
-              <span className="rounded-full bg-white/60 px-2 py-0.5 font-medium text-slate-400 shadow-sm">
-                #{img.id.slice(-3)}
-              </span>
-            </figcaption>
-          </figure>
-        ))}
+        {data.images.map((img) => {
+          const queryText = getQueryText(img.id)
+          return (
+            <figure
+              key={img.id}
+              className="group rounded-2xl border border-slate-100 bg-slate-50 p-3 transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <img
+                src={img.url}
+                alt={img.id}
+                loading="lazy"
+                className="mb-3 h-36 w-full rounded-xl object-cover"
+              />
+              {queryText && (
+                <figcaption className="mb-2 text-xs text-slate-600 font-medium">
+                  {queryText}
+                </figcaption>
+              )}
+            </figure>
+          )
+        })}
       </div>
     </section>
   )

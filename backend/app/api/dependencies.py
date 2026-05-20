@@ -204,3 +204,15 @@ def get_classical_engine() -> SearchEngineStrategy:
 
 def get_quantum_engine() -> SearchEngineStrategy:
     return _make_engine(QUANTUM_ENGINE_NAME, SEARCH_DIMENSION)
+
+
+def get_all_engines() -> list[tuple[SearchEngineStrategy, bool]]:
+    all_engines = [
+        ("brute_force_cosine", False),
+        ("faiss_flat_l2", False),
+        ("faiss_hnsw_l2", False),
+        ("qiskit_swap_test", True),
+        ("qiskit_grover", True),
+        ("qiskit_grover_quantum_prep", True),
+    ]
+    return [(_make_engine(name, SEARCH_DIMENSION), is_quantum) for name, is_quantum in all_engines]
