@@ -9,5 +9,3 @@
 *.fls
 *.fdb_latexmk
 chapters/*.aux
-report.pdf
-
