@@ -138,3 +138,7 @@ A: `(query_id, engine_name, dimension, shots, layers)`. Ensures one row per conf
 
 **Q: Where are CLIP embeddings stored?**
 A: `image_vectors` table. Stored by `index_dataset.py`, loaded by `run_benchmarks.py` via `storage.load_image_vectors()`.
+
+
+---
+*Last updated: 2026-05-20.*

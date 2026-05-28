@@ -1,0 +1,66 @@
+% Cover page. Do not number this page.
+\thispagestyle{empty}
+
+\begin{center}
+{\Large\bfseries \MakeUppercase{\ProjectTitle}\par}
+
+\vspace{2cm}
+
+% Place the IUS logo at figures/ius_logo.png. Until then, this falls back to
+% the placeholder so the build never breaks.
+\IfFileExists{figures/ius_logo.png}{%
+  \includegraphics[height=4cm]{figures/ius_logo.png}%
+}{%
+  \fbox{\parbox{4cm}{\centering\vspace{1.5cm}IUS LOGO\\\texttt{figures/ius\_logo.png}\vspace{1.5cm}}}%
+}
+
+\vspace{2cm}
+
+{\large
+Elhan Mahmutovic\\
+Adna Kikanovic\\
+Adnan Musanovic\\
+Mirza Abdulahovic\par}
+
+\vspace{2cm}
+
+{\large \MakeUppercase{\InstitutionName}\par}
+
+\vspace{1cm}
+
+{\large \the\year\par}
+
+\vfill
+\end{center}
+
+\clearpage
+
+% Inner title page (per FENS template).
+\thispagestyle{empty}
+\begin{center}
+{\Large\bfseries \MakeUppercase{\ProjectTitle}\par}
+
+\vspace{2cm}
+
+{\large BY\par}
+
+\vspace{1cm}
+
+{\large
+Elhan Mahmutovic\,--\,Software Engineering\\
+Adna Kikanovic\,--\,Software Engineering\\
+Adnan Musanovic\,--\,Software Engineering\\
+Mirza Abdulahovic\,--\,Software Engineering\par}
+
+\vspace{2cm}
+
+A graduation project submitted in partial fulfillment of the\\
+requirements for the degree of Bachelor of Science at the\\
+\FacultyName\\
+\InstitutionName
+
+\vspace{2cm}
+
+{\SubmissionMonthYear}
+\end{center}
+\clearpage

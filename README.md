@@ -17,7 +17,34 @@ now. The point is to establish the baseline - built now, while quantum hardware 
 limited to run it at scale, so the benchmarking framework and resource cost model are ready
 when the hardware catches up.
 
-For the full theory, design decisions, and Q&A see the [`docs/`](docs/) folder.
+## Architecture at a glance
+
+```
+            ┌────────────┐     ┌────────────┐     ┌─────────────────┐     ┌──────────────┐     ┌────────────┐
+  text  →   │   CLIP     │  →  │  truncate  │  →  │   one of 8      │  →  │ PostgreSQL   │  ←  │  FastAPI   │
+            │  ViT-B/32  │     │   to dim   │     │   engines       │     │  +  pgvector │     │  +  React  │
+            └────────────┘     └────────────┘     └─────────────────┘     └──────────────┘     └────────────┘
+            512-dim vector     64/128/256-dim     classical / quantum     benchmark_results        UI + REST
+```
+
+A proper diagram (`docs/architecture.png`) is on the figure punch list — see `report/STRUCTURE.md`.
+
+## Documentation
+
+| Doc | What's in it |
+|---|---|
+| [`docs/NOTES.md`](docs/NOTES.md) | Architecture, engineering principles, five-phase pipeline, DB schema |
+| [`docs/THEORY.md`](docs/THEORY.md) | Cheat sheet: similarity metrics, CLIP, swap test, Grover, MRR, qubit counts |
+| [`docs/ENGINES_GUIDE.md`](docs/ENGINES_GUIDE.md) | Every engine, its parameters, and what they trade off |
+| [`docs/QUANTUM_INTUITION.md`](docs/QUANTUM_INTUITION.md) | Plain-language walk-through of the quantum bits |
+| [`docs/QUANTUM_SEARCH_ANALYSIS.md`](docs/QUANTUM_SEARCH_ANALYSIS.md) | qRAM, scaling, the honest quantum picture |
+| [`docs/RESEARCH_QUESTIONS.md`](docs/RESEARCH_QUESTIONS.md) | What we set out to measure |
+| [`docs/BENCHMARK_KPIS.md`](docs/BENCHMARK_KPIS.md) | MRR, oracle calls, circuit depth — precise definitions |
+| [`docs/FAQ.md`](docs/FAQ.md) | Questions the team kept hitting while building |
+| [`docs/LEARNING_ROADMAP.md`](docs/LEARNING_ROADMAP.md) | If you want to learn the theory end-to-end |
+| [`docs/midterm/`](docs/midterm/) | Midterm presentation HTML + speaker notes |
+| [`report/`](report/) | LaTeX graduation-project report (build with `make` inside `report/`) |
+| [`poster/`](poster/) | A0 portrait HTML poster (open `poster/index.html` in a browser) |
 
 ## Quick Start
 

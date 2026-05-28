@@ -1,0 +1,91 @@
+\chapter{RESULTS AND ANALYSIS}
+\label{ch:results}
+
+% State main findings in words FIRST, then go into details. Use subheadings.
+% Every claim here must be backed by a row in benchmark_results or a figure
+% generated from it. No prose claims without a number behind them.
+% Target length: ~1,500-2,500 words.
+
+[OPENING SUMMARY \,--\, one paragraph stating the headline findings: (1) which
+engine ranks first on MRR, (2) whether swap test matches classical ranking, (3)
+whether Grover hits its theoretical oracle-call count, (4) the practical
+position of the hybrid engine. All numbers must come from the benchmark DB.]
+
+\section{Accuracy Across Engines}
+\label{sec:results:mrr}
+
+% MRR per engine, broken out by dimension and shots where relevant. Use the
+% same table layout as the frontend BenchmarkResults component.
+
+\begin{table}[ht]
+  \centering
+  \caption{Average Mean Reciprocal Rank by engine. Higher is better.}
+  \label{tab:mrr}
+  % Using tabularx so the Engine column wraps if a label or placeholder is long.
+  \begin{tabularx}{\linewidth}{Xcccc}
+    \toprule
+    \textbf{Engine} & \textbf{Dim} & \textbf{Shots} & \textbf{Avg MRR} & \textbf{Runs} \\
+    \midrule
+    \multicolumn{5}{l}{\emph{Fill from} \texttt{/api/benchmarks} \emph{or} \texttt{scripts/generate\_report.py}.} \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+[MRR DISCUSSION \,--\, comment on which engines tied, which dropped, and what
+the shot/dimension interaction looks like.]
+
+\section{Quantum Resource Cost}
+\label{sec:results:cost}
+
+% Circuit depth, qubit count, oracle calls. This section answers RQ2 (Grover
+% scaling) and supports the practicality framing on RQ3.
+
+\begin{figure}[ht]
+  \centering
+  \fbox{\parbox[c][6cm][c]{0.7\linewidth}{\centering FIGURE PLACEHOLDER\\\texttt{figures/oracle\_scaling.png}\\(empirical vs theoretical Grover scaling)}}
+  \caption{Empirical Grover oracle calls vs.\ the theoretical $\lfloor\pi\sqrt{N}/4\rfloor$ curve.}
+  \label{fig:oracle_scaling}
+\end{figure}
+
+[RESOURCE COST DISCUSSION \,--\, qubits per dimension, circuit depth growth,
+how it matches the theory.]
+
+\section{Wall-Clock Behaviour (Within-Engine Only)}
+\label{sec:results:walltime}
+
+% IMPORTANT: per docs/NOTES.md, wall-clock is NOT a valid cross-engine metric on
+% a simulator. State this in the first sentence to avoid the reader misreading
+% the numbers.
+
+[WALL-TIME DISCUSSION \,--\, restrict comparisons to within-engine across
+dimensions. Explicitly state why cross-engine wall-time is misleading.]
+
+\section{IBM Hardware Sanity Check}
+\label{sec:results:ibm}
+
+% The dimension-2, 2-candidate validation run. Frame as: "we want to confirm
+% the swap test circuit behaves the same on real hardware as on the simulator,
+% within shot noise". Do NOT make scaling claims from this.
+
+[IBM SANITY CHECK \,--\, results of the validation run, what we learned, what
+we did not (and cannot) measure from it.]
+
+\section{Discussion}
+\label{sec:results:discussion}
+
+% Tie results back to the three research questions. Answer each one explicitly:
+% "RQ1: yes, swap test reproduces classical ranking at >= X shots. RQ2: yes,
+% oracle count matches theory to within Y%. RQ3: no - HNSW beats Grover even
+% under ideal-qRAM assumptions at N >= Z."
+
+[DISCUSSION \,--\, one short paragraph per research question, each ending with
+a one-sentence answer.]
+
+\section{Limitations}
+\label{sec:results:limitations}
+
+% Be honest. Small dataset (20 images), simulator-only quantum execution,
+% truncated CLIP embeddings, classical-precomputed Grover oracle.
+
+[LIMITATIONS \,--\, list, briefly, every constraint a reviewer might point to.
+Pre-empting limitations is stronger than letting the committee find them.]

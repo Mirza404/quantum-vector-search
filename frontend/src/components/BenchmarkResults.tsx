@@ -1,43 +1,31 @@
 import { useEffect, useState } from 'react'
-import { fetchBenchmarks, type EngineBenchmarkSummary } from '../api'
+import {
+  fetchBenchmarkBreakdown,
+  fetchBenchmarks,
+  type BenchmarkBreakdownRow,
+  type EngineBenchmarkSummary,
+} from '../api'
+import { CATEGORY_STYLE, getEngine } from '../engines'
+import MetricsLegend from './MetricsLegend'
 
-const COMPLEXITY: Record<string, string> = {
-  brute_force_cosine: 'O(N)',
-  faiss_flat_l2: 'O(N)',
-  faiss_hnsw_l2: 'O(log N)',
-  hybrid_hnsw_swap_test: 'O(log N + M)',
-  hybrid_hnsw_swap_test_ibm: 'IBM QPU',
-  qiskit_swap_test: 'O(N)',
-  qiskit_grover: 'O(√N)',
-  qiskit_grover_quantum_prep: 'O(√N)',
-}
+type ViewMode = 'summary' | 'breakdown'
+
+const fmt = (value: number | null | undefined, decimals = 2) =>
+  value === null || value === undefined ? '—' : value.toFixed(decimals)
 
 export default function BenchmarkResults() {
-  const [data, setData] = useState<EngineBenchmarkSummary[]>([])
+  const [summary, setSummary] = useState<EngineBenchmarkSummary[]>([])
+  const [breakdown, setBreakdown] = useState<BenchmarkBreakdownRow[]>([])
+  const [view, setView] = useState<ViewMode>('summary')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  const classicalEngines = ['brute_force_cosine', 'faiss_flat_l2', 'faiss_hnsw_l2']
-  const quantumEngines = [
-    'hybrid_hnsw_swap_test',
-    'hybrid_hnsw_swap_test_ibm',
-    'qiskit_swap_test',
-    'qiskit_grover',
-    'qiskit_grover_quantum_prep',
-  ]
-  const isClassical = (engineName: string) => classicalEngines.includes(engineName)
-  const isIbm = (engineName: string) => engineName === 'hybrid_hnsw_swap_test_ibm'
-
-  const formatValue = (value: number | null | undefined, decimals = 2) => {
-    if (value === null || value === undefined) return '—'
-    return value.toFixed(decimals)
-  }
 
   useEffect(() => {
     ;(async () => {
       try {
-        const response = await fetchBenchmarks()
-        setData(response.engines)
+        const [s, b] = await Promise.all([fetchBenchmarks(), fetchBenchmarkBreakdown()])
+        setSummary(s.engines)
+        setBreakdown(b.rows)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch benchmarks')
       } finally {
@@ -46,145 +34,210 @@ export default function BenchmarkResults() {
     })()
   }, [])
 
-  const getHighestMRREngine = () => {
-    if (data.length === 0) return null
-    return data.reduce((prev, current) =>
-      prev.avg_mrr > current.avg_mrr ? prev : current
-    )
-  }
+  const bestSummary =
+    summary.length === 0
+      ? null
+      : summary.reduce((p, c) => (p.avg_mrr > c.avg_mrr ? p : c))
 
-  const getBestQuantumEngine = () => {
-    const quantum = data.filter(e => quantumEngines.includes(e.engine_name))
-    if (quantum.length === 0) return null
-    return quantum.reduce((prev, current) =>
-      prev.avg_mrr > current.avg_mrr ? prev : current
-    )
-  }
-
-  const getWorstEngine = () => {
-    if (data.length === 0) return null
-    return data.reduce((prev, current) =>
-      prev.avg_mrr < current.avg_mrr ? prev : current
-    )
-  }
-
-  const bestEngine = getHighestMRREngine()
-  const bestQuantum = getBestQuantumEngine()
-  const worstEngine = getWorstEngine()
-  const highestEngine = bestEngine?.engine_name ?? null
-
-  const generateConclusion = () => {
-    if (!bestEngine || !bestQuantum || !worstEngine) return null
-    const swapTest = data.find(e => e.engine_name === 'qiskit_swap_test')
+  const renderConclusion = () => {
+    if (summary.length === 0) return null
+    const best = bestSummary!
+    const others = summary.filter((e) => e.category !== 'classical')
+    const bestQuantum = others.length
+      ? others.reduce((p, c) => (p.avg_mrr > c.avg_mrr ? p : c))
+      : null
+    const worst = summary.reduce((p, c) => (p.avg_mrr < c.avg_mrr ? p : c))
+    const bestLabel = getEngine(best.engine_name).label
+    const worstLabel = getEngine(worst.engine_name).label
     return (
-      `Across all benchmark queries and both vector dimensions, ${bestEngine.engine_name} achieves the highest accuracy ` +
-      `(MRR ${bestEngine.avg_mrr.toFixed(3)}), confirming it as the ground truth baseline. ` +
-      `Among quantum engines, ${bestQuantum.engine_name} performs best (MRR ${bestQuantum.avg_mrr.toFixed(3)}). ` +
-      `The ${worstEngine.engine_name} engine shows the lowest accuracy (MRR ${worstEngine.avg_mrr.toFixed(3)}). ` +
-      (swapTest ? `The swap test engine (MRR ${swapTest.avg_mrr.toFixed(3)}) requires ` +
-      `${swapTest.circuit_depth ?? '—'} circuit depth and ${swapTest.num_qubits ?? '—'} qubits. ` : '') +
-      `Classical engines are orders of magnitude faster than quantum engines, which reflects simulation overhead rather than true quantum hardware performance.`
+      <p className="text-sm text-slate-600 leading-relaxed text-center">
+        Highest accuracy in this run: <strong>{bestLabel}</strong> at MRR{' '}
+        {best.avg_mrr.toFixed(3)}. Lowest: {worstLabel} at MRR {worst.avg_mrr.toFixed(3)}.
+        {bestQuantum && (
+          <>
+            {' '}
+            Best non-classical engine: <strong>{getEngine(bestQuantum.engine_name).label}</strong>{' '}
+            at MRR {bestQuantum.avg_mrr.toFixed(3)}
+            {bestQuantum.circuit_depth != null && bestQuantum.num_qubits != null && (
+              <>
+                {' '}
+                ({bestQuantum.num_qubits} qubits, circuit depth {bestQuantum.circuit_depth})
+              </>
+            )}
+            .
+          </>
+        )}{' '}
+        Wall-clock times on this page run on a CPU simulator and are not comparable across the
+        classical/quantum split — see the legend above.
+      </p>
     )
   }
 
-  const getRowClass = (engineName: string) => {
-    if (highestEngine === engineName) return 'border-b border-slate-100 bg-green-200 hover:bg-green-200'
-    if (isClassical(engineName)) return 'border-b border-slate-100 bg-blue-50 hover:bg-blue-50'
-    if (isIbm(engineName)) return 'border-b border-slate-100 bg-amber-50 hover:bg-amber-50'
-    return 'border-b border-slate-100 bg-purple-50 hover:bg-purple-50'
-  }
+  const renderSummaryTable = () => (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse text-sm">
+        <thead>
+          <tr className="border-b border-slate-200 text-slate-900">
+            <th className="px-4 py-3 text-left font-semibold">Engine</th>
+            <th className="px-4 py-3 text-left font-semibold">Scaling</th>
+            <th className="px-4 py-3 text-center font-semibold" title="Mean Reciprocal Rank — higher is better">
+              Avg MRR
+            </th>
+            <th className="px-4 py-3 text-center font-semibold" title="Average milliseconds per query for the similarity step only">
+              Search ms
+            </th>
+            <th className="px-4 py-3 text-center font-semibold" title="Time spent encoding vectors into a quantum state; classical engines skip this">
+              State-prep ms
+            </th>
+            <th className="px-4 py-3 text-center font-semibold">Circuit depth</th>
+            <th className="px-4 py-3 text-center font-semibold">Qubits</th>
+            <th className="px-4 py-3 text-center font-semibold">Avg oracle calls</th>
+            <th className="px-4 py-3 text-center font-semibold">Runs</th>
+          </tr>
+        </thead>
+        <tbody>
+          {summary.map((row) => {
+            const meta = getEngine(row.engine_name)
+            const style = CATEGORY_STYLE[meta.category]
+            const isBest = bestSummary?.engine_name === row.engine_name
+            const isClassical = row.category === 'classical'
+            const rowClass = `border-b border-slate-100 ${isBest ? 'bg-green-100' : style.row}`
+            const cellClass = isBest ? 'text-slate-900 font-semibold' : 'text-slate-600'
+            return (
+              <tr key={row.engine_name} className={rowClass}>
+                <td className="px-4 py-3 text-slate-900">
+                  <div className="font-medium">{meta.label}</div>
+                  <div className="text-xs text-slate-400 font-mono">{meta.id}</div>
+                </td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`inline-block rounded-full px-2 py-0.5 text-xs font-mono font-semibold ${style.badge}`}
+                    title={meta.description}
+                  >
+                    {meta.scaling}
+                  </span>
+                </td>
+                <td className={`px-4 py-3 text-center ${cellClass}`}>{fmt(row.avg_mrr, 3)}</td>
+                <td className={`px-4 py-3 text-center ${cellClass}`}>{fmt(row.avg_search_ms, 1)}</td>
+                <td className={`px-4 py-3 text-center ${cellClass}`}>
+                  {isClassical ? '—' : fmt(row.avg_state_prep_ms, 1)}
+                </td>
+                <td className={`px-4 py-3 text-center ${cellClass}`}>
+                  {isClassical ? '—' : row.circuit_depth ?? '—'}
+                </td>
+                <td className={`px-4 py-3 text-center ${cellClass}`}>
+                  {isClassical ? '—' : row.num_qubits ?? '—'}
+                </td>
+                <td className={`px-4 py-3 text-center ${cellClass}`}>
+                  {row.avg_oracle_calls == null ? '—' : fmt(row.avg_oracle_calls)}
+                </td>
+                <td className={`px-4 py-3 text-center ${cellClass}`}>{row.total_runs}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
 
-  const getCellClass = (engineName: string) => {
-    if (highestEngine === engineName) return 'text-slate-900 font-bold'
-    return 'text-slate-600'
-  }
+  const renderBreakdownTable = () => (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse text-sm">
+        <thead>
+          <tr className="border-b border-slate-200 text-slate-900">
+            <th className="px-4 py-3 text-left font-semibold">Engine</th>
+            <th className="px-4 py-3 text-center font-semibold">Dim</th>
+            <th className="px-4 py-3 text-center font-semibold">Shots</th>
+            <th className="px-4 py-3 text-center font-semibold">Avg MRR</th>
+            <th className="px-4 py-3 text-center font-semibold">Search ms</th>
+            <th className="px-4 py-3 text-center font-semibold">State-prep ms</th>
+            <th className="px-4 py-3 text-center font-semibold">Depth</th>
+            <th className="px-4 py-3 text-center font-semibold">Qubits</th>
+            <th className="px-4 py-3 text-center font-semibold">Runs</th>
+          </tr>
+        </thead>
+        <tbody>
+          {breakdown.map((row) => {
+            const meta = getEngine(row.engine_name)
+            const style = CATEGORY_STYLE[meta.category]
+            const isClassical = row.category === 'classical'
+            const shotsLabel = isClassical || row.shots === null || row.shots === -1 ? '—' : row.shots
+            return (
+              <tr
+                key={`${row.engine_name}-${row.dimension}-${row.shots}`}
+                className={`border-b border-slate-100 ${style.row}`}
+              >
+                <td className="px-4 py-3 text-slate-900">
+                  <div className="font-medium">{meta.label}</div>
+                  <div className="text-xs text-slate-400 font-mono">{meta.id}</div>
+                </td>
+                <td className="px-4 py-3 text-center text-slate-700">{row.dimension}</td>
+                <td className="px-4 py-3 text-center text-slate-700">{shotsLabel}</td>
+                <td className="px-4 py-3 text-center font-semibold text-slate-900">
+                  {fmt(row.avg_mrr, 3)}
+                </td>
+                <td className="px-4 py-3 text-center text-slate-600">{fmt(row.avg_search_ms, 1)}</td>
+                <td className="px-4 py-3 text-center text-slate-600">
+                  {isClassical ? '—' : fmt(row.avg_state_prep_ms, 1)}
+                </td>
+                <td className="px-4 py-3 text-center text-slate-600">
+                  {isClassical ? '—' : row.circuit_depth ?? '—'}
+                </td>
+                <td className="px-4 py-3 text-center text-slate-600">
+                  {isClassical ? '—' : row.num_qubits ?? '—'}
+                </td>
+                <td className="px-4 py-3 text-center text-slate-600">{row.runs}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+
+  const viewTabClass = (mode: ViewMode) =>
+    [
+      'rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors',
+      view === mode
+        ? 'bg-slate-900 text-white'
+        : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+    ].join(' ')
 
   return (
     <section className="space-y-6">
       <div className="text-center">
         <h2 className="text-3xl font-semibold text-slate-900">Benchmark Results</h2>
-        <p className="mt-2 text-base text-slate-500">Classical vs. Quantum engine comparison</p>
+        <p className="mt-2 text-base text-slate-500">
+          Accuracy and quantum resource cost per engine.
+        </p>
       </div>
 
       <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-card space-y-6">
-        {loading && (
-          <div className="text-center py-8 text-slate-500">Loading benchmarks...</div>
+        <MetricsLegend />
+
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-xs uppercase tracking-wide text-slate-400">View:</span>
+          <button type="button" onClick={() => setView('summary')} className={viewTabClass('summary')}>
+            Summary (one row per engine)
+          </button>
+          <button type="button" onClick={() => setView('breakdown')} className={viewTabClass('breakdown')}>
+            By dim &amp; shots
+          </button>
+        </div>
+
+        {loading && <div className="text-center py-8 text-slate-500">Loading benchmarks…</div>}
+        {error && <div className="text-center py-8 text-red-600">Error: {error}</div>}
+        {!loading && !error && summary.length === 0 && (
+          <div className="text-center py-8 text-slate-500">
+            No benchmark data available yet. Run <code>python3 scripts/run_benchmarks.py</code> from{' '}
+            <code>backend/</code>.
+          </div>
         )}
-        {error && (
-          <div className="text-center py-8 text-red-600">Error: {error}</div>
-        )}
-        {!loading && !error && data.length === 0 && (
-          <div className="text-center py-8 text-slate-500">No benchmark data available</div>
-        )}
-        {!loading && !error && data.length > 0 && (
+
+        {!loading && !error && summary.length > 0 && (
           <>
-            <p className="text-sm text-slate-600 leading-relaxed text-center">
-              The table below shows average performance metrics for each engine. Simulator and
-              classical rows use the configured benchmark dimensions; the IBM hardware row is a
-              separate validation run with dimension 2, 2 candidates, and 32 shots to stay within
-              free QPU quota. MRR (Mean Reciprocal Rank) measures search accuracy — higher is better.
-            </p>
-            <div className="overflow-x-auto mt-8 mb-8">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200">
-                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Engine</th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Complexity</th>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-900">Avg MRR</th>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-900">Avg Search Time (ms)</th>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-900">Avg Total Time (ms)</th>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-900">Circuit Depth</th>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-900">Qubits</th>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-900">Avg Oracle Calls</th>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-900">Total Runs</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.map((row) => (
-                    <tr key={row.engine_name} className={getRowClass(row.engine_name)}>
-                      <td className={`px-4 py-3 font-medium ${highestEngine === row.engine_name ? 'text-slate-900 font-bold' : 'text-slate-900'}`}>
-                        {row.engine_name}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-mono font-semibold ${
-                          isIbm(row.engine_name)
-                            ? 'bg-amber-100 text-amber-800'
-                            : isClassical(row.engine_name)
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-purple-100 text-purple-800'
-                        }`}>
-                          {COMPLEXITY[row.engine_name] ?? '—'}
-                        </span>
-                      </td>
-                      <td className={`px-4 py-3 text-center ${getCellClass(row.engine_name)}`}>
-                        {formatValue(row.avg_mrr, 3)}
-                      </td>
-                      <td className={`px-4 py-3 text-center ${getCellClass(row.engine_name)}`}>
-                        {formatValue(row.avg_search_ms, 1)}
-                      </td>
-                      <td className={`px-4 py-3 text-center ${getCellClass(row.engine_name)}`}>
-                        {formatValue(row.avg_total_ms, 1)}
-                      </td>
-                      <td className={`px-4 py-3 text-center ${getCellClass(row.engine_name)}`}>
-                        {isClassical(row.engine_name) ? '—' : row.circuit_depth ?? '—'}
-                      </td>
-                      <td className={`px-4 py-3 text-center ${getCellClass(row.engine_name)}`}>
-                        {isClassical(row.engine_name) ? '—' : row.num_qubits ?? '—'}
-                      </td>
-                      <td className={`px-4 py-3 text-center ${getCellClass(row.engine_name)}`}>
-                        {isClassical(row.engine_name) ? '—' : formatValue(row.avg_oracle_calls)}
-                      </td>
-                      <td className={`px-4 py-3 text-center ${getCellClass(row.engine_name)}`}>
-                        {row.total_runs}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="text-sm text-slate-600 leading-relaxed text-center">
-              {generateConclusion()}
-            </p>
+            {view === 'summary' ? renderSummaryTable() : renderBreakdownTable()}
+            {view === 'summary' && renderConclusion()}
           </>
         )}
       </div>

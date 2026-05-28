@@ -1,0 +1,149 @@
+% =============================================================================
+%  FENS / IUS Bachelor Graduation Project Report
+%  Project: Quantum-Enhanced Multi-Modal Vector Search
+%  Build:   make           (uses pdflatex + bibtex via latexmk-free Makefile)
+%  Edit:    chapters/*.tex and references.bib only. Do not change the preamble
+%           without checking GUIDELINES.md first - template compliance matters.
+% =============================================================================
+
+\documentclass[12pt,a4paper,oneside]{report}
+
+% -------- Fonts: Times-equivalent for both text and math -----------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}                       % Times Roman text + math
+
+% -------- Page geometry per FENS template (4cm L, 3cm B, 2.5cm T/R) -----------
+\usepackage[a4paper,left=4cm,right=2.5cm,top=2.5cm,bottom=3cm]{geometry}
+
+% -------- Line spacing 1.5 ----------------------------------------------------
+\usepackage{setspace}
+\onehalfspacing
+
+% -------- Paragraphs: indented first line + 12pt spacing ----------------------
+\usepackage{parskip}
+\setlength{\parindent}{1.27cm}
+\setlength{\parskip}{12pt plus 1pt minus 1pt}
+
+% -------- Common typesetting tools --------------------------------------------
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf,justification=centering}
+\usepackage{booktabs}                       % proper table rules
+\usepackage{array}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}                      % \coloneqq and friends
+\usepackage{braket}                         % \ket{}, \bra{} for quantum notation
+\usepackage{siunitx}                        % \SI{}, numeric formatting
+\usepackage{microtype}                      % subtle kerning, no visible change
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}                       % code blocks if needed
+\usepackage{tabularx}
+% Coloured, clickable hyperlinks. Single muted blue across internal references,
+% citations, and URLs. Color must be defined BEFORE hyperref is loaded.
+\definecolor{iuslink}{HTML}{1E40AF}
+\usepackage[%
+  colorlinks=true,
+  linkcolor=iuslink,
+  citecolor=iuslink,
+  urlcolor=iuslink,
+  filecolor=iuslink,
+]{hyperref}
+\usepackage{url}
+
+% -------- IEEE citation style (numeric, [1], [2,3,4]) -------------------------
+\usepackage[numbers,sort&compress]{natbib}
+\bibliographystyle{IEEEtran}
+
+% -------- Chapter heading formatting ------------------------------------------
+\usepackage{titlesec}
+\titleformat{\chapter}[block]
+  {\normalfont\Large\bfseries}{\thechapter.}{0.5em}{\Large\MakeUppercase}
+\titlespacing*{\chapter}{0pt}{0pt}{18pt}
+
+% -------- TOC dot leaders for every level (default report class omits dots
+%          on chapter rows; we want them everywhere for the FENS template). ---
+\usepackage{tocloft}
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftchapdotsep}{\cftdotsep}
+
+% Prefix List-of-Tables / List-of-Figures entries with "Table N:" / "Figure N:"
+% so they read literally as "Table 1: Caption..." in the rendered PDF.
+\renewcommand{\cfttabpresnum}{Table~}
+\renewcommand{\cfttabaftersnum}{:}
+\setlength{\cfttabnumwidth}{5.5em}
+\setlength{\cfttabindent}{0pt}
+
+\renewcommand{\cftfigpresnum}{Figure~}
+\renewcommand{\cftfigaftersnum}{:}
+\setlength{\cftfignumwidth}{5.5em}
+\setlength{\cftfigindent}{0pt}
+
+% -------- Sequential numbering for tables/figures/equations across the whole
+%          document (no chapter prefix, so we get "Table 1" instead of
+%          "Table 3.1" per the FENS template examples). --------------------
+\usepackage{chngcntr}
+\counterwithout{figure}{chapter}
+\counterwithout{table}{chapter}
+\counterwithout{equation}{chapter}
+
+% -------- TOC / list-of styling -----------------------------------------------
+\renewcommand{\contentsname}{TABLE OF CONTENTS}
+\renewcommand{\listfigurename}{LIST OF FIGURES}
+\renewcommand{\listtablename}{LIST OF TABLES}
+\renewcommand{\bibname}{REFERENCES}
+
+% -------- Project-wide constants (single source of truth for the cover) -------
+\newcommand{\ProjectTitle}{Quantum-Enhanced Multi-Modal Vector Search: A Hybrid Database Web App}
+\newcommand{\ProjectShortTitle}{Quantum-Enhanced Multi-Modal Vector Search}
+\newcommand{\Supervisor}{Assist.\,Prof.\,Dr. Ali Abd Almisreb}
+\newcommand{\InstitutionName}{International University of Sarajevo}
+\newcommand{\FacultyName}{Faculty of Engineering and Natural Sciences}
+\newcommand{\SubmissionMonthYear}{\ifcase\month\or January\or February\or March\or April\or May\or June\or July\or August\or September\or October\or November\or December\fi{} \the\year}
+
+% =============================================================================
+\begin{document}
+
+% ============================  FRONT MATTER  =================================
+% Roman numerals iii ... onwards per template; cover counts but is not numbered.
+\pagenumbering{roman}
+\setcounter{page}{1}
+
+\include{chapters/00_cover}
+\include{chapters/00_approval}
+\include{chapters/00_declaration}
+\include{chapters/00_copyright}
+\include{chapters/00_acknowledgements}
+\include{chapters/00_abbreviations}
+
+% Front-matter lists
+\tableofcontents
+\clearpage
+\include{chapters/00_abstract}
+\listoftables
+\clearpage
+\listoffigures
+\clearpage
+
+% ============================  MAIN MATTER  ==================================
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\include{chapters/01_introduction}
+\include{chapters/02_literature_review}
+\include{chapters/03_methodology}
+\include{chapters/04_results}
+\include{chapters/05_sustainability}
+\include{chapters/06_conclusion}
+
+% ============================  BACK MATTER  ==================================
+\cleardoublepage
+\addcontentsline{toc}{chapter}{REFERENCES}
+\bibliography{references}
+
+\appendix
+\include{chapters/07_appendix}
+
+\end{document}

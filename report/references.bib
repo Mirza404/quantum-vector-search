@@ -1,0 +1,115 @@
+% ============================================================================
+%  Bibliography for the FENS graduation project report.
+%  Style: IEEE numeric (see main.tex - \bibliographystyle{IEEEtran}).
+%
+%  Rule (see GUIDELINES.md \S Claims-must-be-sourced): every external claim
+%  in the report MUST be backed by an entry here. Add new entries at the
+%  bottom of the relevant section. Keep BibTeX keys lowercase + descriptive
+%  (e.g. radford2021clip, not CLIP).
+% ============================================================================
+
+% --- Classical vector search ------------------------------------------------
+
+@article{johnson2019faiss,
+  author  = {Jeff Johnson and Matthijs Douze and Herv{\'e} J{\'e}gou},
+  title   = {Billion-scale similarity search with {GPUs}},
+  journal = {IEEE Transactions on Big Data},
+  volume  = {7},
+  number  = {3},
+  pages   = {535--547},
+  year    = {2019},
+  doi     = {10.1109/TBDATA.2019.2921572}
+}
+
+@article{malkov2020hnsw,
+  author  = {Yury A. Malkov and D. A. Yashunin},
+  title   = {Efficient and Robust Approximate Nearest Neighbor Search Using
+             Hierarchical Navigable Small World Graphs},
+  journal = {IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  volume  = {42},
+  number  = {4},
+  pages   = {824--836},
+  year    = {2020},
+  doi     = {10.1109/TPAMI.2018.2889473}
+}
+
+% --- Cross-modal embeddings -------------------------------------------------
+
+@inproceedings{radford2021clip,
+  author    = {Alec Radford and Jong Wook Kim and Chris Hallacy and others},
+  title     = {Learning Transferable Visual Models From Natural Language
+               Supervision},
+  booktitle = {Proceedings of the 38th International Conference on Machine
+               Learning ({ICML})},
+  year      = {2021},
+  pages     = {8748--8763}
+}
+
+% --- Quantum primitives -----------------------------------------------------
+
+@inproceedings{grover1996,
+  author    = {Lov K. Grover},
+  title     = {A fast quantum mechanical algorithm for database search},
+  booktitle = {Proceedings of the 28th Annual ACM Symposium on Theory of
+               Computing ({STOC})},
+  year      = {1996},
+  pages     = {212--219},
+  doi       = {10.1145/237814.237866}
+}
+
+@article{buhrman2001swaptest,
+  author  = {Harry Buhrman and Richard Cleve and John Watrous and Ronald de Wolf},
+  title   = {Quantum Fingerprinting},
+  journal = {Physical Review Letters},
+  volume  = {87},
+  number  = {16},
+  pages   = {167902},
+  year    = {2001},
+  doi     = {10.1103/PhysRevLett.87.167902}
+}
+
+@article{giovannetti2008qram,
+  author  = {Vittorio Giovannetti and Seth Lloyd and Lorenzo Maccone},
+  title   = {Quantum Random Access Memory},
+  journal = {Physical Review Letters},
+  volume  = {100},
+  number  = {16},
+  pages   = {160501},
+  year    = {2008},
+  doi     = {10.1103/PhysRevLett.100.160501}
+}
+
+@article{aaronson2015readfine,
+  author  = {Scott Aaronson},
+  title   = {Read the fine print},
+  journal = {Nature Physics},
+  volume  = {11},
+  number  = {4},
+  pages   = {291--293},
+  year    = {2015},
+  doi     = {10.1038/nphys3272}
+}
+
+% --- Quantum machine learning / hybrid retrieval (placeholders) -------------
+% Add at least one survey citation here before submission - candidates below.
+
+@article{biamonte2017qml,
+  author  = {Jacob Biamonte and Peter Wittek and Nicola Pancotti and Patrick
+             Rebentrost and Nathan Wiebe and Seth Lloyd},
+  title   = {Quantum Machine Learning},
+  journal = {Nature},
+  volume  = {549},
+  number  = {7671},
+  pages   = {195--202},
+  year    = {2017},
+  doi     = {10.1038/nature23474}
+}
+
+% --- Tooling references (cite the software you used) ----------------------
+
+@misc{qiskit2024,
+  author = {{Qiskit Contributors}},
+  title  = {{Qiskit}: An Open-Source Framework for Quantum Computing},
+  year   = {2024},
+  note   = {\url{https://qiskit.org/}}
+}

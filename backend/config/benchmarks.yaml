@@ -36,8 +36,8 @@ quantum_engines:
 dimensions:
   - 64
   - 128
-  # - 256
-  # - 512  # full ViT-B/32 output; maximum accuracy, maximum qubit cost
+  - 256
+  # - 512  # full ViT-B/32 output; maximum accuracy, maximum qubit cost (slow on simulator)
 
 # Number of circuit executions per similarity comparison (one shot = one measurement).
 # More shots = lower variance = more accurate score, but higher cost on real hardware.
@@ -46,8 +46,8 @@ dimensions:
 shots_values:
   - 512
   - 1024
-  # - 2048
-  # - 4096
+  - 2048
+  # - 4096  # 8x slower than 512; only useful for noise-limited engines on real hardware
 
 # Number of variational gate layers (ansatz depth). Required by the benchmark harness but not
 # used by any currently enabled engine (qiskit_swap_test and qiskit_grover ignore it).
@@ -58,3 +58,25 @@ layers_values:
 # responses and as the k in MRR@k during benchmarks. Override at runtime with the
 # SEARCH_TOP_K environment variable.
 top_k: 10
+
+# ---------------------------------------------------------------------------
+# Live /api/search configuration.
+#
+# The benchmark harness above sweeps the full grid; the live API only runs ONE
+# config per process. These values are picked separately because the trade-off
+# is different: benchmarks want completeness, live search wants snappy
+# responses with a config strong enough that the demo doesn't look broken.
+#
+# Sweet spot we landed on:
+#   - dim 128: MRR ceiling around 0.86 for classical; swap test reaches 0.65-0.88
+#   - shots 512: lowest shot budget; keeps qiskit_grover_quantum_prep under ~5 s
+#   - top_k 10: matches the benchmark MRR@10 metric so live results are comparable
+#
+# Override per-process with env vars: SEARCH_DIMENSION, SEARCH_SHOTS,
+# SEARCH_LAYERS, SEARCH_TOP_K (these take precedence over this block).
+# ---------------------------------------------------------------------------
+live_search:
+  dimension: 128
+  shots: 512
+  layers: 1
+  top_k: 10

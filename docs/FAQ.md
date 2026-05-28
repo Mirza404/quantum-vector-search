@@ -190,3 +190,7 @@ All engines implement the same interface (`SearchEngineStrategy` in `backend/src
 Same pattern for `EmbeddingGenerator` (pipeline) and `BaseDataLoader` (repository).
 
 > Like USB ports. Any device that follows the spec works.
+
+
+---
+*Last updated: 2026-05-20.*

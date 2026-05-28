@@ -297,3 +297,7 @@ production standard."
 On the current 20-image dataset, HNSW is expected to match the exact FAISS L2 ranking
 and MRR. The graph is too small to expose the approximation trade-off; that only becomes
 meaningful at thousands of vectors and above.
+
+
+---
+*Last updated: 2026-05-20.*
