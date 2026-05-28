@@ -13,6 +13,7 @@ function EnginePanel({ result }: { result: EngineResult }) {
   const items = result.results.slice(0, visibleCount)
   const truthBeyondInitial =
     !expanded && truthRank !== null && truthRank > initialCount && truthRank <= totalAvailable
+  const truthMissing = truthRank === null
 
   return (
     <div className="flex h-full min-h-[620px] flex-col rounded-3xl border border-slate-100 bg-white p-6 shadow-card">
@@ -55,6 +56,12 @@ function EnginePanel({ result }: { result: EngineResult }) {
             Show all
           </button>
           .
+        </p>
+      )}
+
+      {truthMissing && (
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+          Correct image is not in the top {totalAvailable} results returned by this engine.
         </p>
       )}
 

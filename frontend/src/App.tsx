@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { NavLink, Navigate, Route, Routes, useSearchParams } from 'react-router-dom'
+import { NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { runSearch, type QueryItem, type SearchResponse } from './api'
 import { ENGINES } from './engines'
 import ImageBrowser from './components/ImageBrowser'
@@ -37,59 +37,39 @@ function SearchEmptyState() {
   )
 }
 
-/**
- * The Search route owns its own state and reads the selected query from the URL.
- * That keeps the deep-link / refresh story working: hitting /search?q=query_X
- * re-runs the search on mount, so reload preserves what the user was looking at.
- */
 function SearchRoute() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const queryId = searchParams.get('q')
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [queryId, setQueryId] = useState<string | null>(null)
   const [searchData, setSearchData] = useState<SearchResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const handleQuery = useCallback(
     (query: QueryItem) => {
-      // Update URL; the effect below picks it up and runs the search.
-      setSearchParams({ q: query.id })
-    },
-    [setSearchParams],
-  )
-
-  // Fire whenever the query id in the URL changes. The cancelled flag protects
-  // against React StrictMode's intentional double-invoke in dev: if the first
-  // run is torn down before the network response lands, we discard it instead
-  // of leaving stale state behind. (Earlier versions kept a lastFetchedId
-  // guard, which caused the second invocation to short-circuit and leave
-  // loading=true forever - see git history.)
-  useEffect(() => {
-    if (!queryId) {
+      const selectedQueryId = query.id
+      setQueryId(selectedQueryId)
       setSearchData(null)
+      setLoading(true)
       setError(null)
-      setLoading(false)
-      return
-    }
-    let cancelled = false
-    setLoading(true)
-    setError(null)
-    runSearch(queryId)
-      .then((result) => {
-        if (!cancelled) {
+      runSearch(selectedQueryId)
+        .then((result) => {
           setSearchData(result)
           setLoading(false)
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
+        })
+        .catch((err) => {
           setError(err instanceof Error ? err.message : 'Search failed')
           setLoading(false)
-        }
-      })
-    return () => {
-      cancelled = true
+        })
+    },
+    [],
+  )
+
+  useEffect(() => {
+    if (location.search) {
+      navigate(location.pathname, { replace: true })
     }
-  }, [queryId])
+  }, [location.pathname, location.search, navigate])
 
   return (
     <section className="space-y-4">

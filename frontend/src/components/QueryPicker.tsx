@@ -3,7 +3,7 @@ import { fetchQueries, type QueryItem } from '../api'
 
 interface Props {
   onSelect: (query: QueryItem) => void
-  /** Controlled selection from the URL (e.g. /search?q=query_X). Optional. */
+  /** Controlled selection from the parent route. Optional. */
   selectedId?: string | null
   disabled?: boolean
 }
