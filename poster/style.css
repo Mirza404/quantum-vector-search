@@ -22,18 +22,18 @@
   --c-accent:      #16a34a;   /* green-600 */
   --c-callout-bg:  #fef3c7;   /* amber-100 */
 
-  --pad: 18mm;
-  --gap: 12mm;
-  --radius: 6mm;
+  --pad: 13mm;
+  --gap: 8mm;
+  --radius: 4mm;
 
   /* Reading distance ~1.5 m → body ≥ 24 pt. We use mm so print and screen
      stay in lockstep. 1 pt ≈ 0.353 mm. 24 pt ≈ 8.5 mm. */
   --fs-body:     7mm;
-  --fs-body-sm:  6mm;
-  --fs-h2:       14mm;
-  --fs-h1:       30mm;
-  --fs-subtitle: 12mm;
-  --fs-caption:  5.5mm;
+  --fs-body-sm:  5.6mm;
+  --fs-h2:       12mm;
+  --fs-h1:       26mm;
+  --fs-subtitle: 9.5mm;
+  --fs-caption:  5.2mm;
 }
 
 * { box-sizing: border-box; }
@@ -45,6 +45,11 @@ html, body {
   font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
   color: var(--c-text);
   line-height: 1.35;
+}
+
+img {
+  display: block;
+  max-width: 100%;
 }
 
 /* The poster itself ---------------------------------------------------------*/
@@ -60,27 +65,6 @@ html, body {
   overflow: hidden;                /* hard clip — if content overflows, fix layout */
 }
 
-/* On-screen scaling: shrink the poster to fit the viewport without changing
-   its physical layout. Print rule below restores 1:1. */
-@media screen {
-  body {
-    /* Use a CSS-only fit-to-screen trick: scale via transform on #poster. */
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 20px;
-  }
-  #poster {
-    /* Approximate scale: a typical 1080p screen is ~340mm wide. A0 is 841mm.
-       Use a CSS custom property the user can override via DevTools. */
-    transform: scale(var(--screen-scale, 0.32));
-    transform-origin: top center;
-    /* Visual shadow only on screen. */
-    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-  }
-}
-
 @media print {
   @page { size: A0 portrait; margin: 0; }
   html, body { background: white; }
@@ -90,33 +74,54 @@ html, body {
 /* ----- Header ------------------------------------------------------------- */
 .poster-header {
   display: grid;
-  grid-template-columns: 120mm 1fr 280mm;
+  grid-template-columns: 80mm minmax(0, 1fr);
+  grid-template-areas:
+    "logo title"
+    "logo meta";
   align-items: center;
-  gap: var(--gap);
-  padding: 12mm 16mm;
+  column-gap: 12mm;
+  row-gap: 3mm;
+  padding: 8mm 10mm;
   background: var(--c-text);
   color: white;
   border-radius: var(--radius);
 }
 
 .poster-header .logo-slot {
-  height: 100mm;
-  width: 100mm;
+  grid-area: logo;
+  height: 72mm;
+  width: 72mm;
   background: white;
-  border-radius: 4mm;
-  color: var(--c-text-soft);
+  border-radius: 3mm;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--fs-caption);
-  text-align: center;
+  padding: 5mm;
+  overflow: hidden;
+}
+
+.poster-header .logo-slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.poster-header .title-block,
+.poster-header .meta-block {
+  min-width: 0;
+}
+
+.poster-header .title-block {
+  grid-area: title;
 }
 
 .poster-header .title-block h1 {
-  margin: 0 0 4mm 0;
+  margin: 0 0 2mm 0;
   font-size: var(--fs-h1);
   line-height: 1.08;
-  letter-spacing: -0.5px;
+  letter-spacing: 0;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 .poster-header .title-block .subtitle {
   margin: 0;
@@ -126,21 +131,24 @@ html, body {
 }
 
 .poster-header .meta-block {
-  text-align: right;
+  grid-area: meta;
+  text-align: left;
   font-size: var(--fs-body-sm);
+  line-height: 1.28;
+  overflow-wrap: anywhere;
 }
-.poster-header .meta-block .authors { font-weight: 600; margin: 0 0 3mm 0; font-size: var(--fs-body); }
-.poster-header .meta-block .mentor  { margin: 0 0 2mm 0; color: #cbd5e1; }
+.poster-header .meta-block .authors { font-weight: 600; margin: 0 0 2mm 0; font-size: 6mm; }
+.poster-header .meta-block .mentor  { margin: 0 0 1.5mm 0; color: #cbd5e1; }
 .poster-header .meta-block .institution { margin: 0; color: #94a3b8; font-size: 5mm; }
 
 /* ----- Abstract banner ---------------------------------------------------- */
 .abstract-banner {
   background: linear-gradient(135deg, var(--c-classical), var(--c-quantum));
   color: white;
-  padding: 10mm 16mm;
+  padding: 7mm 11mm;
   border-radius: var(--radius);
-  font-size: var(--fs-body);
-  line-height: 1.5;
+  font-size: 6.1mm;
+  line-height: 1.35;
 }
 .abstract-banner p { margin: 0; }
 
@@ -154,18 +162,20 @@ html, body {
   background: var(--c-card);
   border: 1px solid var(--c-border);
   border-radius: var(--radius);
-  padding: 12mm 14mm;
+  padding: 8.5mm 9.5mm;
   display: flex;
   flex-direction: column;
-  gap: 6mm;
+  gap: 4.5mm;
+  min-width: 0;
 }
 .card h2 {
-  margin: 0 0 4mm 0;
+  margin: 0 0 2mm 0;
   font-size: var(--fs-h2);
   color: var(--c-text);
-  border-bottom: 1mm solid var(--c-accent);
-  padding-bottom: 3mm;
-  letter-spacing: -0.3px;
+  border-bottom: 0.7mm solid var(--c-accent);
+  padding-bottom: 2mm;
+  letter-spacing: 0;
+  line-height: 1.12;
 }
 .card p { margin: 0; font-size: var(--fs-body); }
 .card.full {}                       /* full-width modifier; layout-only */
@@ -175,9 +185,9 @@ html, body {
 /* ----- Callouts ----------------------------------------------------------- */
 .callout {
   background: var(--c-callout-bg);
-  border-left: 3mm solid var(--c-accent);
-  padding: 6mm 8mm;
-  border-radius: 0 4mm 4mm 0;
+  border-left: 1.8mm solid var(--c-accent);
+  padding: 3.5mm 5mm;
+  border-radius: 0 3mm 3mm 0;
   font-size: var(--fs-body);
 }
 .callout.small { font-size: var(--fs-body-sm); }
@@ -185,24 +195,26 @@ html, body {
 /* ----- Lists -------------------------------------------------------------- */
 .rq-list, .contributions, .refs {
   margin: 0;
-  padding-left: 10mm;
+  padding-left: 6mm;
   font-size: var(--fs-body);
-  line-height: 1.5;
+  line-height: 1.34;
 }
-.rq-list li, .contributions li { margin-bottom: 4mm; }
+.rq-list li, .contributions li { margin-bottom: 2mm; }
 .refs { font-size: var(--fs-body-sm); }
-.refs li { margin-bottom: 3mm; }
+.refs li { margin-bottom: 1.8mm; }
 
 /* ----- Engine table ------------------------------------------------------- */
 table.engines {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--fs-body-sm);
+  table-layout: fixed;
 }
 table.engines th, table.engines td {
-  padding: 4mm 6mm;
+  padding: 2.2mm 3mm;
   text-align: left;
   border-bottom: 0.5mm solid var(--c-border);
+  overflow-wrap: anywhere;
 }
 table.engines thead th {
   font-weight: 700;
@@ -214,34 +226,34 @@ table.engines thead th {
 table.engines td.classical { color: var(--c-classical); font-weight: 600; }
 table.engines td.quantum   { color: var(--c-quantum);   font-weight: 600; }
 table.engines td.ibm       { color: var(--c-ibm);       font-weight: 600; }
-table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono", "SF Mono", monospace; font-size: 6mm; }
+table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono", "SF Mono", monospace; font-size: 3.7mm; }
 
 /* ----- Figure placeholders ----------------------------------------------- */
 .figure-slot {
   width: 100%;
   background: #f1f5f9;
-  border: 2mm dashed #94a3b8;
-  border-radius: 4mm;
-  min-height: 80mm;
+  border: 1mm dashed #94a3b8;
+  border-radius: 3mm;
+  min-height: 60mm;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--c-text-soft);
   font-size: var(--fs-caption);
 }
-.figure-slot.tall { min-height: 220mm; }
+.figure-slot.tall { min-height: 205mm; }
 .placeholder { position: relative; }
 .placeholder-label {
   font-family: ui-monospace, "JetBrains Mono", monospace;
-  font-size: 5mm;
+  font-size: 6.5mm;
   text-align: center;
-  padding: 4mm 8mm;
+  padding: 3mm 5mm;
 }
 
 .caption {
   font-size: var(--fs-caption);
   color: var(--c-text-soft);
-  line-height: 1.4;
+  line-height: 1.3;
   font-style: italic;
 }
 
@@ -251,7 +263,8 @@ table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono"
   grid-template-columns: 1fr 1fr;
   gap: var(--gap);
 }
-.results-grid .figure-slot { min-height: 140mm; }
+.results-grid .figure-slot { min-height: 125mm; }
+.results-grid > div { min-width: 0; }
 
 /* ----- Honest section two-column ----------------------------------------- */
 .two-col-inside {
@@ -269,12 +282,12 @@ table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono"
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4mm;
-  margin-top: 6mm;
+  gap: 2.5mm;
+  margin-top: 3mm;
 }
 .qr-slot {
-  width: 80mm;
-  height: 80mm;
+  width: 55mm;
+  height: 55mm;
   background: white;
   border: 0.5mm solid var(--c-border);
   border-radius: 4mm;
@@ -289,4 +302,113 @@ table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono"
   color: var(--c-text-soft);
   margin: 0;
   text-align: center;
+}
+
+/* On-screen preview: same A0 ratio, but scaled to occupy desktop space without
+   transform artifacts or fake scroll after the poster ends. */
+@media screen {
+  :root {
+    --poster-w: 80vw;
+    --poster-h: 113.10vw;
+
+    --pad: 1.24vw;
+    --gap: 0.76vw;
+    --radius: 0.38vw;
+
+    --fs-body: 0.67vw;
+    --fs-body-sm: 0.53vw;
+    --fs-h2: 1.14vw;
+    --fs-h1: 2.47vw;
+    --fs-subtitle: 0.9vw;
+    --fs-caption: 0.49vw;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+  }
+
+  #poster {
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+
+  .poster-header {
+    grid-template-columns: 7.61vw minmax(0, 1fr);
+    column-gap: 1.14vw;
+    row-gap: 0.29vw;
+    padding: 0.76vw 0.95vw;
+  }
+
+  .poster-header .logo-slot {
+    height: 6.85vw;
+    width: 6.85vw;
+    border-radius: 0.29vw;
+    padding: 0.48vw;
+  }
+
+  .poster-header .title-block h1 { margin-bottom: 0.19vw; }
+  .poster-header .meta-block .authors { margin-bottom: 0.19vw; font-size: 0.57vw; }
+  .poster-header .meta-block .mentor { margin-bottom: 0.14vw; }
+  .poster-header .meta-block .institution { font-size: 0.48vw; }
+
+  .abstract-banner {
+    padding: 0.67vw 1.05vw;
+    font-size: 0.58vw;
+  }
+
+  .card {
+    padding: 0.81vw 0.9vw;
+    gap: 0.43vw;
+  }
+
+  .card h2 {
+    margin-bottom: 0.19vw;
+    border-bottom-width: 0.07vw;
+    padding-bottom: 0.19vw;
+  }
+
+  .callout {
+    border-left-width: 0.17vw;
+    padding: 0.33vw 0.48vw;
+    border-radius: 0 0.29vw 0.29vw 0;
+  }
+
+  .rq-list, .contributions, .refs { padding-left: 0.57vw; }
+  .rq-list li, .contributions li { margin-bottom: 0.19vw; }
+  .refs li { margin-bottom: 0.17vw; }
+
+  table.engines th, table.engines td {
+    padding: 0.21vw 0.29vw;
+    border-bottom-width: 0.05vw;
+  }
+
+  table.engines thead th { border-bottom-width: 0.1vw; }
+  table.engines tbody td:first-child { font-size: 0.35vw; }
+
+  .figure-slot {
+    border-width: 0.1vw;
+    border-radius: 0.29vw;
+    min-height: 5.71vw;
+  }
+
+  .figure-slot.tall { min-height: 19.5vw; }
+  .placeholder-label {
+    font-size: 0.62vw;
+    padding: 0.29vw 0.48vw;
+  }
+
+  .results-grid .figure-slot { min-height: 11.89vw; }
+  .qr-block {
+    gap: 0.24vw;
+    margin-top: 0.29vw;
+  }
+  .qr-slot {
+    width: 5.23vw;
+    height: 5.23vw;
+    border-width: 0.05vw;
+    border-radius: 0.38vw;
+  }
 }
