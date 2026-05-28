@@ -182,3 +182,7 @@ A: MRR = 0 for that query. The harness passes `top_k` (default 10) to each engin
 - **Backend injection:** Quantum engines accept an optional `backend` parameter (e.g. `QiskitGroverEngine(backend=ibm_backend)`). Swap to IBM hardware without changing engine code
 - **Config-driven benchmarking:** `benchmarks.yaml` controls engines, dimensions, shots, layers. Comment out a line to skip it
 - **Upsert storage:** Run key `(query_id, engine_name, dimension, shots, layers)` ensures one row per config. Re-running overwrites; new params append
+
+
+---
+*Last updated: 2026-05-13.*

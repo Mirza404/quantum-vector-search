@@ -1,0 +1,155 @@
+\chapter{RESEARCH METHODOLOGY}
+\label{ch:methodology}
+
+% Describe how the study was conducted, well enough for someone else to
+% reproduce it. This chapter is the bulk of the report (~1,500-2,500 words).
+% The "Use of AI Tools" subsection at the END is MANDATORY per handbook \S1.1.
+
+\section{System Overview}
+\label{sec:method:overview}
+
+% One paragraph describing the modular monolith - data loader, embedding
+% pipeline, engines, storage, API+UI. Reference Figure \ref{fig:architecture}.
+
+[SYSTEM OVERVIEW \,--\, describe the five phases and the strategy pattern.
+Pull content from docs/NOTES.md \S Implementation Phases.]
+
+\begin{figure}[ht]
+  \centering
+  \fbox{\parbox[c][6cm][c]{0.8\linewidth}{\centering FIGURE PLACEHOLDER\\\texttt{figures/architecture.png}\\(5-phase pipeline diagram)}}
+  \caption{End-to-end pipeline: data loader $\rightarrow$ CLIP embedder $\rightarrow$ engine strategy $\rightarrow$ PostgreSQL storage $\rightarrow$ FastAPI / React UI.}
+  \label{fig:architecture}
+\end{figure}
+
+\section{Methodology Diagram}
+\label{sec:method:diagram}
+
+% Per project brief: "Trebamo diagram metodologije napravit, kao diagram how we
+% did all od this step by step." Insert it here.
+
+\begin{figure}[ht]
+  \centering
+  \fbox{\parbox[c][7cm][c]{0.8\linewidth}{\centering FIGURE PLACEHOLDER\\\texttt{figures/methodology.png}\\(step-by-step methodology flow)}}
+  \caption{Methodology flow: from dataset import through benchmark execution and reporting.}
+  \label{fig:methodology}
+\end{figure}
+
+[METHODOLOGY NARRATIVE \,--\, walk the reader through the steps shown in
+Figure~\ref{fig:methodology} in the same left-to-right order.]
+
+\section{Dataset and Ground Truth}
+\label{sec:method:dataset}
+
+% Flickr30k subset, how it is loaded, what counts as a "correct" hit. Be
+% explicit that ground truth is image-caption pairs from the dataset itself,
+% not human relevance judgements.
+
+[DATASET \,--\, source, size, how queries were derived, what counts as a
+correct retrieval. Reference backend/data/ground\_truth.jsonc.]
+
+\section{Embedding Pipeline}
+\label{sec:method:embeddings}
+
+% CLIP ViT-B/32, L2-normalisation, dimension truncation (64 / 128). Explain why
+% truncation is necessary for the swap test on a CPU simulator.
+
+[EMBEDDINGS \,--\, model, normalisation, truncation rationale.]
+
+\section{Search Engines}
+\label{sec:method:engines}
+
+% One subsubsection per engine; keep each to a single paragraph plus formula(s)
+% where relevant. Cross-reference docs/ENGINES_GUIDE.md as the authoritative
+% source on parameter ranges.
+
+\subsection{Classical Baselines}
+\subsubsection{Brute-Force Cosine}
+[BRUTE FORCE \,--\, NumPy dot product against every vector. Ground truth.]
+
+\subsubsection{FAISS Flat (Exact)}
+[FAISS FLAT \,--\, SIMD-vectorised exact search.]
+
+\subsubsection{FAISS HNSW (Approximate)}
+[FAISS HNSW \,--\, multi-layer proximity graph, $O(\log N)$ retrieval.]
+
+\subsection{Quantum Engines}
+\subsubsection{Qiskit Swap Test}
+% Include the formula here. Equations must be numbered per FENS template.
+The swap test estimates the squared inner product of two amplitude-encoded
+vectors $\ket{\psi}$ and $\ket{\phi}$ via a single ancilla measurement:
+\begin{equation}
+P(\text{ancilla}=0) = \frac{1 + |\langle\psi|\phi\rangle|^2}{2}.
+\label{eq:swaptest}
+\end{equation}
+
+[SWAP TEST \,--\, explain circuit (Hadamard, controlled-SWAP, Hadamard,
+measure), shot-noise scaling, and the choice of AerSimulator over IBM
+hardware.]
+
+\subsubsection{Qiskit Grover (Hardcoded Oracle)}
+[GROVER \,--\, $\lfloor\pi\sqrt{N}/4\rfloor$ oracle calls, how we measure that
+empirically, why the oracle is classically pre-specified (qRAM caveat).]
+
+\subsubsection{Qiskit Grover with Quantum State Preparation}
+[GROVER (quantum prep) \,--\, contrast with the hardcoded variant.]
+
+\subsubsection{Hybrid HNSW + Swap Test}
+[HYBRID \,--\, HNSW prefilter, swap-test rerank. Discuss the rationale.]
+
+\subsubsection{IBM Hardware Validation}
+[IBM HARDWARE \,--\, the dimension-2, 2-candidate, 32-shot run on real QPU.
+Frame as a sanity check, not a scaling study.]
+
+\section{Evaluation Metrics}
+\label{sec:method:metrics}
+
+% Define MRR formally, then define oracle calls. Explain why wall-clock is per-
+% engine only - the simulator-time issue.
+
+[MRR DEFINITION \,--\, formula + intuition.]
+
+\begin{equation}
+\text{MRR} = \frac{1}{|Q|} \sum_{q \in Q} \frac{1}{\text{rank}_q},
+\label{eq:mrr}
+\end{equation}
+where $\text{rank}_q$ is the position of the first relevant result for query
+$q \in Q$ and $1/\text{rank}_q \coloneqq 0$ if no relevant result is in the top-$k$.
+
+[ORACLE CALLS, CIRCUIT DEPTH, QUBIT COUNT \,--\, define each, state which
+engines populate which fields.]
+
+\section{Experimental Configuration}
+\label{sec:method:config}
+
+% Table summarising the cartesian product of (engine, dimension, shots, layers)
+% actually run. Pull values from backend/config/benchmarks.yaml.
+
+\begin{table}[ht]
+  \centering
+  \caption{Benchmark configuration grid.}
+  \label{tab:config}
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Parameter} & \textbf{Values} \\
+    \midrule
+    Engines             & [PULL FROM benchmarks.yaml] \\
+    Dimensions          & 64, 128 \\
+    Shots               & 512, 1024 \\
+    Layers              & 1 \\
+    Top-$k$             & 10 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section*{Use of AI Tools}
+\label{sec:method:ai}
+\addcontentsline{toc}{section}{Use of AI Tools}
+
+% MANDATORY per FENS handbook \S1.1. Be specific - generic disclaimers fail
+% the originality check. State which tools were used for which tasks.
+
+[USE OF AI TOOLS \,--\, list every AI-assisted activity: code generation /
+review, prose drafting, diagram drafting, brainstorming. State explicitly which
+parts of the algorithm design, implementation, and analysis are the authors'
+own. Responsibility for correctness rests with the authors. See
+GUIDELINES.md \S AI Disclosure for the exact phrasing template.]

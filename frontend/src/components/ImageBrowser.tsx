@@ -52,8 +52,9 @@ export default function ImageBrowser() {
   const getQueryText = (imageId: string): string | null => {
     const query = queries.find((q) => q.target_image_id === imageId)
     if (!query) return null
-    const text = query.text.slice(0, 37)
-    return text.length < query.text.length ? text + '...' : text
+    if (query.text.length <= 37) return query.text
+    // trimEnd so we never get "sentence ..." with a stray space before the ellipsis.
+    return query.text.slice(0, 37).trimEnd() + '...'
   }
 
   if (error)

@@ -192,6 +192,45 @@ class DatabaseStorage(BaseBenchmarkStorage):
             columns = [desc[0] for desc in cursor.description]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
+    def load_benchmark_breakdown(self) -> list[dict]:
+        """Per (engine, dimension, shots) row — does NOT collapse across configs.
+
+        Used by the API to surface the shots-vs-MRR curve that RQ1 requires; the
+        aggregated `load_benchmark_summary` view hides that breakdown.
+        """
+        sql = """
+            SELECT
+                engine_name,
+                dimension,
+                shots,
+                AVG(
+                    CASE
+                        WHEN top_ids::jsonb @> target_ids::jsonb THEN
+                            1.0 / (
+                                SELECT idx
+                                FROM jsonb_array_elements_text(top_ids::jsonb) WITH ORDINALITY arr(val, idx)
+                                WHERE val = (target_ids::jsonb ->> 0)
+                                LIMIT 1
+                            )
+                        ELSE 0.0
+                    END
+                ) as avg_mrr,
+                AVG(search_ms) as avg_search_ms,
+                AVG(state_prep_ms) as avg_state_prep_ms,
+                AVG(total_ms) as avg_total_ms,
+                MAX(circuit_depth) as circuit_depth,
+                MAX(num_qubits) as num_qubits,
+                AVG(oracle_calls) as avg_oracle_calls,
+                COUNT(*) as runs
+            FROM benchmark_results
+            GROUP BY engine_name, dimension, shots
+            ORDER BY engine_name, dimension, shots
+        """
+        with self._conn.cursor() as cursor:
+            cursor.execute(sql)
+            columns = [desc[0] for desc in cursor.description]
+            return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
     def close(self) -> None:
         self._conn.close()
 

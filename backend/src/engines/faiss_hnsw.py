@@ -6,6 +6,7 @@ import faiss
 import numpy as np
 
 from .base import SearchEngineStrategy, SearchResult
+from .faiss_flat import _l2_normalize_rows
 
 
 class FaissHnswEngine(SearchEngineStrategy):
@@ -59,6 +60,9 @@ class FaissHnswEngine(SearchEngineStrategy):
         self._index = self._new_index()
         self._ids = ids
         matrix = np.asarray(vectors, dtype="float32")
+        # See faiss_flat.py: truncated CLIP vectors are no longer unit-norm, so
+        # L2 ranking diverges from cosine. Renormalising restores equivalence.
+        matrix = _l2_normalize_rows(matrix)
         self._index.add(matrix)
 
     def search(
@@ -80,6 +84,7 @@ class FaissHnswEngine(SearchEngineStrategy):
             self._index.hnsw.efSearch = int(ef_search)
 
         q = np.asarray([query_vector], dtype="float32")
+        q = _l2_normalize_rows(q)
         distances, indices = self._index.search(q, top_k)
         hits = indices[0]
         scores = -distances[0]

@@ -100,10 +100,14 @@ def _load_benchmark_defaults() -> BenchmarkDefaults:
     quantum = _first_list_entry(
         raw_config, "quantum_engines", fallback="qiskit_swap_test"
     )
-    dimension = _first_list_entry(raw_config, "dimensions", fallback=64)
-    shots = _first_list_entry(raw_config, "shots_values", fallback=1024)
-    layers = _first_list_entry(raw_config, "layers_values", fallback=1)
-    top_k = raw_config.get("top_k", 10)
+
+    # Prefer the `live_search:` block (intended for the live API); fall back to
+    # the first benchmark-sweep entry for backward compatibility.
+    live = raw_config.get("live_search") or {}
+    dimension = live.get("dimension") or _first_list_entry(raw_config, "dimensions", fallback=64)
+    shots = live.get("shots") or _first_list_entry(raw_config, "shots_values", fallback=1024)
+    layers = live.get("layers") or _first_list_entry(raw_config, "layers_values", fallback=1)
+    top_k = live.get("top_k") or raw_config.get("top_k", 10)
 
     try:
         return BenchmarkDefaults(
@@ -156,7 +160,12 @@ def _make_engine(name: str, dimension: int) -> SearchEngineStrategy:
         "brute_force_cosine": lambda: BruteForceCosineEngine(),
         "faiss_flat_l2": lambda: FaissFlatEngine(dimension=dimension),
         "faiss_hnsw_l2": lambda: FaissHnswEngine(dimension=dimension),
-        "hybrid_hnsw_swap_test": lambda: HybridHnswSwapTestEngine(dimension=dimension),
+        # Live UI passes top_k=10, so set the candidate pool to 10 too — otherwise
+        # the hybrid panel renders 5 results while every other engine renders 10
+        # and the UI looks inconsistent. Benchmarks keep their own default (5).
+        "hybrid_hnsw_swap_test": lambda: HybridHnswSwapTestEngine(
+            dimension=dimension, candidate_pool_size=10
+        ),
         "qiskit_swap_test": lambda: QiskitSwapTestEngine(),
         "qiskit_grover": lambda: QiskitGroverEngine(),
         "qiskit_grover_quantum_prep": lambda: QiskitGroverQuantumPrepEngine(),
@@ -208,19 +217,77 @@ def get_quantum_engine() -> SearchEngineStrategy:
     return _make_engine(QUANTUM_ENGINE_NAME, SEARCH_DIMENSION)
 
 
-def get_all_engines() -> list[tuple[SearchEngineStrategy, bool]]:
-    """Engines used by live API search.
+# ---------------------------------------------------------------------------
+# Engine catalogue used by live /api/search
+#   - Whether the engine is "quantum" controls which kwargs the API passes.
+#   - The category label is what the frontend uses for colour-coding; mirror
+#     the values in frontend/src/engines.ts.
+#   - IBM hardware is excluded here on purpose: QPU minutes are finite and
+#     gated behind an explicit script run (run_ibm_validation.py).
+# ---------------------------------------------------------------------------
 
-    IBM hardware is intentionally excluded here. It is exposed only through
-    explicit scripts because QPU queue time and Open Plan quota are limited.
+LIVE_ENGINE_CATALOG: list[dict[str, str | bool]] = [
+    {"id": "brute_force_cosine",         "category": "classical", "is_quantum": False},
+    {"id": "faiss_flat_l2",              "category": "classical", "is_quantum": False},
+    {"id": "faiss_hnsw_l2",              "category": "classical", "is_quantum": False},
+    {"id": "hybrid_hnsw_swap_test",      "category": "hybrid",    "is_quantum": True},
+    {"id": "qiskit_swap_test",           "category": "quantum",   "is_quantum": True},
+    {"id": "qiskit_grover",              "category": "quantum",   "is_quantum": True},
+    {"id": "qiskit_grover_quantum_prep", "category": "quantum",   "is_quantum": True},
+]
+
+# Engines that can show up in /api/benchmarks but not /api/search (real QPU runs).
+BENCHMARK_ONLY_CATEGORY: dict[str, str] = {
+    "hybrid_hnsw_swap_test_ibm": "ibm",
+}
+
+
+def get_engine_category(engine_id: str) -> str:
+    """Resolve an engine ID to its display category. Falls back to 'quantum'."""
+    for entry in LIVE_ENGINE_CATALOG:
+        if entry["id"] == engine_id:
+            return str(entry["category"])
+    return BENCHMARK_ONLY_CATEGORY.get(engine_id, "quantum")
+
+
+@lru_cache(maxsize=1)
+def get_built_live_engines() -> list[tuple[SearchEngineStrategy, bool]]:
+    """Cached engines, indexes pre-built against the current `image_vectors` table.
+
+    Built lazily on the first /api/search request. This avoids rebuilding the
+    FAISS / HNSW indices on every query (the original code rebuilt them per
+    request, paying O(N log N) for HNSW on each hit). The cache is invalidated
+    by restarting the API process — if image_vectors changes, restart.
     """
-    all_engines = [
-        ("brute_force_cosine", False),
-        ("faiss_flat_l2", False),
-        ("faiss_hnsw_l2", False),
-        ("hybrid_hnsw_swap_test", True),
-        ("qiskit_swap_test", True),
-        ("qiskit_grover", True),
-        ("qiskit_grover_quantum_prep", True),
-    ]
-    return [(_make_engine(name, SEARCH_DIMENSION), is_quantum) for name, is_quantum in all_engines]
+    import numpy as np  # local import to keep module load fast on cold start
+
+    storage = get_storage()
+    stored = storage.load_image_vectors()
+    if not stored:
+        # No vectors yet — return empty; the API layer surfaces a 503 to the user.
+        return []
+
+    dataset_ids = list(stored.keys())
+    full_matrix = np.array([stored[id_] for id_ in dataset_ids], dtype=np.float32)
+    vectors = full_matrix[:, :SEARCH_DIMENSION].tolist()
+
+    built: list[tuple[SearchEngineStrategy, bool]] = []
+    for entry in LIVE_ENGINE_CATALOG:
+        engine = _make_engine(str(entry["id"]), SEARCH_DIMENSION)
+        engine.build_index(vectors=vectors, ids=dataset_ids)
+        built.append((engine, bool(entry["is_quantum"])))
+    return built
+
+
+def get_live_vectors_and_ids() -> tuple[list[str], list[list[float]]]:
+    """Return (ids, truncated vectors) without rebuilding any index."""
+    import numpy as np
+
+    storage = get_storage()
+    stored = storage.load_image_vectors()
+    if not stored:
+        return [], []
+    dataset_ids = list(stored.keys())
+    full_matrix = np.array([stored[id_] for id_ in dataset_ids], dtype=np.float32)
+    vectors = full_matrix[:, :SEARCH_DIMENSION].tolist()
+    return dataset_ids, vectors

@@ -3,12 +3,13 @@ import { fetchQueries, type QueryItem } from '../api'
 
 interface Props {
   onSelect: (query: QueryItem) => void
+  /** Controlled selection from the URL (e.g. /search?q=query_X). Optional. */
+  selectedId?: string | null
   disabled?: boolean
 }
 
-export default function QueryPicker({ onSelect, disabled }: Props) {
+export default function QueryPicker({ onSelect, selectedId, disabled }: Props) {
   const [queries, setQueries] = useState<QueryItem[]>([])
-  const [selected, setSelected] = useState('')
 
   useEffect(() => {
     fetchQueries().then(setQueries).catch(console.error)
@@ -16,10 +17,11 @@ export default function QueryPicker({ onSelect, disabled }: Props) {
 
   const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value
-    setSelected(id)
     const q = queries.find((q) => q.id === id)
     if (q) onSelect(q)
   }
+
+  const selected = selectedId ?? ''
 
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:flex-row sm:items-center">

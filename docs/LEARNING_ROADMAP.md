@@ -413,3 +413,7 @@ A: (1) Empirical proof both swap test and Grover work, (2) measured circuit dept
 
 **Q: Most common examiner misconception?**
 A: That the project claims quantum is faster. It doesn't - it measures correctness and cost.
+
+
+---
+*Last updated: 2026-05-20.*

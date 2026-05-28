@@ -1,0 +1,75 @@
+\chapter{LITERATURE REVIEW}
+\label{ch:literature}
+
+% Focused review. Do NOT write a history of quantum computing. The committee is
+% not made of quantum experts (see project brief), so explain just enough for a
+% CS-bachelor reader to follow the methodology chapter.
+% Target length: ~800-1,200 words.
+
+\section{Classical Vector Search}
+\label{sec:lit:classical}
+
+% Cover, in order of complexity: exact brute force, FAISS flat indices,
+% approximate-nearest-neighbour graphs (HNSW). Frame HNSW as the production
+% standard - it is the most important comparison point on slide 11 of the
+% midterm deck.
+
+% Example sentence that exercises the citation machinery -- rewrite, but keep
+% the same citation pattern so the reference list stays populated.
+Exact nearest-neighbour search at scale was popularised by FAISS, a SIMD-vectorised
+library for billion-scale similarity search~\cite{johnson2019faiss}. For datasets
+where exact search is too expensive, the de facto approximate method is the
+Hierarchical Navigable Small World graph~\cite{malkov2020hnsw}, which trades a
+small recall loss for $O(\log N)$ retrieval.
+
+[CLASSICAL VECTOR SEARCH \,--\, expand the paragraph above; add a brute-force
+baseline reference if one is wanted.]
+
+\section{Cross-Modal Embeddings}
+\label{sec:lit:embeddings}
+
+% One short subsection on CLIP. Explain contrastive learning at a high level
+% and why text and image embeddings end up in the same metric space.
+
+CLIP aligns a text encoder and an image encoder via contrastive pre-training
+on 400~million image--caption pairs, producing a shared 512-dimensional space in
+which cosine similarity captures cross-modal relevance~\cite{radford2021clip}.
+
+[CLIP / CROSS-MODAL EMBEDDINGS \,--\, expand: explain ViT-B/32, mention that
+we truncate the 512-dim output to 64/128/256 for benchmarking.]
+
+\section{Quantum Similarity Primitives}
+\label{sec:lit:quantum}
+
+% Swap test (Buhrman et al.), amplitude encoding state preparation, Grover.
+% Be honest about what is "speedup" and what is "amortised state preparation
+% cost" - the qRAM caveat goes here, not in the methodology.
+
+Grover's algorithm provides a quadratic speedup for unstructured
+search~\cite{grover1996}. The swap test, introduced by Buhrman et
+al.~\cite{buhrman2001swaptest}, estimates the squared inner product of two
+quantum states with a single ancilla measurement. Both algorithms assume
+that the dataset is already encoded into a quantum state; in the absence of
+quantum RAM~\cite{giovannetti2008qram}, this state preparation step costs
+$O(N)$ and cancels Grover's quadratic advantage at the system
+level~\cite{aaronson2015readfine}.
+
+[QUANTUM PRIMITIVES \,--\, expand: explain amplitude encoding cost, give the
+formula for swap-test overlap, foreshadow the qRAM discussion in chapter~4.]
+
+\section{Hybrid Classical--Quantum Architectures}
+\label{sec:lit:hybrid}
+
+% Brief discussion of recent hybrid retrieval pipelines that use a classical
+% prefilter and a quantum reranker. Frame our hybrid_hnsw_swap_test engine as
+% an instance of this pattern.
+
+Quantum machine-learning surveys~\cite{biamonte2017qml} catalogue hybrid
+classical--quantum pipelines that delegate the expensive global step to
+classical hardware and reserve quantum resources for a smaller, structured
+subproblem. Our \texttt{hybrid\_hnsw\_swap\_test} engine follows this pattern:
+HNSW returns a small candidate pool, then the swap test reranks it on the
+simulator (implemented with Qiskit~\cite{qiskit2024}).
+
+[HYBRID ARCHITECTURES \,--\, expand: discuss other hybrid retrieval approaches
+in the literature; position our work as an instance of this pattern.]

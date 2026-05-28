@@ -64,3 +64,7 @@ A: Operation count. Classical = N iterations, Grover = floor(π√N/4) iteration
 
 **Q: Why not compare wall-clock times across engines?**
 A: Simulator wall-clock measures how expensive it is to *simulate* quantum on a CPU - not how fast the quantum algorithm is. It would make quantum look worse for the wrong reason.
+
+
+---
+*Last updated: 2026-05-20.*

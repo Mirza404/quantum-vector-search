@@ -150,3 +150,7 @@ A: "Two practical reasons: free tier queue times can stretch to hours, making it
 
 **Q: "What's the single most important number?"**
 A: "MRR comparison between quantum and classical engines. If they match, the algorithms are correct. Everything else follows."
+
+
+---
+*Last updated: 2026-05-20.*

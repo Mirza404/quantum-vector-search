@@ -1,0 +1,56 @@
+\chapter{INTRODUCTION}
+\label{ch:introduction}
+
+% Purpose (from template): tell the reader WHY this study exists. Start broad,
+% narrow to the research question. Define terms on first use. Reference prior work.
+%
+% Target length: ~600-900 words for this chapter (project is 5,000-10,000 total).
+% See report/STRUCTURE.md for the full per-section budget.
+
+[INTRODUCTION \,--\, opening paragraphs framing why cross-modal vector search matters
+in modern machine-learning systems, and why a side-by-side comparison with quantum
+similarity is worth doing now even though quantum hardware is not yet competitive.
+See GUIDELINES.md \S Claims-must-be-sourced before writing.]
+
+\section{Background of Study}
+\label{sec:background}
+
+% What is vector search, what is cross-modal retrieval, what is CLIP, and what
+% does "quantum similarity" mean here. Two or three paragraphs. Cite the
+% foundational papers (CLIP, Grover, Buhrman et al. swap test).
+
+[BACKGROUND \,--\, define vector search, embeddings, CLIP, and the quantum primitives
+referenced later (swap test, Grover, amplitude encoding). All claims must point to a
+reference in \texttt{references.bib}.]
+
+\section{Problem Statement and Research Aims}
+\label{sec:problem}
+
+% Make the gap explicit: classical vector search is well-studied; the practical
+% relevance of quantum vector search at NISQ scale is not. State what we set out
+% to MEASURE - not what we set out to PROVE.
+
+[PROBLEM STATEMENT \,--\, frame the work as an empirical investigation, not a
+claim of quantum advantage. Borrow framing from docs/midterm/speaker\_notes.md
+slide 3 and slide 11.]
+
+\section{Research Questions and Objectives}
+\label{sec:questions}
+
+% List 3-4 measurable research questions. Each must map to something the
+% benchmark harness already produces (MRR, oracle calls, circuit depth, etc.)
+% so we never write a question we cannot answer with data we already have.
+
+\begin{enumerate}[label=RQ\arabic*., leftmargin=*]
+  \item \emph{Accuracy:} Does swap-test similarity reproduce the ranking of
+        classical cosine similarity, and what is the shot budget required to do so?
+  \item \emph{Scaling:} Does our Grover implementation reproduce the
+        $\lfloor \pi\sqrt{N}/4 \rfloor$ oracle-call scaling on real circuits?
+  \item \emph{Practicality:} Under what conditions \,--\, if any \,--\, would a
+        quantum vector-search engine outperform a production classical baseline
+        (HNSW) on the same dataset?
+\end{enumerate}
+
+[OBJECTIVES \,--\, list 3-4 deliverable-shaped goals (engines implemented,
+benchmarks collected, web app for inspection, written analysis). Each
+deliverable must be checkable against the repository.]

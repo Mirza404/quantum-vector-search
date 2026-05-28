@@ -87,3 +87,7 @@ Mentors will respect this honesty. It shows you understand the field, not just y
 ## One-Paragraph Summary of the Whole Project
 
 > We built a text-to-image search system benchmarking classical, quantum, and hybrid engines on the same CLIP embeddings. The quantum engines implement the swap test and Grover's algorithm on Qiskit's AerSimulator, while the hybrid engine uses classical HNSW candidate retrieval followed by quantum swap-test reranking. We empirically verified that Grover's oracle call count follows the O(sqrt(N)) curve across dataset sizes, that the swap test produces MRR comparable to classical at sufficient shot counts, and measured circuit depth and qubit requirements at each vector dimension. We found that quantum search algorithms are correct and their resource costs match theory, but the O(N) state preparation cost (requiring qRAM which does not exist) prevents end-to-end speedup. Even in the ideal future with working qRAM, the standard classical approximate search algorithm HNSW achieves O(log N) which outperforms Grover's O(sqrt(N)). The project's value is the empirical verification, the complete benchmarking infrastructure, and the honest analysis of exactly where the gap between quantum theory and quantum practice lies.
+
+
+---
+*Last updated: 2026-05-20.*

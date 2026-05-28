@@ -302,3 +302,7 @@ Simulator covers everything for current phase. IBM adds queue delays and noise o
 **Phase 1 (now):** `qiskit_grover.py` on AerSimulator, `oracle_calls` column, operation count scaling in reports
 
 **Phase 2 (later):** IBM backend via constructor injection (no engine code changes), record circuit execution time from job metadata only
+
+
+---
+*Last updated: 2026-05-20.*
