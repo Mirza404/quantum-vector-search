@@ -11,7 +11,7 @@ import MetricsLegend from './MetricsLegend'
 type ViewMode = 'summary' | 'breakdown'
 
 const fmt = (value: number | null | undefined, decimals = 2) =>
-  value === null || value === undefined ? '—' : value.toFixed(decimals)
+  value === null || value === undefined ? '-' : value.toFixed(decimals)
 
 export default function BenchmarkResults() {
   const [summary, setSummary] = useState<EngineBenchmarkSummary[]>([])
@@ -68,7 +68,7 @@ export default function BenchmarkResults() {
           </>
         )}{' '}
         Wall-clock times on this page run on a CPU simulator and are not comparable across the
-        classical/quantum split — see the legend above.
+        classical/quantum split - see the legend above.
       </p>
     )
   }
@@ -80,7 +80,7 @@ export default function BenchmarkResults() {
           <tr className="border-b border-slate-200 text-slate-900">
             <th className="px-4 py-3 text-left font-semibold">Engine</th>
             <th className="px-4 py-3 text-left font-semibold">Scaling</th>
-            <th className="px-4 py-3 text-center font-semibold" title="Mean Reciprocal Rank — higher is better">
+            <th className="px-4 py-3 text-center font-semibold" title="Mean Reciprocal Rank - higher is better">
               Avg MRR
             </th>
             <th className="px-4 py-3 text-center font-semibold" title="Average milliseconds per query for the similarity step only">
@@ -120,16 +120,16 @@ export default function BenchmarkResults() {
                 <td className={`px-4 py-3 text-center ${cellClass}`}>{fmt(row.avg_mrr, 3)}</td>
                 <td className={`px-4 py-3 text-center ${cellClass}`}>{fmt(row.avg_search_ms, 1)}</td>
                 <td className={`px-4 py-3 text-center ${cellClass}`}>
-                  {isClassical ? '—' : fmt(row.avg_state_prep_ms, 1)}
+                  {isClassical ? '-' : fmt(row.avg_state_prep_ms, 1)}
                 </td>
                 <td className={`px-4 py-3 text-center ${cellClass}`}>
-                  {isClassical ? '—' : row.circuit_depth ?? '—'}
+                  {isClassical ? '-' : row.circuit_depth ?? '-'}
                 </td>
                 <td className={`px-4 py-3 text-center ${cellClass}`}>
-                  {isClassical ? '—' : row.num_qubits ?? '—'}
+                  {isClassical ? '-' : row.num_qubits ?? '-'}
                 </td>
                 <td className={`px-4 py-3 text-center ${cellClass}`}>
-                  {row.avg_oracle_calls == null ? '—' : fmt(row.avg_oracle_calls)}
+                  {row.avg_oracle_calls == null ? '-' : fmt(row.avg_oracle_calls)}
                 </td>
                 <td className={`px-4 py-3 text-center ${cellClass}`}>{row.total_runs}</td>
               </tr>
@@ -161,7 +161,7 @@ export default function BenchmarkResults() {
             const meta = getEngine(row.engine_name)
             const style = CATEGORY_STYLE[meta.category]
             const isClassical = row.category === 'classical'
-            const shotsLabel = isClassical || row.shots === null || row.shots === -1 ? '—' : row.shots
+            const shotsLabel = isClassical || row.shots === null || row.shots === -1 ? '-' : row.shots
             return (
               <tr
                 key={`${row.engine_name}-${row.dimension}-${row.shots}`}
@@ -178,13 +178,13 @@ export default function BenchmarkResults() {
                 </td>
                 <td className="px-4 py-3 text-center text-slate-600">{fmt(row.avg_search_ms, 1)}</td>
                 <td className="px-4 py-3 text-center text-slate-600">
-                  {isClassical ? '—' : fmt(row.avg_state_prep_ms, 1)}
+                  {isClassical ? '-' : fmt(row.avg_state_prep_ms, 1)}
                 </td>
                 <td className="px-4 py-3 text-center text-slate-600">
-                  {isClassical ? '—' : row.circuit_depth ?? '—'}
+                  {isClassical ? '-' : row.circuit_depth ?? '-'}
                 </td>
                 <td className="px-4 py-3 text-center text-slate-600">
-                  {isClassical ? '—' : row.num_qubits ?? '—'}
+                  {isClassical ? '-' : row.num_qubits ?? '-'}
                 </td>
                 <td className="px-4 py-3 text-center text-slate-600">{row.runs}</td>
               </tr>
@@ -225,7 +225,7 @@ export default function BenchmarkResults() {
           </button>
         </div>
 
-        {loading && <div className="text-center py-8 text-slate-500">Loading benchmarks…</div>}
+        {loading && <div className="text-center py-8 text-slate-500">Loading benchmarks...</div>}
         {error && <div className="text-center py-8 text-red-600">Error: {error}</div>}
         {!loading && !error && summary.length === 0 && (
           <div className="text-center py-8 text-slate-500">

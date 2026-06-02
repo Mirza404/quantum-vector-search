@@ -18,7 +18,7 @@ circuit-simulation overhead rather than real quantum hardware latency.
 Cross-engine scaling comparison:
   - Operation count    : Exact classical engines use N comparisons per query.
                          HNSW uses an approximate O(log N) graph traversal.
-                         Grover uses floor(π√N/4) oracle calls per query.
+                         Grover uses floor(pi*sqrt(N)/4) oracle calls per query.
                          This is the only valid cross-engine "speed" metric.
 
 Quantum-specific KPI:
@@ -283,8 +283,7 @@ def _section_circuit_complexity(rows: list[dict]) -> str:
         "> Circuit metrics are hardware-agnostic cost proxies.\n"
         "> **Circuit depth** = number of sequential gate layers; deeper circuits are more susceptible to decoherence on real hardware.\n"
         "> **Qubits** = number of qubits required; more qubits = harder to allocate on near-term devices.\n"
-        "> For the mock engine these are theoretical estimates based on amplitude encoding.\n"
-        "> For the swap-test engine these are extracted from the actual compiled Qiskit circuit.\n"
+        "> Grover circuit metrics are extracted from the actual Grover circuits; swap-test and hybrid metrics are extracted from the compiled swap-test circuits.\n"
     )
     return "## Quantum Circuit Complexity\n\n" + note + "\n" + _md_table(headers, table_rows)
 
@@ -368,7 +367,7 @@ def _section_operation_count_scaling(rows: list[dict]) -> str:
     """Cross-engine scaling comparison: operation count vs dataset size.
 
     Exact classical engines use N comparisons. HNSW uses an approximate O(log N)
-    graph traversal. Grover uses floor(π√N/4) oracle calls. This is the only
+    graph traversal. Grover uses floor(pi*sqrt(N)/4) oracle calls. This is the only
     valid cross-engine "speed" metric because it is hardware-independent.
     """
     # Group by (engine, dataset_size) - average oracle_calls (should be constant per group)
@@ -395,7 +394,7 @@ def _section_operation_count_scaling(rows: list[dict]) -> str:
                 continue
             ops = data[key][0]
             if engine in {"qiskit_grover", "qiskit_grover_quantum_prep"}:
-                complexity = "O(√N)"
+                complexity = "O(sqrt(N))"
             elif engine == "hybrid_hnsw_swap_test":
                 complexity = "O(log N + M)"
             elif engine == "faiss_hnsw_l2":
@@ -414,7 +413,7 @@ def _section_operation_count_scaling(rows: list[dict]) -> str:
         "> Exact classical engines perform N comparisons per query (linear scan).\n"
         "> HNSW performs an approximate graph traversal with O(log N) expected "
         "query cost.\n"
-        "> Grover's algorithm uses floor(π√N/4) oracle calls per query.\n"
+        "> Grover's algorithm uses floor(pi*sqrt(N)/4) oracle calls per query.\n"
         "> This comparison is hardware-independent - it measures algorithmic efficiency,\n"
         "> not wall-clock time.\n"
     )

@@ -15,7 +15,7 @@ export default function MetricsLegend() {
         aria-expanded={open}
       >
         <span>About these metrics</span>
-        <span className="text-slate-400">{open ? '−' : '+'}</span>
+        <span className="text-slate-400">{open ? '-' : '+'}</span>
       </button>
       {open && (
         <dl className="space-y-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600">
@@ -24,7 +24,7 @@ export default function MetricsLegend() {
             <dd>
               Average of 1 / (rank of the first relevant result) across queries.
               Higher is better; 1.0 means the correct image was first every time.
-              Computed over the top 10 results — if the truth is outside the top 10, that query contributes 0.
+              Computed over the top 10 results - if the truth is outside the top 10, that query contributes 0.
             </dd>
           </div>
           <div>
@@ -33,7 +33,7 @@ export default function MetricsLegend() {
               <strong>Search ms</strong> is the time spent on the actual similarity step
               (one classical pass for FAISS / brute force, or one round of circuit executions for quantum engines).
               <strong> State-prep ms</strong> is the extra time quantum engines spend encoding vectors into a
-              quantum state before they can run. Classical engines have no state-prep step, so it's <code>—</code> for them.
+              quantum state before they can run. Classical engines have no state-prep step, so it's <code>-</code> for them.
               <strong> Total ms = state-prep + search.</strong> All timings come from a CPU simulator and are
               not comparable to real quantum hardware.
             </dd>
@@ -41,7 +41,7 @@ export default function MetricsLegend() {
           <div>
             <dt className="font-semibold text-slate-800">Scaling</dt>
             <dd>
-              Algorithmic comparisons per query (e.g. O(N) for brute force, O(√N) oracle calls for Grover).
+              Algorithmic comparisons per query (e.g. O(N) for brute force, O(sqrt(N)) oracle calls for Grover).
               This is the only fair cross-engine measure of cost. Wall-clock time on a simulator reflects
               CPU overhead, not the quantum algorithm.
             </dd>

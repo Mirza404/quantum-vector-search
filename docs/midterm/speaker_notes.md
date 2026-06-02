@@ -98,7 +98,7 @@ HNSW: multi-layer proximity graph. O(log N), 95-99%+ recall. Implemented as
 `faiss_hnsw_l2` using FAISS `IndexHNSWFlat`. This is the most important comparison
 point - see slide 11 for why.
 
-Point to the complexity callout: the progression brute force O(N) → Grover O(√N) → HNSW O(log N)
+Point to the complexity callout: the progression brute force O(N) -> Grover O(sqrt(N)) -> HNSW O(log N)
 is the central story of the project.
 
 ---
@@ -165,13 +165,13 @@ of dataset size. qRAM is the storage layer that would hold the dataset and feed 
 processor - that does not exist. They are completely different hardware, like a CPU vs a
 hard drive.
 
-The table shows this split directly. Algorithm qubits: Grover needs log₂(N) qubits - just
+The table shows this split directly. Algorithm qubits: Grover needs log2(N) qubits - just
 enough to represent a number up to N. At 1,000 vectors that's ~10 qubits; at 1,000,000 it's
 ~20. Tiny. The qRAM storage is the opposite: 1,000 vectors needs ~1,000,000 physical qubits;
 1,000,000 vectors needs ~1,000,000,000.
 The multiplier is ~1,000 physical qubits per memory slot: qubits are fragile, so reliable
 storage wraps each slot in error correction circuitry. qRAM needs one slot per vector, so the
-cost is N × 1,000 qubits. Classical RAM for the same data is 2 MB vs 2 GB - linear in both
+cost is N x 1,000 qubits. Classical RAM for the same data is 2 MB vs 2 GB - linear in both
 cases, but classical RAM is already cheap. This is not a timeline problem - the hardware
 architecture does not exist on any roadmap.
 

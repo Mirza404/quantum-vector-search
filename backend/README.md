@@ -6,10 +6,10 @@ Benchmarking harness for classical and quantum-inspired search engines. For setu
 
 ```
 src/
-├── benchmark/   # dataclasses, storage strategies, DatabaseStorage
-├── engines/     # SearchEngineStrategy base + engine implementations
-├── pipeline/    # EmbeddingGenerator interface, CLIPEmbeddingModel, mock
-└── repository/  # DataLoader interface, DirectoryDataLoader
+|-- benchmark/   # dataclasses, storage strategies, DatabaseStorage
+|-- engines/     # SearchEngineStrategy base + engine implementations
+|-- pipeline/    # EmbeddingGenerator interface, CLIPEmbeddingModel, mock
+`-- repository/  # DataLoader interface, DirectoryDataLoader
 ```
 
 ## Dataset
@@ -34,7 +34,15 @@ python3 scripts/index_dataset.py
 
 CLI flags override `benchmarks.yaml` for one-off runs: `--shots-values`, `--layers-values`, `--dimensions`, `--clip-model`, `--device`, `--batch-size`.
 
-MRR is computed over the full ranking - no top_k cutoff. The harness retrieves all dataset images and measures the true rank of the correct result.
+MRR is computed on the top-k result list returned by each engine. The default
+is `top_k: 10`, configured in `config/benchmarks.yaml`, so benchmark MRR and
+live-search MRR use the same cutoff.
+
+Engine-count convention: the active benchmark/live-search set has 7 engines
+(3 classical, 4 quantum or hybrid). Stored benchmark results can show an 8th
+engine ID, `hybrid_hnsw_swap_test_ibm`, because the IBM hardware validation is
+run separately at dimension 2 with two candidates and 32 shots. Treat IBM as a
+validation data point, not as part of the normal simulator sweep.
 
 ## IBM Quantum smoke test
 

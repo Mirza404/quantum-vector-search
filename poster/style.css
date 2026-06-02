@@ -1,8 +1,8 @@
 /* ==========================================================================
  *  FENS 2026 Graduation Project Poster
- *  Format: A0 portrait (841 mm × 1189 mm). The on-screen view scales to fit
+ *  Format: A0 portrait (841 mm x 1189 mm). The on-screen view scales to fit
  *  the browser viewport via a CSS transform on #poster's wrapper. Print
- *  (Chrome → Save as PDF, A0, margins: None) renders at full physical size.
+ *  (Chrome -> Save as PDF, A0, margins: None) renders at full physical size.
  * ========================================================================== */
 
 :root {
@@ -26,8 +26,8 @@
   --gap: 8mm;
   --radius: 4mm;
 
-  /* Reading distance ~1.5 m → body ≥ 24 pt. We use mm so print and screen
-     stay in lockstep. 1 pt ≈ 0.353 mm. 24 pt ≈ 8.5 mm. */
+  /* Reading distance ~1.5 m -> body >= 24 pt. We use mm so print and screen
+     stay in lockstep. 1 pt ~ 0.353 mm. 24 pt ~ 8.5 mm. */
   --fs-body:     7mm;
   --fs-body-sm:  5.6mm;
   --fs-h2:       12mm;
@@ -62,7 +62,7 @@ img {
   flex-direction: column;
   gap: var(--gap);
   margin: 0 auto;
-  overflow: hidden;                /* hard clip — if content overflows, fix layout */
+  overflow: hidden;                /* hard clip - if content overflows, fix layout */
 }
 
 @media print {
@@ -249,6 +249,21 @@ table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono"
   text-align: center;
   padding: 3mm 5mm;
 }
+
+/* Figure slot holding a real image: drop the dashed placeholder framing. */
+.figure-slot.filled {
+  background: none;
+  border: none;
+  min-height: 0;
+  padding: 0;
+}
+.figure-slot.filled img {
+  width: 100%;
+  height: auto;
+  border-radius: 3mm;
+  display: block;
+}
+.qr-slot img { width: 92%; height: auto; }
 
 .caption {
   font-size: var(--fs-caption);

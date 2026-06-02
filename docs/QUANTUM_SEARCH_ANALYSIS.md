@@ -58,7 +58,7 @@ Classical search checks items one at a time. Grover's exploits **amplitude ampli
 
 **In the code:** `QiskitGroverEngine._build_grover_circuit()` in `qiskit_grover.py`. Oracle: `_apply_oracle()`. Diffusion: `_apply_diffusion()`.
 
-| N | Brute-force comparisons (O(N)) | Grover oracle calls (O(√N)) | Speedup vs brute force |
+| N | Brute-force comparisons (O(N)) | Grover oracle calls (O(sqrt(N))) | Speedup vs brute force |
 |---|---|---|---|
 | 100 | 100 | 8 | 12x |
 | 1,000 | 1,000 | 25 | 40x |

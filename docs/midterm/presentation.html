@@ -712,11 +712,11 @@
         <strong>qRAM</strong> is the <em>storage</em> - it holds the dataset and feeds it to the processor.
         Both are built from qubits, but qubits are fragile: reliable storage needs ~1,000 physical qubits
         wrapping each memory slot for error correction. qRAM needs one slot per vector, so the storage cost is
-        <em>N vectors × 1,000 qubits</em>. The algorithm itself only needs log₂(N) qubits to index N items -
+        <em>N vectors x 1,000 qubits</em>. The algorithm itself only needs log2(N) qubits to index N items -
         just enough to represent a number up to N.<sup class="ref">[4]</sup>
       </p>
       <table>
-        <thead><tr><th>Dataset size</th><th>Classical RAM</th><th>Algorithm qubits (log₂N)</th><th>Storage qubits (qRAM)</th></tr></thead>
+        <thead><tr><th>Dataset size</th><th>Classical RAM</th><th>Algorithm qubits (log2N)</th><th>Storage qubits (qRAM)</th></tr></thead>
         <tbody>
           <tr><td>1,000 vectors</td><td>~2 MB</td><td>~10</td><td class="warn">~1,000,000</td></tr>
           <tr><td>1,000,000 vectors</td><td>~2 GB</td><td>~20</td><td class="warn">~1,000,000,000</td></tr>
@@ -743,7 +743,7 @@
       <h3 style="margin-top:8px">Why Grover's speedup still matters</h3>
       <ul class="sm">
         <li>Built for <strong>unstructured search</strong> - no index, no geometry required. Works on any computable condition, not just vector distance.</li>
-        <li><strong>Proven optimal</strong>: there is a lower bound showing no quantum algorithm can beat O(√N) for unstructured search. Grover hits it exactly - provably the best possible, not just the best known.<sup class="ref">[7]</sup></li>
+        <li><strong>Proven optimal</strong>: there is a lower bound showing no quantum algorithm can beat O(sqrt(N)) for unstructured search. Grover hits it exactly - provably the best possible, not just the best known.<sup class="ref">[7]</sup></li>
         <li>A building block inside larger quantum algorithms - its value is abstract and future-facing, not in vector search today.</li>
       </ul>
     </div>

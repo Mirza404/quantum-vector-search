@@ -20,14 +20,21 @@ when the hardware catches up.
 ## Architecture at a glance
 
 ```
-            ┌────────────┐     ┌────────────┐     ┌─────────────────┐     ┌──────────────┐     ┌────────────┐
-  text  →   │   CLIP     │  →  │  truncate  │  →  │   one of 8      │  →  │ PostgreSQL   │  ←  │  FastAPI   │
-            │  ViT-B/32  │     │   to dim   │     │   engines       │     │  +  pgvector │     │  +  React  │
-            └────────────┘     └────────────┘     └─────────────────┘     └──────────────┘     └────────────┘
-            512-dim vector     64/128/256-dim     classical / quantum     benchmark_results        UI + REST
+text
+  -> CLIP ViT-B/32
+  -> truncate to 64/128/256 dimensions
+  -> one of 7 active engines
+  -> PostgreSQL + pgvector
+  -> FastAPI + React
 ```
 
-A proper diagram (`docs/architecture.png`) is on the figure punch list — see `report/STRUCTURE.md`.
+Engine-count convention: the active benchmark/live-search set has 7 engines
+(3 classical, 4 quantum or hybrid). Stored benchmark results can show an 8th
+engine ID, `hybrid_hnsw_swap_test_ibm`, because the IBM hardware validation is
+run separately at dimension 2 with two candidates and 32 shots. Treat IBM as a
+validation data point, not as part of the normal simulator sweep.
+
+A proper diagram (`docs/architecture.png`) is on the figure punch list - see `report/STRUCTURE.md`.
 
 ## Documentation
 
@@ -39,7 +46,7 @@ A proper diagram (`docs/architecture.png`) is on the figure punch list — see `
 | [`docs/QUANTUM_INTUITION.md`](docs/QUANTUM_INTUITION.md) | Plain-language walk-through of the quantum bits |
 | [`docs/QUANTUM_SEARCH_ANALYSIS.md`](docs/QUANTUM_SEARCH_ANALYSIS.md) | qRAM, scaling, the honest quantum picture |
 | [`docs/RESEARCH_QUESTIONS.md`](docs/RESEARCH_QUESTIONS.md) | What we set out to measure |
-| [`docs/BENCHMARK_KPIS.md`](docs/BENCHMARK_KPIS.md) | MRR, oracle calls, circuit depth — precise definitions |
+| [`docs/BENCHMARK_KPIS.md`](docs/BENCHMARK_KPIS.md) | MRR, oracle calls, circuit depth - precise definitions |
 | [`docs/FAQ.md`](docs/FAQ.md) | Questions the team kept hitting while building |
 | [`docs/LEARNING_ROADMAP.md`](docs/LEARNING_ROADMAP.md) | If you want to learn the theory end-to-end |
 | [`docs/midterm/`](docs/midterm/) | Midterm presentation HTML + speaker notes |

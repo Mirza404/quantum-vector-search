@@ -5,11 +5,24 @@
 % optional. The poster grading form awards up to +10% bonus for this, so worth
 % getting right.
 
-[SUSTAINABILITY \& IMPACT \,--\, address: (1) energy / compute efficiency of the
-benchmarking workflow (we deliberately ran on simulator + small dataset rather
-than burning GPU hours), (2) data privacy (Flickr30k is public, no PII), (3)
-educational impact (the codebase and benchmarks are reproducible and openly
-available), (4) honest framing of quantum capabilities as a counterweight to
-hype. Map loosely to SDG~4 (quality education) and SDG~9 (industry, innovation,
-infrastructure) if that aids the bonus. See GUIDELINES.md \S Sustainability
-for tone notes.]
+This project was designed to be modest in its use of resources. The quantum
+engines ran on a CPU-based circuit simulator over a deliberately small dataset of
+twenty images, rather than on large-scale GPU training or extended
+quantum-hardware time, so the entire benchmark sweep completes on a single
+workstation; the one run on real quantum hardware consumed eighty seconds of a
+free-tier quota. The data raises no privacy concerns, as Flickr30k is a public
+research dataset of captioned images and contains no personal identifying
+information that we collect or process. The work is openly reproducible: the
+source code, the benchmark harness, and the dataset configuration are publicly
+available, and the harness is deterministic, so the reported results can be
+regenerated from scratch.
+
+Beyond these practical points, the study makes a small contribution to how
+quantum computing is discussed. Public accounts often present quantum advantage
+as imminent and general; by measuring where quantum search helps and where it
+does not, and by being explicit about the data-loading cost that the headline
+speed-ups omit, the work offers a counterweight to that framing. In the language
+of the United Nations Sustainable Development Goals, the project speaks most
+directly to SDG~4 (quality education), as an openly available teaching artefact
+for quantum and classical retrieval, and to SDG~9 (industry, innovation, and
+infrastructure), as an honest assessment of a candidate technology's readiness.

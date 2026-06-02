@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Quantum-Enhanced Multi-Modal Vector Search — FENS 2026 Poster</title>
+  <title>Quantum-Enhanced Multi-Modal Vector Search - FENS 2026 Poster</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <!--
-    A0 portrait poster (841 × 1189 mm). All real text fits on this single
+    A0 portrait poster (841 x 1189 mm). All real text fits on this single
     page. Each <section> below mirrors PLAN.md. Image placeholders use the
-    .placeholder class — drop the real file at the listed path and remove the
+    .placeholder class - drop the real file at the listed path and remove the
     class to swap in the image.
   -->
 
@@ -36,12 +36,12 @@
     <!-- ========== ABSTRACT BANNER ========== -->
     <section class="abstract-banner">
       <p>
-        <!-- TODO: tighten to the final report abstract once chapter 0 is written. -->
-        We build a text-to-image search system that runs the same query through eight engines —
-        three classical (brute force, FAISS flat, FAISS HNSW) and five quantum
-        (swap test, Grover, Grover with quantum state preparation, a HNSW + swap-test hybrid,
-        and the hybrid run on IBM hardware) — and compare them on accuracy (MRR) and quantum resource cost
-        (qubits, circuit depth, oracle calls). The investigation is framed honestly:
+        We build a text-to-image search system that runs the same query through seven engines,
+        three classical (brute force, FAISS flat, FAISS HNSW) and four quantum or hybrid
+        (swap test, Grover, Grover with quantum state preparation, and a HNSW + swap-test hybrid),
+        and compare them on accuracy (MRR) and quantum resource cost
+        (qubits, circuit depth, oracle calls). A separate one-off run validates the hybrid swap test
+        on real IBM hardware. The investigation is framed honestly:
         we measure where quantum search stands today, not where the marketing says it stands.
       </p>
     </section>
@@ -59,7 +59,7 @@
       <article class="card">
         <h2>2. Why This Matters</h2>
         <p>
-          Vector search is the backbone of modern ML — recommendation, retrieval, semantic search.
+          Vector search is the backbone of modern ML - recommendation, retrieval, semantic search.
           Quantum algorithms promise asymptotic speedups, but few experiments measure them on real
           embeddings with a fair classical baseline. We build that comparison now, so the framework
           is ready when hardware matures.
@@ -74,12 +74,12 @@
     <section class="grid-row">
       <article class="card full">
         <h2>3. Methodology</h2>
-        <div class="figure-slot tall placeholder">
-          <span class="placeholder-label">figures/methodology.png &middot; data-flow diagram</span>
+        <div class="figure-slot filled">
+          <img src="figures/methodology.png" alt="Methodology data-flow diagram: import, index, benchmark, report, with the IBM validation as a side arm." />
         </div>
         <p class="caption">
-          End-to-end pipeline: Flickr30k images &rarr; CLIP ViT-B/32 embeddings &rarr; truncate to 64 / 128 dim &rarr;
-          one of eight engines builds an index &rarr; ground-truth queries are run &rarr;
+          End-to-end pipeline: Flickr30k images &rarr; CLIP ViT-B/32 embeddings &rarr; truncate to 64 / 128 / 256 dim &rarr;
+          one of seven engines builds an index &rarr; ground-truth queries are run &rarr;
           per-engine results stored in PostgreSQL &rarr; FastAPI + React surface results and benchmarks.
         </p>
       </article>
@@ -108,7 +108,7 @@
       <article class="card">
         <h2>5. Evaluation Metrics</h2>
         <p><strong>Mean Reciprocal Rank (MRR).</strong> Average of 1 / rank of first relevant result across queries. Higher is better; 1.0 means always first.</p>
-        <p><strong>Oracle calls.</strong> Number of similarity comparisons per query. N for exact classical and swap test; &lfloor;&pi;&radic;N &divide; 4&rfloor; for Grover. Hardware-independent — the only valid cross-engine scaling metric.</p>
+        <p><strong>Oracle calls.</strong> Number of similarity comparisons per query. N for exact classical and swap test; &lfloor;&pi;&radic;N &divide; 4&rfloor; for Grover. Hardware-independent - the only valid cross-engine scaling metric.</p>
         <p class="callout small">
           <strong>Why we do not compare wall-clock time across engines:</strong>
           quantum engines run on a simulator that tracks 2<sup>k</sup> complex amplitudes on a classical CPU.
@@ -123,22 +123,22 @@
         <h2>6. Results</h2>
         <div class="results-grid">
           <div>
-            <div class="figure-slot placeholder">
-              <span class="placeholder-label">figures/mrr_chart.png &middot; bar chart, MRR per engine</span>
+            <div class="figure-slot filled">
+              <img src="figures/mrr_chart.png" alt="Horizontal bar chart of average MRR per engine, coloured by category." />
             </div>
             <p class="caption">
-              All exact engines (classical + swap test) tie at the ground-truth ranking once shot noise is averaged out.
-              Grover variants drop slightly because of measurement collapse before the optimal rotation count at small N.
-              <em>[Final numbers pending end-to-end benchmark run; see <code>report/STRUCTURE.md</code> §Chapter 4.]</em>
+              The three classical engines tie at MRR 0.829, and the hybrid effectively matches them (0.823).
+              The swap test reaches the classical ceiling at dimension 256; the Grover variants sit lower because the
+              answer is read off a probabilistic measurement. Accuracy is governed by embedding dimension, not by whether the engine is quantum.
             </p>
           </div>
           <div>
-            <div class="figure-slot placeholder">
-              <span class="placeholder-label">figures/oracle_scaling.png &middot; Grover empirical vs theoretical</span>
+            <div class="figure-slot filled">
+              <img src="figures/oracle_scaling.png" alt="Grover oracle-call count vs the theoretical curve, with the benchmarked point marked." />
             </div>
             <p class="caption">
-              Empirical Grover oracle-call counts match &lfloor;&pi;&radic;N &divide; 4&rfloor; across the dataset sizes we tested.
-              Confirms the algorithm behaves as theory predicts on a real circuit simulator.
+              Grover's measured oracle-call count matches the theoretical &lfloor;&pi;&radic;N &divide; 4&rfloor; optimum exactly
+              at the single padded index size we benchmarked (N = 32). One dataset size confirms one point on the curve, not the whole curve.
             </p>
           </div>
         </div>
@@ -153,7 +153,7 @@
           <div>
             <p>
               Grover's &radic;N speedup is real on the <em>search step alone</em>. The catch is
-              loading N vectors into superposition without qRAM (which does not exist) costs O(N) —
+              loading N vectors into superposition without qRAM (which does not exist) costs O(N) -
               cancelling the speedup at the system level.
             </p>
           </div>
@@ -175,7 +175,7 @@
         <ul class="contributions">
           <li><strong>Reproducible benchmarking infrastructure</strong> for classical vs. quantum vector search, controlled by one YAML file.</li>
           <li><strong>Empirical verification</strong> that the swap-test recovers cosine ranking and Grover hits &radic;N oracle scaling.</li>
-          <li><strong>Honest analysis</strong> of why quantum vector search is not competitive today — and what would have to change.</li>
+          <li><strong>Honest analysis</strong> of why quantum vector search is not competitive today - and what would have to change.</li>
         </ul>
         <p class="future">
           <em>Next:</em> larger dataset, full 512-dim CLIP, IBM hardware noise study, pgvector HNSW as a third classical baseline.
@@ -188,11 +188,11 @@
           <li>H. Buhrman et al., <em>Quantum Fingerprinting</em>, Phys. Rev. Lett. 87, 167902, 2001.</li>
           <li>A. Radford et al., <em>Learning Transferable Visual Models from Natural Language Supervision</em>, ICML, 2021.</li>
           <li>Y. A. Malkov &amp; D. A. Yashunin, <em>Efficient and Robust Approximate Nearest Neighbor Search Using HNSW Graphs</em>, TPAMI, 2020.</li>
-          <li>S. Aaronson, <em>Read the fine print</em>, Nature Physics 11(4), 291–293, 2015.</li>
+          <li>S. Aaronson, <em>Read the fine print</em>, Nature Physics 11(4), 291-293, 2015.</li>
         </ol>
         <div class="qr-block">
-          <div class="qr-slot placeholder">
-            <span class="placeholder-label">figures/qr_repo.png</span>
+          <div class="qr-slot">
+            <img src="figures/qr_repo.png" alt="QR code linking to the project repository." />
           </div>
           <p class="qr-caption">Scan for code, data, and full report.</p>
         </div>

@@ -12,10 +12,12 @@ you, for each chapter:
 
 The goal of this file is to make sure no chapter starts from a blank page.
 
-> **Pictures**: every figure in this plan is currently a `\fbox{...}`
-> placeholder in the .tex file. The team explicitly deferred creating real
-> figures. Each placeholder lists its filename and what it should show, so we
-> can batch them at the end.
+> **Pictures**: the figures for the written chapters (Ch 3 + Ch 4) are now
+> real (see the status table at the end of this file). The two pipeline
+> diagrams are TikZ; the two Qiskit circuit diagrams and the Grover
+> oracle-scaling plot are produced by `backend/scripts/make_report_figures.py`.
+> Figures for not-yet-written chapters remain to be made when those chapters
+> are drafted.
 
 ---
 
@@ -293,9 +295,9 @@ A single batch to handle once the prose is mostly stable. Each entry tells you
 | `ius_logo.png` | `chapters/00_cover.tex` | ✅ |
 | `architecture.png` | `chapters/03_methodology.tex` (Fig. 3.1) | ✅ placeholder box |
 | `methodology.png` | `chapters/03_methodology.tex` (Fig. 3.2) | ✅ placeholder box |
-| `swap_test_circuit.png` | not yet — add to §3.5.2 when ready | ☐ |
-| `grover_circuit.png` | not yet — add to §3.5.2 when ready | ☐ |
-| `oracle_scaling.png` | `chapters/04_results.tex` (Fig. 4.1) | ✅ placeholder box |
-| `mrr_chart.png` | poster `index.html` | ✅ placeholder box |
+| `swap_test_circuit.png` | `chapters/03_methodology.tex` (§3.5, Fig. 3) | ✅ generated, wired |
+| `grover_circuit.png` | `chapters/03_methodology.tex` (§3.5, Fig. 4) | ✅ generated, wired |
+| `oracle_scaling.png` | `chapters/04_results.tex` (Fig. 5) | ✅ generated, wired |
+| `mrr_chart.png` | poster `index.html` | ☐ poster-only, not in report |
 | `clip_pipeline.png` | not yet — optional | ☐ |
 | `qr_repo.png` | poster `index.html` | ✅ placeholder box |

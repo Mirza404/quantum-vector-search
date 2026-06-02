@@ -4,16 +4,39 @@
 % Summarise findings, highlight contributions, point to future work.
 % Target length: ~300-500 words. No new results may appear here.
 
-[SUMMARY \,--\, restate the three research questions and their answers in two
-to three sentences.]
+This study built a single framework in which classical, quantum, and hybrid
+engines answer the same cross-modal queries over the same embeddings, and used it
+to measure where quantum similarity search helps. The findings are consistent and,
+in places, sobering. Retrieval accuracy was governed by the embedding dimension
+rather than by whether an engine was quantum: the swap test reproduced classical
+accuracy once given a sufficient measurement budget (RQ1), and our Grover
+implementation reproduced its theoretical $\lfloor (\pi/4)\sqrt{N} \rfloor$
+oracle-call count exactly at the size we tested (RQ2). No engine that performed
+its search quantumly outperformed the classical HNSW baseline on this dataset;
+the only quantum-containing engine to match it, the hybrid, did so by delegating
+the search to the classical index (RQ3). The structural reason is that vector
+retrieval is dominated by reading the dataset, a data-bound task, whereas quantum
+advantage concentrates on compute-bound problems over small inputs, so cross-modal
+search is not a natural fit for quantum methods even setting hardware maturity
+aside (RQ4).
 
-[CONTRIBUTIONS \,--\, list what this work delivered: (1) the benchmark
-infrastructure, (2) the empirical verification of swap-test and Grover
-behaviour, (3) the web application for inspection, (4) the honest analysis of
-where the quantum-classical gap actually lies. The honest framing IS a
-contribution - say so.]
+This work delivers four things. The first is a reproducible benchmarking framework
+that runs seven engines, classical, quantum, and hybrid, behind one interface and
+records every result in a database. The second is an empirical verification of
+textbook quantum behaviour on a real retrieval task: the swap test's convergence
+to the classical ranking, and Grover's oracle-call scaling. The third is a web
+application that displays the engines' rankings side by side, making the
+comparison inspectable rather than abstract. The fourth, and the one we consider
+most important, is the honest framing itself: stating plainly where quantum search
+does not help, and why, is a contribution in a setting where that question is
+often left unasked.
 
-[FUTURE WORK \,--\, candidates: larger dataset (Flickr30k full set or
-ImageNet subset), wider dimension sweep (256, 512), proper variational ansatz
-study, comparison against pgvector HNSW as a third classical baseline, IBM
-hardware noise characterisation.]
+Several directions would extend the study. A larger dataset, drawn from the full
+Flickr30k set or an ImageNet subset, would exercise the HNSW approximation that
+twenty vectors leave untested and give the accuracy figures more statistical
+weight. A wider dimension sweep, and a study of variational state-preparation
+circuits in place of the hardcoded oracle, would probe the quantum engines closer
+to their intended use. Comparing against a production vector store such as
+pgvector's HNSW would add a third classical baseline, and a characterisation of
+noise on real quantum hardware, beyond the single validation run reported here,
+would show how the simulated behaviour degrades on present-day devices.

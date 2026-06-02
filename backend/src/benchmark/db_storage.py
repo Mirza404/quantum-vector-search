@@ -193,7 +193,7 @@ class DatabaseStorage(BaseBenchmarkStorage):
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
     def load_benchmark_breakdown(self) -> list[dict]:
-        """Per (engine, dimension, shots) row — does NOT collapse across configs.
+        """Per (engine, dimension, shots) row - does NOT collapse across configs.
 
         Used by the API to surface the shots-vs-MRR curve that RQ1 requires; the
         aggregated `load_benchmark_summary` view hides that breakdown.

@@ -6,10 +6,24 @@
 % generated from it. No prose claims without a number behind them.
 % Target length: ~1,500-2,500 words.
 
-[OPENING SUMMARY \,--\, one paragraph stating the headline findings: (1) which
-engine ranks first on MRR, (2) whether swap test matches classical ranking, (3)
-whether Grover hits its theoretical oracle-call count, (4) the practical
-position of the hybrid engine. All numbers must come from the benchmark DB.]
+The central result of this study is that retrieval accuracy was governed by the
+embedding dimension we gave each engine, not by whether the engine was classical
+or quantum. The three classical baselines returned identical rankings and tied
+for the highest Mean Reciprocal Rank (MRR) at 0.829, and every engine, classical
+or quantum, improved along the same staircase as the dimension rose from 64 to
+256. Within that pattern the quantum engines behaved exactly as their algorithms
+predict. The swap test reproduced the classical ranking exactly at dimension 256
+(MRR 0.975) and degraded gracefully below it, recovering as we spent more
+measurement shots. Grover with a hardcoded oracle returned the correct neighbour
+using a number of oracle calls that matched the theoretical $\lfloor
+(\pi/4)\sqrt{N} \rfloor$ count, but its sampling-based read-out left it slightly
+short of the classical ceiling (MRR 0.955 at dimension 256). The fully quantum
+state-preparation variant of Grover was the weakest engine in the study (MRR
+0.559). The hybrid engine, which uses the classical index to shortlist
+candidates and the swap test only to rerank them, effectively tied the classical
+baseline (MRR 0.823). The sections below break these findings down by accuracy,
+quantum resource cost, timing, and the separate hardware validation run, and then
+return to the research questions.
 
 \section{Accuracy Across Engines}
 \label{sec:results:mrr}
@@ -19,20 +33,82 @@ position of the hybrid engine. All numbers must come from the benchmark DB.]
 
 \begin{table}[ht]
   \centering
-  \caption{Average Mean Reciprocal Rank by engine. Higher is better.}
+  \caption[Mean Reciprocal Rank by engine and dimension]{Average Mean
+  Reciprocal Rank (MRR) by engine and embedding
+  dimension, over the twenty benchmark queries. Higher is better: an MRR of
+  1.000 means the correct image was ranked first for every query. Quantum
+  cells average over the three shot counts (512, 1024, 2048); the shot
+  dependence is examined separately below. The IBM hardware run is reported
+  in Section~\ref{sec:results:ibm}.}
   \label{tab:mrr}
-  % Using tabularx so the Engine column wraps if a label or placeholder is long.
   \begin{tabularx}{\linewidth}{Xcccc}
     \toprule
-    \textbf{Engine} & \textbf{Dim} & \textbf{Shots} & \textbf{Avg MRR} & \textbf{Runs} \\
+    & \multicolumn{3}{c}{\textbf{MRR by dimension}} & \\
+    \cmidrule(lr){2-4}
+    \textbf{Engine} & \textbf{64} & \textbf{128} & \textbf{256} & \textbf{Avg} \\
     \midrule
-    \multicolumn{5}{l}{\emph{Fill from} \texttt{/api/benchmarks} \emph{or} \texttt{scripts/generate\_report.py}.} \\
+    Brute-force cosine          & 0.655 & 0.858 & 0.975 & 0.829 \\
+    FAISS flat                  & 0.655 & 0.858 & 0.975 & 0.829 \\
+    FAISS HNSW                  & 0.655 & 0.858 & 0.975 & 0.829 \\
+    \addlinespace
+    Swap test                   & 0.470 & 0.738 & 0.975 & 0.728 \\
+    Grover (hardcoded oracle)   & 0.546 & 0.776 & 0.955 & 0.759 \\
+    Grover (quantum state prep) & 0.404 & 0.551 & 0.722 & 0.559 \\
+    \addlinespace
+    Hybrid (HNSW + swap test)   & 0.635 & 0.858 & 0.975 & 0.823 \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-[MRR DISCUSSION \,--\, comment on which engines tied, which dropped, and what
-the shot/dimension interaction looks like.]
+The three classical engines are statistically indistinguishable in
+Table~\ref{tab:mrr}: brute-force cosine, FAISS flat, and FAISS HNSW each scored
+an average MRR of 0.829 and, query by query, produced the same ordering of
+results. This is the expected outcome rather than a coincidence. Brute-force
+cosine and FAISS flat are both exact searches over the same twenty unit vectors,
+so they must agree, and FAISS HNSW is an approximate graph index whose
+approximation only begins to matter at thousands of vectors. With a dataset this
+small its navigable graph visits effectively every node, so it reproduces the
+exact ranking. We treat the brute-force result as the ground-truth ordering
+against which the other engines are measured.
+
+The dominant factor in accuracy was the embedding dimension. Every engine in the
+table improves monotonically from dimension 64 to 256, and the classical
+baseline traces a clear staircase of 0.655, 0.858, and 0.975. This is a property
+of the embeddings, not of the search algorithm: truncating the 512-dimensional
+CLIP vectors to 64 components discards information that separates near-neighbours,
+and restoring dimensions recovers it. Because we truncate for the simulator's
+qubit budget rather than for any retrieval reason, the dimension axis is best
+read as the cost of making the problem small enough to simulate, and the
+256-dimensional column as the most representative of what the embeddings can do.
+
+The swap test illustrates how a quantum estimator approaches the exact answer as
+its measurement budget grows. At dimension 256 it matched the classical ceiling
+exactly (MRR 0.975 at every shot count), because the overlaps it estimates are
+well separated and even a coarse estimate ranks them correctly. At dimension 128,
+where neighbours are closer together, accuracy depended on how finely we measured:
+MRR rose from 0.642 at 512 shots to 0.688 at 1024 and 0.883 at 2048. The swap
+test estimates the squared overlap $|\langle\psi|\phi\rangle|^2$ from a finite
+number of measurements, so additional shots reduce the sampling noise and sharpen
+the ranking. This shot-versus-accuracy trade-off, rather than any ceiling on the
+method itself, explains the swap test's lower average of 0.728: the average is
+pulled down by the low-dimension, low-shot configurations that a practical
+deployment would not choose.
+
+The two Grover engines separate sharply. Grover with a hardcoded oracle tracked
+the classical accuracy closely, reaching MRR 0.955 at dimension 256, just short
+of the 0.975 ceiling. The shortfall comes from the read-out: Grover amplifies the
+marked state but is still measured probabilistically, so on a small number of
+queries the most-sampled index is not the true nearest neighbour. The
+fully quantum variant, which prepares the candidate state on the circuit instead
+of supplying it through a classical oracle, was the weakest engine at every
+dimension and averaged 0.559. Moving the one classically assisted step into the
+quantum circuit compounded the state-preparation error and the same sampling
+noise, and the engine had no classical fallback to recover from a misdirected
+search. The hybrid engine sits at the opposite end of this trade-off: by letting
+the classical HNSW index choose the candidates and using the swap test only to
+rerank them, it stayed level with the classical baseline (MRR 0.823, and 0.975 at
+dimension 256), confining the quantum step to the part of the pipeline where its
+error did not change the outcome.
 
 \section{Quantum Resource Cost}
 \label{sec:results:cost}
@@ -40,15 +116,112 @@ the shot/dimension interaction looks like.]
 % Circuit depth, qubit count, oracle calls. This section answers RQ2 (Grover
 % scaling) and supports the practicality framing on RQ3.
 
+Because the quantum engines run on a classical simulator, their wall-clock time
+measures simulation overhead rather than the cost of a real quantum device
+(Section~\ref{sec:results:walltime} returns to this). The hardware-independent
+way to compare the engines is therefore to count the operations each one
+performs per query and the resources its circuit would demand on a real device.
+Table~\ref{tab:opcount} reports the first of these: the number of similarity
+comparisons or oracle calls each engine makes for a single query over the
+twenty-image dataset.
+
+\begin{table}[ht]
+  \centering
+  \caption[Operations per query and complexity class]{Operations per query and
+  algorithmic complexity for each engine over
+  the twenty-image dataset ($N=20$). The operation count is the cross-engine
+  scaling metric; it is independent of hardware. Here $M$ denotes the number of
+  candidates the hybrid engine reranks.}
+  \label{tab:opcount}
+  \begin{tabularx}{\linewidth}{Xcc}
+    \toprule
+    \textbf{Engine} & \textbf{Operations / query} & \textbf{Complexity} \\
+    \midrule
+    Brute-force cosine          & 20 & $O(N)$ \\
+    FAISS flat                  & 20 & $O(N)$ \\
+    FAISS HNSW                  & 5  & $O(\log N)$ approx. \\
+    \addlinespace
+    Swap test                   & 20 & $O(N)$ \\
+    Grover (hardcoded oracle)   & 4  & $O(\sqrt{N})$ \\
+    Grover (quantum state prep) & 4  & $O(\sqrt{N})$ \\
+    \addlinespace
+    Hybrid (HNSW + swap test)   & 10 & $O(\log N + M)$ \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Grover was the only engine whose per-query cost was sublinear in the dataset
+size. The exact classical engines and the standalone swap test each performed one
+comparison per stored vector, twenty in total, while FAISS HNSW reached its
+answer in about five graph hops and the hybrid engine made ten comparisons (one
+HNSW shortlist followed by a swap-test rerank of the survivors). Both Grover
+engines used four oracle calls, and this count is exactly what the theory
+predicts once the index padding is accounted for. Grover addresses an index
+register whose length is a power of two, so the twenty images are padded to the
+next power of two, $N' = 32$, which is why the Grover circuits used five qubits
+($\lceil \log_2 32 \rceil = 5$). The optimal number of Grover iterations for an
+unstructured search of $N'$ items is $\lfloor (\pi/4)\sqrt{N'} \rfloor$, and for
+$N' = 32$ this evaluates to $\lfloor 4.44 \rfloor = 4$, matching the measured
+count. Figure~\ref{fig:oracle_scaling} places this verified point on the
+theoretical curve.
+
 \begin{figure}[ht]
   \centering
-  \fbox{\parbox[c][6cm][c]{0.7\linewidth}{\centering FIGURE PLACEHOLDER\\\texttt{figures/oracle\_scaling.png}\\(empirical vs theoretical Grover scaling)}}
-  \caption{Empirical Grover oracle calls vs.\ the theoretical $\lfloor\pi\sqrt{N}/4\rfloor$ curve.}
+  \includegraphics[width=0.8\linewidth]{figures/oracle_scaling.png}
+  \caption[Grover oracle-call scaling]{Theoretical Grover oracle-call count
+  $\lfloor (\pi/4)\sqrt{N} \rfloor$ as a function of the padded index size $N$,
+  with a marker at the single size we benchmarked ($N = 32$, four oracle calls).
+  We ran one dataset size, so this confirms the count at a single point on the
+  curve rather than tracing the curve empirically.}
   \label{fig:oracle_scaling}
 \end{figure}
 
-[RESOURCE COST DISCUSSION \,--\, qubits per dimension, circuit depth growth,
-how it matches the theory.]
+The two quantum families differ sharply in what they encode, and
+Table~\ref{tab:circuitcost} shows the consequence for circuit width and depth.
+Grover encodes the candidate \emph{index}, so its width stayed fixed at five
+qubits regardless of the embedding dimension; its cost instead appears as depth,
+around fifty gate layers, because each of the four iterations applies an oracle
+and a diffusion operator in sequence. The swap test and the hybrid engine encode
+the candidate \emph{vectors}, so their width grew with the embedding dimension as
+$1 + 2\lceil \log_2 d \rceil$ qubits, from thirteen at dimension 64 to seventeen
+at dimension 256, while their circuits stayed shallow (depth nine to eleven). On
+near-term hardware both costs matter: more qubits are harder to allocate, and
+greater depth gives decoherence more time to corrupt the state, which is the
+practical reason the deep Grover circuits would be the harder of the two to run
+faithfully on a real device.
+
+\begin{table}[ht]
+  \centering
+  \caption[Quantum circuit width and depth]{Circuit width and depth for the
+  quantum engines, from the compiled
+  circuits. The swap test and the hybrid engine share the same circuit metrics
+  because the hybrid reuses the swap-test circuit. Grover's width is set by the
+  padded index register, not the embedding dimension, so it is constant.}
+  \label{tab:circuitcost}
+  \begin{tabularx}{\linewidth}{Xccc}
+    \toprule
+    \textbf{Engine (dimension)} & \textbf{Qubits} & \textbf{Circuit depth} \\
+    \midrule
+    Swap test / Hybrid, dim 64   & 13 & 9 \\
+    Swap test / Hybrid, dim 128  & 15 & 10 \\
+    Swap test / Hybrid, dim 256  & 17 & 11 \\
+    \addlinespace
+    Grover (both variants), any dim & 5 & $\approx 50$ \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+These counts also expose the assumption hidden inside Grover's sublinear figure.
+The four oracle calls measure only the search once the data is already encoded in
+the oracle; they do not include the cost of building that oracle. Our hardcoded
+oracle computes the nearest neighbour classically and then marks it, so the
+twenty comparisons Grover appears to save have in effect been paid before the
+circuit runs. This is the qRAM caveat set out in Section~\ref{sec:method:engines}:
+a genuine quantum speed-up for search would require loading the dataset into a
+quantum-accessible memory, which is itself an unsolved cost. The swap test and
+hybrid engines make the opposite trade, paying their cost openly in qubits and in
+one circuit execution per candidate. Section~\ref{sec:results:discussion} returns
+to what this means for the practicality question.
 
 \section{Wall-Clock Behaviour (Within-Engine Only)}
 \label{sec:results:walltime}
@@ -57,8 +230,66 @@ how it matches the theory.]
 % a simulator. State this in the first sentence to avoid the reader misreading
 % the numbers.
 
-[WALL-TIME DISCUSSION \,--\, restrict comparisons to within-engine across
-dimensions. Explicitly state why cross-engine wall-time is misleading.]
+Wall-clock time cannot be compared across engines in this study, and
+Table~\ref{tab:walltime} should be read only one row at a time. The reason is
+that the quantum engines did not run on a quantum computer: they ran on a
+classical statevector simulator, which represents the full quantum state in
+ordinary memory and so does work that grows exponentially with the number of
+qubits. The times for the quantum engines therefore measure the cost of
+\emph{simulating} a circuit on a CPU, not the latency a real quantum processor
+would incur, and putting them next to the classical millisecond figures would
+compare two unrelated quantities. The within-engine comparison across dimension
+is meaningful, because there the hardware is held fixed and only the problem size
+changes.
+
+\begin{table}[ht]
+  \centering
+  \caption[Mean query time by engine and dimension]{Mean total time per query,
+  in milliseconds, by engine and embedding
+  dimension. The three classical engines completed in well under a millisecond
+  (0.2 to 0.6 ms) and are shown as ``$<1$''. The quantum and hybrid times are
+  simulator times on a CPU and are \emph{not} comparable to the classical
+  figures or to real quantum hardware; they are reported only to show how each
+  engine's simulation cost scales with dimension.}
+  \label{tab:walltime}
+  \begin{tabularx}{\linewidth}{Xccc}
+    \toprule
+    & \multicolumn{3}{c}{\textbf{Mean time per query (ms)}} \\
+    \cmidrule(lr){2-4}
+    \textbf{Engine} & \textbf{dim 64} & \textbf{dim 128} & \textbf{dim 256} \\
+    \midrule
+    Brute-force cosine          & $<1$ & $<1$  & $<1$ \\
+    FAISS flat                  & $<1$ & $<1$  & $<1$ \\
+    FAISS HNSW                  & $<1$ & $<1$  & $<1$ \\
+    \addlinespace
+    Swap test                   & 993  & 4764  & 21555 \\
+    Grover (hardcoded oracle)   & 19   & 20    & 19 \\
+    Grover (quantum state prep) & 3399 & 6916  & 7453 \\
+    Hybrid (HNSW + swap test)   & 254  & 1134  & 5255 \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Read row by row, the table reflects the circuit sizes reported in
+Section~\ref{sec:results:cost}. The swap test and the hybrid engine slowed
+sharply as the dimension rose, the swap test from about one second per query at
+dimension 64 to roughly twenty-two seconds at dimension 256, because each
+doubling of the embedding dimension adds two qubits to the amplitude encoding and
+so quadruples the size of the statevector the simulator must track. Grover with a
+hardcoded oracle was the exception: its time stayed essentially flat at about
+twenty milliseconds across all three dimensions, because its circuit always uses
+the same five-qubit index register regardless of the embedding dimension. This
+contrast is the clearest evidence in our data that the simulation cost is driven
+by the qubit count, not by the dataset or the dimension as such. The quantum
+state-preparation variant of Grover was far slower than the hardcoded one, in the
+thousands of milliseconds, because it builds the candidate state on the circuit
+instead of supplying it classically.
+
+The practical consequence is that the simulator, not the algorithm, set the
+ceiling on how large a problem we could study, which is why the embedding
+dimension was capped at 256. None of these times should be read as a statement
+about how fast any engine would run on real quantum hardware;
+Section~\ref{sec:results:limitations} states this constraint plainly.
 
 \section{IBM Hardware Sanity Check}
 \label{sec:results:ibm}
@@ -67,8 +298,28 @@ dimensions. Explicitly state why cross-engine wall-time is misleading.]
 % the swap test circuit behaves the same on real hardware as on the simulator,
 % within shot noise". Do NOT make scaling claims from this.
 
-[IBM SANITY CHECK \,--\, results of the validation run, what we learned, what
-we did not (and cannot) measure from it.]
+All of the quantum results above were produced on a simulator. To confirm that
+the swap-test pipeline also runs on a physical quantum processor, we executed the
+hybrid engine once on real IBM Quantum hardware through the IBM Quantum cloud
+service. This run was deliberately tiny: it used two-dimensional vectors, two
+candidates per query, and thirty-two measurement shots, across the same twenty
+queries, and it consumed eighty seconds of the limited free-tier quota. We treat
+it as a sanity check on the execution path, not as a benchmark, and it is kept
+separate from the simulator results for that reason.
+
+The run achieved an average MRR of 0.125, far below the simulator figures. This
+number reflects the severity of the configuration rather than any property of
+the method. Reducing the vectors to two dimensions destroys almost all of the
+information that distinguishes one image from another, two candidates leaves the
+task close to a coin toss, and thirty-two shots give a very noisy estimate of the
+swap-test overlap; real-device noise then sits on top of all three. What the run
+does establish is that the full hardware path works end to end: the swap-test
+circuit transpiles to a real device's gate set, executes in the cloud queue, and
+returns measurement counts that our pipeline reads back into a ranking. What it
+cannot establish is anything about accuracy or scaling, because the configuration
+was chosen to fit inside the free-tier quota rather than to measure retrieval
+quality. We therefore make no comparison between this run and the simulator
+results, and draw no scaling conclusion from it.
 
 \section{Discussion}
 \label{sec:results:discussion}
@@ -78,8 +329,54 @@ we did not (and cannot) measure from it.]
 % oracle count matches theory to within Y%. RQ3: no - HNSW beats Grover even
 % under ideal-qRAM assumptions at N >= Z."
 
-[DISCUSSION \,--\, one short paragraph per research question, each ending with
-a one-sentence answer.]
+\textbf{RQ1 (Accuracy).} The swap test reproduced the retrieval accuracy of
+classical cosine similarity once it was given enough measurement shots, and the
+shot budget it needed depended on how close the candidate vectors were. At
+dimension 256, where neighbours are well separated, it matched the classical MRR
+of 0.975 at every shot count we tried, including the smallest. At dimension 128
+it reached classical accuracy only at the highest setting, rising to 0.883 at
+2048 shots from 0.642 at 512, and at dimension 64 it remained below the classical
+baseline even at 2048 shots. The pattern is consistent with the swap test being a
+sampled estimate of vector overlap: the harder the discrimination, the more shots
+are required to resolve it. \emph{Yes: the swap test reproduces classical
+retrieval accuracy given a sufficient shot budget, and the budget required grows
+as the embedding dimension, and hence the separation between neighbours, falls.}
+
+\textbf{RQ2 (Scaling).} Our Grover implementation used four oracle calls per
+query, which is exactly the theoretical optimum $\lfloor (\pi/4)\sqrt{N'}
+\rfloor$ for the padded index size $N' = 32$, as set out in
+Section~\ref{sec:results:cost}. The match was exact rather than approximate.
+The qualification is that we benchmarked only one dataset size, so we confirmed
+the formula at a single point rather than tracing the scaling curve across a
+range of $N$. \emph{Yes: at the size we tested, the oracle-call count matched the
+theoretical $\lfloor (\pi/4)\sqrt{N} \rfloor$ optimum exactly, though a single
+dataset size cannot demonstrate the full curve.}
+
+\textbf{RQ3 (Practicality).} No engine that performed its search quantumly beat
+the classical HNSW baseline on this dataset. HNSW reached the full
+brute-force accuracy of 0.829 in about five graph hops, while the standalone
+quantum engines were either less accurate or, in Grover's case, dependent on a
+classically precomputed oracle. The one quantum-containing engine that matched
+the baseline, the hybrid, did so precisely because the classical index performed
+the search and the swap test only reranked a shortlist; its accuracy is inherited
+from HNSW, not produced by the quantum step. \emph{We found no condition under
+which a quantum search engine outperformed the HNSW baseline on this dataset; the
+strongest quantum-containing engine matched it only by delegating the search
+itself to the classical index.}
+
+\textbf{RQ4 (Suitability).} The resource accounting in
+Section~\ref{sec:results:cost} points to a structural reason for the RQ3 result.
+Grover's sublinear oracle count is genuine, but it measures the search after the
+data has been loaded into the oracle; constructing that oracle, or an equivalent
+quantum-accessible memory, reintroduces a cost linear in the dataset size. Vector
+retrieval is dominated by exactly this data-loading step, because answering a
+query means comparing against many stored items. Quantum advantage, by contrast,
+is generally argued to concentrate on compute-bound problems that do heavy
+processing over small inputs rather than on data-bound problems that must read a
+large dataset~\cite{aaronson2015readfine}. \emph{On both our evidence and the
+structure of the problem, cross-modal vector search is data-bound retrieval
+rather than compute-bound work over small data, so it is not a natural fit for
+quantum advantage even setting aside the maturity of current hardware.}
 
 \section{Limitations}
 \label{sec:results:limitations}
@@ -87,5 +384,24 @@ a one-sentence answer.]
 % Be honest. Small dataset (20 images), simulator-only quantum execution,
 % truncated CLIP embeddings, classical-precomputed Grover oracle.
 
-[LIMITATIONS \,--\, list, briefly, every constraint a reviewer might point to.
-Pre-empting limitations is stronger than letting the committee find them.]
+Several constraints bound what these results can claim, and we state them
+directly. The dataset was small, twenty images with one caption each as the
+query, which was deliberate: it kept every configuration fast enough to simulate
+and gave an unambiguous ground truth. The cost is limited statistical power and
+the fact that the HNSW index never had enough vectors to exercise its
+approximation, so its match with exact search holds for this dataset but would
+not necessarily hold at the scale where HNSW is normally used. The quantum
+engines, with the single exception of the IBM run in
+Section~\ref{sec:results:ibm}, executed on a classical simulator, so our results
+describe the algorithms' behaviour and not the noise, gate errors, or latency of
+present-day quantum hardware. The embeddings were truncated from the model's
+native 512 dimensions to at most 256 to fit the simulator's qubit budget, which
+places every engine below the accuracy the full embeddings could reach, so the
+absolute MRR figures should be read as relative comparisons under a shared
+handicap rather than as the best the method can do. Grover used a classically
+precomputed oracle, meaning its sublinear oracle count excludes the cost of
+encoding the data, as discussed under RQ4. Finally, we benchmarked a single
+dataset size, so the Grover oracle-call scaling is confirmed at one point on its
+theoretical curve rather than across a range. None of these constraints changes
+the direction of the findings, but each marks a boundary beyond which they should
+not be extended.

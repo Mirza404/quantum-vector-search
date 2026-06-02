@@ -94,25 +94,87 @@ Footnotes that are really just a citation belong in `\cite{}` instead.
 
 ## 7. ASCII-Only Source — Use LaTeX Commands, Not Unicode
 
-The `.tex` source must contain only standard keyboard characters. Typographic
-glyphs that look right in a word processor (em dash, arrows, smart quotes,
-Greek letters, mathematical symbols) break compilation, render inconsistently
-across font setups, and confuse search/replace.
+The `.tex` source must contain only standard keyboard characters. Raw
+typographic and mathematical glyphs (Greek letters, roots, arrows, smart
+quotes) break compilation, render inconsistently across font setups, and
+confuse search/replace. The fix is to write them as LaTeX commands, which
+compile to the correct symbol in the PDF.
 
-| Don't paste | Use instead |
+There are **two separate concerns here. Do not conflate them.**
+
+### 7a. Mathematical notation: write it in LaTeX math, and do use it
+
+Maths belongs in a thesis, and the reader should see real mathematical
+symbols. Write them with LaTeX math syntax: `$\sqrt{N}$`, `$\pi$`,
+`$O(\sqrt{N})$`, `$\lceil \log_2 d \rceil$`, `$|\langle\psi|\phi\rangle|^2$`.
+These render as proper symbols (the radical sign, the Greek letter, and so on)
+in the PDF, which is exactly what you want. **This is correct and expected; it
+is not an AI tell.**
+
+Two failure modes to avoid:
+- **Do not paste the raw unicode glyph** (`√`, `π`, `θ`) into the source. It
+  is not ASCII and may not compile.
+- **Do not degrade maths into ASCII words in prose.** Write `$\sqrt{N}$`, never
+  "sqrt(N)"; write `$\lceil \log_2 d \rceil$`, never "ceil(log2 d)"; write
+  `$O(N)$`, never a bare "O(N)". The LaTeX form is the correct one.
+
+| Raw glyph (do not paste) | Write instead (LaTeX) |
 |---|---|
-| `—` (em dash) | `---` or `\,--\,` if you want thin space around it |
-| `–` (en dash) | `--` |
 | `→` `←` `↑` `↓` | `$\rightarrow$` `$\leftarrow$` `$\uparrow$` `$\downarrow$` |
 | `⟨ψ\|φ⟩` | `\ket{\psi}`, `\bra{\phi}`, `\braket{\psi\|\phi}` (braket package) |
 | `…` (ellipsis) | `\ldots{}` (text) or `\dots` (math) |
 | `"smart"` `'quotes'` | `` `` text '' `` and `` ` text ' `` |
 | `×` `÷` `≤` `≥` `≈` | `$\times$` `$\div$` `$\leq$` `$\geq$` `$\approx$` |
-| `π` `√` `½` `²` `³` | `$\pi$` `$\sqrt{x}$` `$\tfrac{1}{2}$` `$x^2$` `$x^3$` |
+| `π` `√` `½` `²` `³` `θ` | `$\pi$` `$\sqrt{x}$` `$\tfrac{1}{2}$` `$x^2$` `$x^3$` `$\theta$` |
+| `−` (unicode minus) | `-` (text) or `$-$` (math) |
 | `°` (degree) | `$^\circ$` or `\degree` (with siunitx) |
 
+### 7b. The em dash is a STYLE rule, not an encoding one: avoid it in prose
+
+A sentence joined by an em dash (whether you encode it `---` or `\,--\,`) reads
+as an obvious AI tell. Unlike the maths above, there is no "correct LaTeX way"
+to keep it: **in body prose, do not use the em-dash construction at all.**
+Rewrite with a comma, a colon, parentheses, or two sentences.
+
+| Glyph | In body prose | In ranges |
+|---|---|---|
+| `—` em dash | avoid; rewrite the sentence | n/a |
+| `–` / range | n/a | `--` (e.g. `pp.~212--219`) |
+
+The en dash `--` for numeric and page ranges is standard and fine. A `\,--\,`
+inside a scaffold label or placeholder is also fine, because that is not prose.
+
+### 7c. Proper names keep their diacritics: do NOT anglicise them
+
+The rules above are about technical and typographic glyphs, not people's names.
+A name is spelled the way its owner spells it, so keep the diacritics. The
+authors are Mahmutovic with the acute (Mahmutovi + c-acute), Kikanovic,
+Musanovic (s-caron), and Abdulahovic; cited authors keep theirs too
+(Haner with an umlaut, Jegou with an acute).
+
+- **In `.tex` source** (which must stay ASCII), write names with LaTeX accent
+  commands so they render the correct glyph: `Mahmutovi\'{c}`,
+  `Mu\v{s}anovi\'{c}`, `J\'{e}gou`, `H\"{a}ner`, plus `\v{c}`, `\v{z}`,
+  `\dj{}` (the d-stroke). These compile correctly under `T1` fontenc.
+- **In Markdown, docs, and code comments**, raw UTF-8 diacritics in names are
+  fine (đ, š, ž, ć, č, ä, é). Do not transliterate or strip them. If you run an
+  ASCII sweep over the codebase, exclude proper names from it.
+- **The PDF filename stays ASCII** per handbook §2.5
+  (`..._Mahmutovic_Kikanovic_Musanovic_Abdulahovic_2026.pdf`). The romanised
+  form is correct only in the filename.
+
+### 7d. The same spirit applies beyond `.tex` (Markdown, docs, code)
+
+For non-`.tex` files, prefer ASCII or LaTeX-style notation over raw unicode
+maths glyphs: write `^2` or `$x^2$`, not `²`; `sqrt(N)` or `$\sqrt{N}$`, not
+`√N`; `->`, not `→`. Markdown renderers understand LaTeX math between dollar
+signs, so reach for it when a real formula helps. The names exception in 7c
+still holds: keep diacritics in names everywhere, including Markdown and code.
+
 Quick check before committing: `grep -nP "[^\x00-\x7F]" chapters/*.tex` should
-return nothing. CI / pre-commit could enforce this.
+return nothing (the `.tex` source is strict ASCII; names there use the LaTeX
+accent commands from 7c). For Markdown and code, a non-ASCII hit is only
+acceptable when it is a diacritic inside a proper name.
 
 ## 8. Numbers and Units
 

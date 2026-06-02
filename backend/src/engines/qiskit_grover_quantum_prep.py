@@ -14,7 +14,7 @@ from .base import SearchEngineStrategy, SearchResult
 class QiskitGroverQuantumPrepEngine(SearchEngineStrategy):
     """Grover's algorithm with quantum state preparation.
 
-    Demonstrates O(√N) oracle scaling for unstructured search with quantum
+    Demonstrates O(sqrt(N)) oracle scaling for unstructured search with quantum
     state preparation. Unlike QiskitGroverEngine which uses classical dot
     products to find the target, this engine encodes vectors as quantum
     states using StatePreparation gates and uses quantum measurements to
@@ -188,7 +188,7 @@ class QiskitGroverQuantumPrepEngine(SearchEngineStrategy):
 
             # Fidelity = P(ancilla measured as 0) = 1/2 + 1/2 * cos(theta)
             # where theta is the relative phase between states.
-            # Estimate from measurement counts: fidelity ≈ (counts['0'] / shots)
+            # Estimate from measurement counts: fidelity ~ (counts['0'] / shots)
             count_0 = counts.get('0', 0)
             measured_fidelity = count_0 / shots
 
@@ -205,14 +205,14 @@ class QiskitGroverQuantumPrepEngine(SearchEngineStrategy):
     def _build_grover_circuit(
         self, n_qubits: int, target_idx: int, iterations: int
     ) -> QuantumCircuit:
-        """Build a standard Grover circuit: H|0⟩ → (Oracle · Diffusion)^k → Measure."""
+        """Build a standard Grover circuit: H|0> -> (Oracle * Diffusion)^k -> Measure."""
         circuit = QuantumCircuit(n_qubits, n_qubits)
 
         # Uniform superposition
         circuit.h(range(n_qubits))
 
         for _ in range(iterations):
-            # Oracle: flip phase of |target_idx⟩
+            # Oracle: flip phase of |target_idx>
             self._apply_oracle(circuit, n_qubits, target_idx)
             # Diffusion: invert about the mean
             self._apply_diffusion(circuit, n_qubits)
@@ -222,7 +222,7 @@ class QiskitGroverQuantumPrepEngine(SearchEngineStrategy):
 
     @staticmethod
     def _apply_oracle(circuit: QuantumCircuit, n_qubits: int, target: int) -> None:
-        """Phase oracle: applies Z (phase flip) to |target⟩.
+        """Phase oracle: applies Z (phase flip) to |target>.
 
         Flips X gates around the target's zero-bits so that a multi-controlled
         Z fires only on the target basis state.
@@ -247,11 +247,11 @@ class QiskitGroverQuantumPrepEngine(SearchEngineStrategy):
 
     @staticmethod
     def _apply_diffusion(circuit: QuantumCircuit, n_qubits: int) -> None:
-        """Diffusion operator: 2|s⟩⟨s| − I where |s⟩ is uniform superposition."""
+        """Diffusion operator: 2|s><s| - I where |s> is uniform superposition."""
         circuit.h(range(n_qubits))
         circuit.x(range(n_qubits))
 
-        # Multi-controlled Z on |11…1⟩
+        # Multi-controlled Z on |11...1>
         if n_qubits == 1:
             circuit.z(0)
         else:
@@ -269,7 +269,7 @@ class QiskitGroverQuantumPrepEngine(SearchEngineStrategy):
     def _decode_counts(self, counts: dict[str, int], n_items: int) -> List[str]:
         """Convert measurement counts to a ranked list of image IDs.
 
-        Indices ≥ n_items (padding) are discarded.  IDs are ranked by
+        Indices >= n_items (padding) are discarded.  IDs are ranked by
         descending measurement frequency.
         """
         freq: dict[int, int] = {}
