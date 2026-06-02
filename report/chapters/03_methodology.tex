@@ -11,13 +11,93 @@
 % One paragraph describing the modular monolith - data loader, embedding
 % pipeline, engines, storage, API+UI. Reference Figure \ref{fig:architecture}.
 
-[SYSTEM OVERVIEW \,--\, describe the five phases and the strategy pattern.
-Pull content from docs/NOTES.md \S Implementation Phases.]
+The system is a modular monolith that performs cross-modal retrieval: given a
+short text query such as ``a dog on a beach'', it returns the dataset images
+whose content best matches that description. Text and images are never compared
+directly. Instead, the same embedding model maps both into a shared vector
+space, and retrieval becomes the problem of finding the dataset vectors closest
+to the query vector. The defining property of the system is that the component
+performing this closest-vector search is interchangeable. A classical engine, a
+quantum engine, and a hybrid of the two all expose one common interface, so a
+single query can be answered by any of them and the rankings placed side by
+side. This makes the system an instrument for comparing search strategies
+rather than a single retrieval product.
+
+This interchangeability is enforced by a single design decision that runs
+through the whole codebase: the strategy pattern. Each stage of the pipeline is
+defined by an abstract interface, and concrete implementations plug into it.
+Data loaders implement \texttt{BaseDataLoader}, embedding models implement
+\texttt{EmbeddingGenerator}, and every search engine implements
+\texttt{SearchEngineStrategy}, which requires just two operations,
+\texttt{build\_index} and \texttt{search}. Because all engines satisfy the same
+contract, the surrounding harness that loads data, generates embeddings, runs
+queries, and records results is identical for every engine. Any difference we
+measure between a classical and a quantum engine therefore reflects the engine
+itself, not the code around it. Which engines run, at which vector dimensions,
+and with how many measurement shots is selected in a configuration file
+(\texttt{benchmarks.yaml}) rather than by editing source, so an experiment is
+defined by configuration rather than by code changes.
+
+The pipeline is organised into five phases, shown in
+Figure~\ref{fig:architecture}. In the first phase, data loading, a
+\texttt{DirectoryDataLoader} reads the image files and the accompanying
+ground-truth pairs that define which image each query should retrieve. In the
+second phase, the embedding pipeline, a CLIP model converts every image and
+every text query into a vector. In the third phase the search engines build
+their indexes over these vectors and answer queries, each engine applying its
+own strategy, whether classical, quantum, or hybrid. In the fourth phase the
+outcome of every run, including its accuracy and resource measurements, is
+written to a PostgreSQL database. The fifth phase exposes the system through a
+FastAPI backend and a React interface, which lets a user issue a query and
+inspect the rankings returned by each engine. The sections that follow describe
+each phase in turn: the dataset and ground truth in
+Section~\ref{sec:method:dataset}, the embedding pipeline in
+Section~\ref{sec:method:embeddings}, and the individual search engines in
+Section~\ref{sec:method:engines}.
 
 \begin{figure}[ht]
   \centering
-  \fbox{\parbox[c][6cm][c]{0.8\linewidth}{\centering FIGURE PLACEHOLDER\\\texttt{figures/architecture.png}\\(5-phase pipeline diagram)}}
-  \caption{End-to-end pipeline: data loader $\rightarrow$ CLIP embedder $\rightarrow$ engine strategy $\rightarrow$ PostgreSQL storage $\rightarrow$ FastAPI / React UI.}
+  \begin{tikzpicture}[
+      font=\small,
+      box/.style={draw, rounded corners, align=center, inner sep=5pt,
+        text width=58mm, fill=gray!8},
+      eng/.style={draw, rounded corners, align=center, inner sep=4pt,
+        text width=30mm, minimum height=12mm, font=\footnotesize},
+      classical/.style={eng, fill=blue!10, draw=blue!55},
+      quantum/.style={eng, fill=violet!12, draw=violet!55},
+      hybrid/.style={eng, fill=green!12, draw=green!50!black!70},
+      arr/.style={-{Latex[length=2.2mm]}, semithick}
+    ]
+    \node[box] (load) {\textit{Phase 1: Data loading}\\[2pt]
+      \textbf{DirectoryDataLoader}\\ images and ground-truth pairs};
+    \node[box, below=7mm of load] (embed) {\textit{Phase 2: Embedding}\\[2pt]
+      \textbf{CLIPEmbeddingModel}\\ ViT-B/32, one vector per image and query};
+    \node[box, below=7mm of embed] (strategy) {\textit{Phase 3: Search engines}\\[2pt]
+      \textbf{SearchEngineStrategy}\\ \texttt{build\_index} / \texttt{search}};
+
+    \node[quantum, below=11mm of strategy] (qu) {\textbf{Quantum}\\ swap test, Grover};
+    \node[classical, left=5mm of qu] (cl) {\textbf{Classical}\\ brute force, FAISS flat, FAISS HNSW};
+    \node[hybrid, right=5mm of qu] (hy) {\textbf{Hybrid}\\ HNSW + swap test};
+
+    \node[box, below=13mm of qu] (db) {\textit{Phase 4: Storage}\\[2pt]
+      \textbf{PostgreSQL + pgvector}\\ benchmark results};
+    \node[box, below=7mm of db] (api) {\textit{Phase 5: API and interface}\\[2pt]
+      \textbf{FastAPI + React}\\ side-by-side rankings per engine};
+
+    \draw[arr] (load) -- (embed);
+    \draw[arr] (embed) -- (strategy);
+    \draw[arr] (strategy.south) -- (cl.north);
+    \draw[arr] (strategy.south) -- (qu.north);
+    \draw[arr] (strategy.south) -- (hy.north);
+    \draw[arr] (cl.south) -- (db.north);
+    \draw[arr] (qu.south) -- (db.north);
+    \draw[arr] (hy.south) -- (db.north);
+    \draw[arr] (db) -- (api);
+  \end{tikzpicture}
+  \caption{End-to-end pipeline. Data loading and CLIP embedding feed a common
+  engine-strategy interface, behind which the classical, quantum, and hybrid
+  engines are interchangeable. Every run is recorded in PostgreSQL and surfaced
+  through the FastAPI and React interface.}
   \label{fig:architecture}
 \end{figure}
 
@@ -29,13 +109,86 @@ Pull content from docs/NOTES.md \S Implementation Phases.]
 
 \begin{figure}[ht]
   \centering
-  \fbox{\parbox[c][7cm][c]{0.8\linewidth}{\centering FIGURE PLACEHOLDER\\\texttt{figures/methodology.png}\\(step-by-step methodology flow)}}
-  \caption{Methodology flow: from dataset import through benchmark execution and reporting.}
+  \begin{tikzpicture}[
+      font=\small,
+      procbox/.style={draw, rounded corners, align=center, inner sep=4pt,
+        text width=56mm, fill=gray!8, minimum height=11mm},
+      store/.style={draw, align=center, inner sep=4pt, text width=56mm,
+        fill=blue!8, draw=blue!50, minimum height=10mm},
+      ibm/.style={draw, rounded corners, align=center, inner sep=4pt,
+        text width=38mm, fill=orange!18, draw=orange!75!black,
+        minimum height=16mm, font=\footnotesize},
+      lane/.style={font=\footnotesize\itshape, text=gray, rotate=90},
+      arr/.style={-{Latex[length=2.2mm]}, semithick}
+    ]
+    \node[procbox] (imp) {\textbf{import\_dataset.py}\\ Flickr30k subset + ground truth};
+    \node[procbox, below=6mm of imp] (idx) {\textbf{index\_dataset.py}\\ CLIP vectors stored in PostgreSQL};
+    \node[procbox, below=10mm of idx] (run) {\textbf{run\_benchmarks.py}\\ engine $\times$ dim $\times$ shots on AerSimulator};
+    \node[store, below=14mm of run] (res) {\textbf{benchmark\_results} (PostgreSQL)\\ one row per run: MRR, oracle calls, depth, qubits};
+    \node[procbox, below=10mm of res] (rep) {\textbf{generate\_report.py}\\ benchmark\_report.md, the source of truth};
+
+    \node[ibm, right=9mm of run] (ibm) {\textbf{run\_ibm\_validation.py}\\ hybrid swap test on a real IBM QPU\\ (dim 2, 2 candidates, 32 shots)};
+
+    \node[lane] at ([xshift=-7mm]$(imp.west)!0.5!(idx.west)$) {Data prep};
+    \node[lane] at ([xshift=-7mm]$(run.west)!0.5!(res.west)$) {Execution};
+    \node[lane] at ([xshift=-7mm]rep.west) {Reporting};
+
+    \draw[arr] (imp) -- (idx);
+    \draw[arr] (idx) -- (run);
+    \draw[arr] (run) -- (res);
+    \draw[arr] (res) -- (rep);
+    \draw[arr] (ibm.south) |- (res.east);
+  \end{tikzpicture}
+  \caption{Methodology flow. Four scripts run in order, from dataset import
+  through CLIP indexing, the simulator benchmark sweep, and report generation.
+  The IBM hardware validation is a one-off side arm that writes its single
+  result into the same database table.}
   \label{fig:methodology}
 \end{figure}
 
-[METHODOLOGY NARRATIVE \,--\, walk the reader through the steps shown in
-Figure~\ref{fig:methodology} in the same left-to-right order.]
+The study follows a fixed sequence of steps, shown in
+Figure~\ref{fig:methodology}, each implemented by a single script so the whole
+experiment can be reproduced from a clean checkout. The first two steps prepare
+the data. The script \texttt{import\_dataset.py} downloads a fixed subset of the
+Flickr30k dataset and, in the same pass, writes the ground-truth file that
+records which image each text query should retrieve. This download is
+deterministic: every run regenerates the same image set and the same
+query-to-image pairing, so the results do not drift between machines. The second
+script, \texttt{index\_dataset.py}, loads each image, passes it through the CLIP
+model to obtain a vector, and stores that vector in PostgreSQL. After these two
+steps the database holds one embedding per image, ready to be searched.
+
+With the embeddings in place, \texttt{run\_benchmarks.py} carries out the main
+experiment. It iterates over every combination of engine, vector dimension, and
+shot count listed in \texttt{benchmarks.yaml}, and for each combination it
+answers all of the ground-truth queries. The quantum and hybrid engines execute
+their circuits on Qiskit's \texttt{AerSimulator}, a noiseless simulator that
+isolates the effect of finite sampling (shot noise) from the physical noise of
+real hardware. Every individual run is recorded as one row in the
+\texttt{benchmark\_results} table, together with its accuracy and its resource
+cost: the Mean Reciprocal Rank of the retrieved images, and, for the quantum
+engines, the number of oracle calls, the circuit depth, and the qubit count.
+Because the configuration file drives the sweep, widening the experiment to a
+new dimension or shot count is a change to that file alone, not to the code.
+
+Alongside the simulator sweep, \texttt{run\_ibm\_validation.py} runs the hybrid
+swap-test engine once on real IBM quantum hardware, at the smallest workable
+size: two dimensions, two candidate images, and 32 shots. Its purpose is
+narrow, to confirm that the swap-test circuit executes on a physical device and
+returns a sensible result, rather than to measure scaling. The single outcome
+is written to the same \texttt{benchmark\_results} table, tagged as the
+\texttt{hybrid\_hnsw\_swap\_test\_ibm} engine, so it sits beside the simulator
+runs without being confused for one.
+
+The final step turns the stored runs back into something readable. The script
+\texttt{generate\_report.py} queries the \texttt{benchmark\_results} table and
+produces a Markdown summary, \texttt{benchmark\_report.md}, that groups the runs
+by engine and reports accuracy per dimension and per shot count. This report is
+the single source of truth for the Results chapter: every figure quoted in
+Chapter~\ref{ch:results} traces back to a row this script read from the
+database, rather than to any number recorded by hand. Keeping the analysis in
+one generated file, derived directly from the stored runs, is what lets the
+whole study be regenerated by re-running the four scripts in order.
 
 \section{Dataset and Ground Truth}
 \label{sec:method:dataset}

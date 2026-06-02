@@ -45,10 +45,14 @@ slide 3 and slide 11.]
   \item \emph{Accuracy:} Does swap-test similarity reproduce the ranking of
         classical cosine similarity, and what is the shot budget required to do so?
   \item \emph{Scaling:} Does our Grover implementation reproduce the
-        $\lfloor \pi\sqrt{N}/4 \rfloor$ oracle-call scaling on real circuits?
+        $\lfloor \pi\sqrt{N}/4 \rfloor$ oracle-call scaling in practice?
   \item \emph{Practicality:} Under what conditions \,--\, if any \,--\, would a
         quantum vector-search engine outperform a production classical baseline
         (HNSW) on the same dataset?
+  \item \emph{Suitability:} Independent of hardware maturity, is cross-modal
+        vector search a problem class that quantum computing is suited to, given
+        that quantum advantage concentrates on compute-bound problems over small
+        data rather than data-bound retrieval?
 \end{enumerate}
 
 [OBJECTIVES \,--\, list 3-4 deliverable-shaped goals (engines implemented,
