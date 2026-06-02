@@ -70,8 +70,29 @@ defense time.
   paragraph, write near the end.
 - **Figures** — every figure in the report is currently a placeholder box.
   See `STRUCTURE.md` § "Figure Production Punch List" for per-figure
-  how-to. The team decided to defer figure production; do not push to make
-  them yet unless the user asks.
+  how-to. The team initially deferred figure production. The AI is free to
+  raise figures when the moment is right — e.g. when a section's prose is
+  stable and a diagram would sharpen it, or when the punch list has
+  everything needed to produce one. Propose it, explain why now, and let
+  the user decide; do not silently generate figures or treat them as a
+  blanket "later".
+
+  When a figure does come up, pick the route that keeps it **editable**:
+  - **Diagram-as-code** (preferred for anything structural): TikZ,
+    Mermaid, draw.io XML, or a small matplotlib/Qiskit script committed to
+    the repo. The source lives alongside the report so anyone can tweak a
+    box or re-run it later.
+  - **A screenshot or a real artefact the user captures** — in that case
+    the AI's job is to spell out exactly what to capture (which page, which
+    config, what to crop) so the user can produce it.
+  - **An existing image from the web** used under a clear licence, cited in
+    the caption per `GUIDELINES.md` §6.
+
+  What we **avoid**: AI-generated raster images (e.g. asking an image model
+  to "draw the methodology diagram"). They look plausible but cannot be
+  edited cleanly when a label or arrow changes, and they are a poor fit for
+  a thesis. A methodology or architecture diagram should always be
+  diagram-as-code, never a generated picture.
 
 ### Open decisions waiting on the team
 - Should we include a small group photo on the poster? (See
@@ -316,6 +337,48 @@ How to update:
 
 ### Done so far
 
+#### 2026-06-02 - First prose: Methodology 3.1 + 3.2 + both diagrams
+
+- **Research questions locked.** Kept RQ1 (Accuracy) and RQ3 (Practicality).
+  Reworded RQ2 ("on real circuits" -> "in practice", to avoid implying
+  real-QPU scaling data, since the IBM run is separate). Added **RQ4
+  (Suitability)**: whether vector search is a problem class quantum is
+  suited to at all, grounded in Aaronson's "big compute on small data"
+  argument (`aaronson2015readfine`). RQ1-3 are empirical; RQ4 is the
+  Argued synthesis question. See `chapters/01_introduction.tex` 1.3.
+- **Methodology 3.1 (System Overview) written** - three paragraphs
+  (framing, the strategy-pattern keystone, the five phases). All
+  descriptive of our own system, no citations. `chapters/03_methodology.tex`.
+- **Figure policy changed.** No longer a blanket defer. The AI may propose
+  figures as prose stabilises, using editable routes (diagram-as-code
+  preferred; screenshots the user captures; licensed web images). What we
+  avoid: AI-generated raster images that cannot be edited. See 2 above.
+- **Methodology 3.2 (Methodology Diagram) written** - four-paragraph
+  narrative walking the four scripts in order (import -> index -> benchmark
+  -> report), with the IBM validation as a side arm. Reproducibility
+  framing throughout (GUIDELINES 14). `chapters/03_methodology.tex`.
+- **Two figures produced as TikZ** (diagram-as-code, live in the .tex,
+  rebuild with `make`), replacing both placeholder boxes:
+  - Fig 1 architecture: five-phase pipeline, palette matches the frontend
+    (classical blue, quantum purple, hybrid green).
+  - Fig 2 methodology: four-script vertical flow with rotated lane labels
+    (Data prep / Execution / Reporting) and the IBM hardware validation as
+    an amber side arm into the same `benchmark_results` table.
+  - Note for future TikZ: avoid `step` as a style name, it collides with
+    TikZ's grid `step` key (caused a fatal error; renamed to `procbox`).
+  - **Preamble change flagged:** added `\usepackage{tikz}` +
+    `arrows.meta, positioning` to `main.tex`.
+- **Approval page:** removed the co-mentor block (the team has no
+  co-mentor). `chapters/00_approval.tex` now shows the mentor block only.
+- Report now builds at 28 pages.
+- **RESUME HERE next session:** Methodology 3.3 (Dataset and Ground Truth),
+  prose-only, no figure. Source: `import_dataset.py` (deterministic
+  Flickr30k subset) and `backend/data/ground_truth.jsonc` (20 image-caption
+  pairs, definition of a correct hit). Same loop: outline -> react ->
+  paragraph-by-paragraph draft. After that, 3.4 Embedding Pipeline, 3.5
+  Search Engines (incl. the IBM Hardware Validation subsection), 3.6-3.8,
+  then Chapter 4 Results.
+
 #### 2026-05-28 (afternoon) — Live-search config + StrictMode fix
 
 - **`/api/search` was hanging in the UI forever** — root cause was a React
@@ -451,13 +514,14 @@ A chapter is done when:
 - Abstract + Acknowledgements (write last).
 - "Use of AI Tools" subsection at the end of Methodology — mandatory per
   FENS handbook §1.1.
-- Real figures (deferred by the team; placeholder boxes in place).
+- Real figures (placeholder boxes in place). No longer a blanket defer —
+  the AI may propose figures as prose stabilises, using the editable
+  routes in §2 (diagram-as-code preferred; no AI-generated raster images).
 - Verification pass on the 9 seeded references.
 - Group photo decision for the poster.
-- Co-mentor block on Approval page (delete if not applicable).
 
 ---
 
 *File created 2026-05-28 at the close of the structural-setup session.
-Last updated 2026-05-28 (this entry). Keep this date in sync with the
-most recent log entry.*
+Last updated 2026-06-02. Keep this date in sync with the most recent log
+entry.*
