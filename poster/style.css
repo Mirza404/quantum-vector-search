@@ -258,11 +258,16 @@ table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono"
   padding: 0;
 }
 .figure-slot.filled img {
-  width: 100%;
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
   height: auto;
   border-radius: 3mm;
-  display: block;
 }
+/* The methodology diagram is the only figure in a full-width card; cap and
+   centre it so it does not dominate the section. Percentage works in both
+   print (mm layout) and the on-screen preview (vw layout). */
+.figure-slot.diagram img { max-width: 50%; }
 .qr-slot img { width: 92%; height: auto; }
 
 .caption {
