@@ -50,7 +50,7 @@ class FaissFlatEngine(SearchEngineStrategy):
         q = _l2_normalize_rows(q)
         distances, indices = self._index.search(q, top_k)
         hits = indices[0]
-        scores = -distances[0]  # convert L2 distance into “higher is better”
+        scores = -distances[0]  # convert L2 distance into "higher is better"
         result_ids = [self._ids[i] for i in hits if i >= 0]
         result_scores = [scores[idx] for idx, i in enumerate(hits) if i >= 0]
         return SearchResult(ids=result_ids, scores=result_scores, meta={"metric": "l2"})

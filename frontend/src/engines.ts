@@ -32,12 +32,12 @@ export const ENGINES: Record<string, EngineMeta> = {
     description: 'NumPy dot product against every normalised vector. Ground truth for accuracy.',
     category: 'classical',
     scaling: 'O(N) comparisons',
-    scoreType: 'cosine similarity (−1 to 1, higher = closer)',
+    scoreType: 'cosine similarity (-1 to 1, higher = closer)',
   },
   faiss_flat_l2: {
     id: 'faiss_flat_l2',
     label: 'FAISS flat (L2)',
-    description: 'FAISS IndexFlatL2 — exact search using SIMD-vectorised L2 distance.',
+    description: 'FAISS IndexFlatL2 - exact search using SIMD-vectorised L2 distance.',
     category: 'classical',
     scaling: 'O(N) comparisons',
     scoreType: 'negative L2 distance (higher = closer)',
@@ -56,7 +56,7 @@ export const ENGINES: Record<string, EngineMeta> = {
     description: 'HNSW prefilters M candidates, then the swap test reranks them on the simulator.',
     category: 'hybrid',
     scaling: 'O(log N + M) comparisons',
-    scoreType: 'swap-test overlap |⟨ψ|φ⟩|²',
+    scoreType: 'swap-test overlap |<psi|phi>|^2',
   },
   hybrid_hnsw_swap_test_ibm: {
     id: 'hybrid_hnsw_swap_test_ibm',
@@ -64,22 +64,22 @@ export const ENGINES: Record<string, EngineMeta> = {
     description: 'Same hybrid pipeline, but the swap-test circuits execute on real IBM hardware. Validation run only.',
     category: 'ibm',
     scaling: 'IBM QPU validation',
-    scoreType: 'swap-test overlap |⟨ψ|φ⟩|²',
+    scoreType: 'swap-test overlap |<psi|phi>|^2',
   },
   qiskit_swap_test: {
     id: 'qiskit_swap_test',
     label: 'Swap test (Qiskit)',
-    description: 'Quantum swap test on AerSimulator — estimates squared overlap of two amplitude-encoded vectors.',
+    description: 'Quantum swap test on AerSimulator - estimates squared overlap of two amplitude-encoded vectors.',
     category: 'quantum',
     scaling: 'O(N) circuit runs',
-    scoreType: 'swap-test overlap |⟨ψ|φ⟩|²',
+    scoreType: 'swap-test overlap |<psi|phi>|^2',
   },
   qiskit_grover: {
     id: 'qiskit_grover',
     label: 'Grover (hardcoded oracle)',
-    description: "Grover's algorithm with a classically pre-built oracle. Measures the √N oracle-call scaling.",
+    description: "Grover's algorithm with a classically pre-built oracle. Measures the sqrt(N) oracle-call scaling.",
     category: 'quantum',
-    scaling: 'O(√N) oracle calls',
+    scaling: 'O(sqrt(N)) oracle calls',
     scoreType: 'measurement frequency at target index',
   },
   qiskit_grover_quantum_prep: {
@@ -87,7 +87,7 @@ export const ENGINES: Record<string, EngineMeta> = {
     label: 'Grover (quantum state prep)',
     description: "Grover variant that prepares the candidate state quantumly rather than via a classical oracle.",
     category: 'quantum',
-    scaling: 'O(√N) oracle calls',
+    scaling: 'O(sqrt(N)) oracle calls',
     scoreType: 'measurement frequency at target index',
   },
 }
@@ -98,10 +98,10 @@ export function getEngine(id: string): EngineMeta {
     ENGINES[id] ?? {
       id,
       label: id,
-      description: 'Unknown engine — add it to frontend/src/engines.ts.',
+      description: 'Unknown engine - add it to frontend/src/engines.ts.',
       category: 'quantum',
-      scaling: '—',
-      scoreType: '—',
+      scaling: '-',
+      scoreType: '-',
     }
   )
 }

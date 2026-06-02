@@ -36,5 +36,5 @@ docker exec "$DB_CONTAINER" pg_dump \
     --no-comments \
     >> "$OUT"
 
-echo "Dumped all tables → $OUT"
+echo "Dumped all tables -> $OUT"
 echo "Commit this file to share your results with the team."

@@ -93,7 +93,7 @@ quantum amplitudes as a sign change, trapped inside the quantum system.
 
 The only way to extract classical information from a quantum system is to measure it. But
 measuring right after the oracle still gives you a random state - the phase flip did not
-change any probabilities (probability = |amplitude|², squaring removes the sign). You would
+change any probabilities (probability = |amplitude|^2, squaring removes the sign). You would
 still get a random answer.
 
 If the oracle could simply tell you which state it marked, you would not need Grover at all --
@@ -121,7 +121,7 @@ Before diffusion:
 - Average amplitude across all 1,000 states is slightly below +1 (the one -1 pulls it down)
 
 After reflecting around the average:
-- Every state's new amplitude = 2 × average - old amplitude
+- Every state's new amplitude = 2 x average - old amplitude
 - The 999 normal states: each gets a bit smaller (they were above average, reflecting
   pushes them below average)
 - The 1 marked state: it was well below average (-1), so reflecting it around the
@@ -148,7 +148,7 @@ The amplitudes grow like a sine curve. If you do too few rounds the prize has no
 amplified enough. If you do *too many* rounds you actually overshoot - the prize starts
 shrinking again and wrong answers come back.
 
-The exact sweet spot is `floor(π · √N / 4)` iterations. This is where the probability
+The exact sweet spot is `floor(pi * sqrt(N) / 4)` iterations. This is where the probability
 of measuring the correct state is at its maximum (close to 1).
 
 | N (doors / dataset size) | Iterations needed | Probability of success |
@@ -160,13 +160,13 @@ of measuring the correct state is at its maximum (close to 1).
 | 1,000,000 | 785 | ~0.999 |
 
 For classical brute force those numbers are 4, 16, 100, 1,000, and 1,000,000
-respectively. The gap grows as N grows - that is what O(√N) vs O(N) means.
+respectively. The gap grows as N grows - that is what O(sqrt(N)) vs O(N) means.
 
 ---
 
 ## 7. The measurement - collapsing to the answer
 
-After `floor(π · √N / 4)` iterations you measure. Quantum measurement is not passive --
+After `floor(pi * sqrt(N) / 4)` iterations you measure. Quantum measurement is not passive --
 it forces the quantum state to commit to one outcome. The probability of each outcome
 is proportional to the square of its amplitude.
 
@@ -210,7 +210,7 @@ while keeping the routing in superposition.
 qRAM is structured as a binary tree. To look up vector number 437 out of 1,000:
 - Enter the tree at the root
 - At each branch, go left or right based on the bits of address "437"
-- After ~10 steps (log₂(1000)) you reach the leaf - your vector
+- After ~10 steps (log2(1000)) you reach the leaf - your vector
 
 Each branching point is one qRAM node - a quantum switch. The tree must stay quantum
 (not collapse to a classical path) because Grover needs to route to *all* addresses
@@ -277,7 +277,7 @@ leave no realistic path to quantum vector search being competitive.
 
 ### Blocker 1 - qRAM does not exist (hard blocker today)
 
-Without qRAM, state preparation is O(N). Total cost: O(N) + O(√N) = O(N). No speedup
+Without qRAM, state preparation is O(N). Total cost: O(N) + O(sqrt(N)) = O(N). No speedup
 over brute force, let alone HNSW. This is the situation right now.
 
 ### Blocker 2 - qRAM hardware scales as O(N) quantum nodes (economic blocker at scale)
@@ -296,11 +296,11 @@ already cheap. qRAM, even in an optimistic future, would require a physically ma
 quantum hardware installation proportional to dataset size. This is not a technology
 problem you solve by waiting - it is a fundamental resource comparison.
 
-### Blocker 3 - Grover's O(√N) is beaten by HNSW's O(log N) classically
+### Blocker 3 - Grover's O(sqrt(N)) is beaten by HNSW's O(log N) classically
 
 Even ignoring blockers 1 and 2 - even with free, perfect, infinitely scalable qRAM --
-Grover achieves O(√N) search. Classical HNSW achieves O(log N) approximate search.
-O(log N) grows slower than O(√N). HNSW wins on the algorithm alone.
+Grover achieves O(sqrt(N)) search. Classical HNSW achieves O(log N) approximate search.
+O(log N) grows slower than O(sqrt(N)). HNSW wins on the algorithm alone.
 
 At N = 1,000,000:
 - HNSW: ~20 operations, on a laptop, today, 95-99%+ accuracy, zero exotic hardware
@@ -318,10 +318,10 @@ as unstructured. HNSW exploits it completely.
 
 **The ideal-world comparison.**
 In an ideal world with infinite, free, perfect qRAM, Grover would be meaningful for quantum vector search:
-it would return the exact nearest neighbour in O(√N) oracle calls, with no approximation
+it would return the exact nearest neighbour in O(sqrt(N)) oracle calls, with no approximation
 error - unlike HNSW, which accepts some inaccuracy in exchange for speed. That is a
 genuine advantage in correctness. But at any dataset size large enough to matter,
-O(log N) is so much smaller than O(√N) that HNSW's approximation is the better
+O(log N) is so much smaller than O(sqrt(N)) that HNSW's approximation is the better
 engineering trade: a few percent of missed results versus ~40x more operations and a
 hardware installation proportional to dataset size that does not exist.
 
@@ -337,7 +337,7 @@ search at scale, and there HNSW dominates regardless of QRAM assumptions.
 Grover's speedup is a **proven, unconditional quantum speedup** for unstructured search.
 "Unstructured" means no index, no shortcut, no way to skip candidates - you genuinely
 have to check. Classical cannot do better than O(N) for unstructured search. Grover does
-O(√N). That is real.
+O(sqrt(N)). That is real.
 
 The speedup has also not been "dequantized" - no one has found a classical algorithm
 that matches it for truly unstructured problems (unlike some other quantum algorithms
@@ -358,7 +358,7 @@ any computable function, not just distance in a metric space.
 **Cryptography.**
 Finding a hash preimage (a password that produces a given hash) is pure unstructured search
 -- the hash function deliberately destroys structure. You cannot index hash outputs. Classical
-is stuck at O(N). Grover does O(√N). This is the domain where quantum search actually matters.
+is stuck at O(N). Grover does O(sqrt(N)). This is the domain where quantum search actually matters.
 
 **Combinatorial search.**
 SAT solving, finding a satisfying assignment to a boolean formula - no geometry, no shortcut,
@@ -378,10 +378,10 @@ dataset - not when it computes a function from scratch.
 
 This means Grover is a real cryptographic threat in principle. AES-128 has effective 64-bit
 security against Grover (halved from 128-bit), because Grover can search the key space in
-O(√2¹²⁸) = O(2⁶⁴) oracle calls instead of O(2¹²⁸). This is why post-quantum cryptography
+O(sqrt21^28) = O(264) oracle calls instead of O(21^28). This is why post-quantum cryptography
 standards recommend AES-256 - Grover halves it to 128-bit, which remains acceptable.
 
-**However**, breaking AES-128 with Grover still requires ~2⁶⁴ oracle calls, each running a
+**However**, breaking AES-128 with Grover still requires ~264 oracle calls, each running a
 full AES circuit on fault-tolerant hardware. Current estimates put this at millions of
 physical qubits running for years. Not a near-term threat, but a real long-term one.
 
@@ -390,7 +390,7 @@ physical qubits running for years. Not a near-term threat, but a real long-term 
 The headlines about "quantum breaks encryption" mostly conflate two different algorithms:
 
 - **Grover** threatens *symmetric* encryption (AES, SHA). Quadratic speedup. Halves effective
-  key length. Mitigated by doubling key size (AES-128 → AES-256).
+  key length. Mitigated by doubling key size (AES-128 -> AES-256).
 - **Shor** threatens *asymmetric* encryption (RSA, ECC). *Exponential* speedup for integer
   factorization and discrete logarithm. RSA-2048 is broken entirely - no key size increase
   helps. This is the catastrophic threat that drives post-quantum cryptography research.
@@ -411,7 +411,7 @@ does not exist yet. But theoretically it holds a strong position:
 
 **It is proven optimal for unstructured search.**
 There is a proven lower bound that no quantum algorithm - not just Grover, any algorithm --
-can do better than O(√N) for truly unstructured search. Grover hits that bound exactly. That
+can do better than O(sqrt(N)) for truly unstructured search. Grover hits that bound exactly. That
 is rare in computer science: most algorithms are just "the best we know of." Grover is
 provably the best possible.
 
@@ -471,7 +471,7 @@ For more on how this applies to vector search specifically, see
 `QUANTUM_SEARCH_ANALYSIS.md`. For how the circuits are actually implemented in this
 project, see `THEORY.md`.
 
-Quantum computing isn’t powerful because it’s faster at everything - it’s powerful because for certain problems (like factoring large numbers, simulating quantum systems, and some structured algebraic problems), it uses interference and quantum states to achieve exponential or otherwise unique speedups that classical computers can’t match; but for problems like vector search, Grover’s algorithm only gives a limited √N improvement (at large hardware costs) and doesn’t beat well-optimized classical approaches that already use massive parallelism and indexing effectively.
+Quantum computing is not faster at everything. For certain problems, such as factoring large numbers, simulating quantum systems, and some structured algebraic problems, it uses interference and quantum states to achieve speedups that classical computers cannot match. For vector search, Grover's algorithm gives only a limited sqrt(N) improvement at large hardware cost, and it does not beat well-optimized classical approaches that already use parallelism and indexing effectively.
 
 
 ---

@@ -2,16 +2,81 @@
 \label{ch:appendix}
 \addcontentsline{toc}{chapter}{APPENDICES}
 
-% Optional. Use for material too long to fit in the body but worth including
-% for completeness. Candidates listed below - drop the ones we choose not to
-% include.
+\section*{Appendix A: Engine Configuration}
+\addcontentsline{toc}{section}{Appendix A: Engine Configuration}
 
-\section*{Appendix A: Engine Configuration File}
-[Reproduce backend/config/benchmarks.yaml verbatim with a \texttt{lstlisting}
-block.]
+The benchmark sweep is driven by a single configuration file,
+\texttt{backend/config/benchmarks.yaml}. The active configuration used for the
+results in Chapter~\ref{ch:results} is reproduced below. Commenting out an entry
+removes it from the sweep without changing any code; the IBM hardware engine is
+kept commented out so that it runs only when quantum-processor time is
+deliberately spent.
+
+\begin{lstlisting}[basicstyle=\ttfamily\small,breaklines=true,columns=flexible,frame=single]
+classical_engines:
+  - brute_force_cosine
+  - faiss_flat_l2
+  - faiss_hnsw_l2
+
+quantum_engines:
+  - hybrid_hnsw_swap_test
+  # - hybrid_hnsw_swap_test_ibm   # IBM hardware; run separately
+  - qiskit_swap_test
+  - qiskit_grover
+  - qiskit_grover_quantum_prep
+
+dimensions:   [64, 128, 256]   # CLIP output truncated to the first d components
+shots_values: [512, 1024, 2048]
+layers_values: [1]
+top_k: 10
+
+# Live /api/search runs a single configuration, chosen for responsiveness.
+live_search:
+  dimension: 128
+  shots: 512
+  layers: 1
+  top_k: 10
+\end{lstlisting}
 
 \section*{Appendix B: Database Schema}
-[Reproduce the benchmark\_results table definition from db/migrations.]
+\addcontentsline{toc}{section}{Appendix B: Database Schema}
 
-\section*{Appendix C: Repository}
-[Link to the public GitHub repository and tag of the report-version commit.]
+Every benchmark run is stored as one row in the \texttt{benchmark\_results}
+table. The schema below records the query and engine, the configuration
+(dimension, shots, layers), the returned and target identifiers used to compute
+the Mean Reciprocal Rank, and the cost measures discussed in
+Section~\ref{sec:results:cost}. The unique constraint makes each
+(query, engine, dimension, shots, layers) combination idempotent, so re-running
+the sweep overwrites rather than duplicates.
+
+\begin{lstlisting}[language=SQL,basicstyle=\ttfamily\small,breaklines=true,columns=flexible,frame=single]
+CREATE TABLE benchmark_results (
+    id            BIGSERIAL PRIMARY KEY,
+    recorded_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    query_id      TEXT        NOT NULL,
+    engine_name   TEXT        NOT NULL,
+    dimension     INTEGER     NOT NULL,
+    target_ids    JSONB       NOT NULL,
+    top_ids       JSONB       NOT NULL,
+    state_prep_ms DOUBLE PRECISION,
+    search_ms     DOUBLE PRECISION NOT NULL,
+    total_ms      DOUBLE PRECISION NOT NULL,
+    parameters    JSONB       NOT NULL DEFAULT '{}',
+    dataset_size  INTEGER     NOT NULL DEFAULT 0,
+    circuit_depth INTEGER,
+    num_qubits    INTEGER,
+    shots         INTEGER     NOT NULL DEFAULT -1,
+    layers        INTEGER     NOT NULL DEFAULT -1,
+    oracle_calls  INTEGER,
+    CONSTRAINT uq_run_key UNIQUE (query_id, engine_name, dimension, shots, layers)
+);
+\end{lstlisting}
+
+\section*{Appendix C: Source Code Repository}
+\addcontentsline{toc}{section}{Appendix C: Source Code Repository}
+
+The complete source code, the benchmark harness, the dataset configuration, and
+the scripts that generate the figures in this report are publicly available at
+\url{https://github.com/Mirza404/quantum-vector-search}. The repository includes
+the instructions needed to reproduce the dataset, run the benchmark sweep, and
+launch the web application described in Chapter~\ref{ch:methodology}.

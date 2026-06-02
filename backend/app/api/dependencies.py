@@ -160,7 +160,7 @@ def _make_engine(name: str, dimension: int) -> SearchEngineStrategy:
         "brute_force_cosine": lambda: BruteForceCosineEngine(),
         "faiss_flat_l2": lambda: FaissFlatEngine(dimension=dimension),
         "faiss_hnsw_l2": lambda: FaissHnswEngine(dimension=dimension),
-        # Live UI passes top_k=10, so set the candidate pool to 10 too — otherwise
+        # Live UI passes top_k=10, so set the candidate pool to 10 too - otherwise
         # the hybrid panel renders 5 results while every other engine renders 10
         # and the UI looks inconsistent. Benchmarks keep their own default (5).
         "hybrid_hnsw_swap_test": lambda: HybridHnswSwapTestEngine(
@@ -257,14 +257,14 @@ def get_built_live_engines() -> list[tuple[SearchEngineStrategy, bool]]:
     Built lazily on the first /api/search request. This avoids rebuilding the
     FAISS / HNSW indices on every query (the original code rebuilt them per
     request, paying O(N log N) for HNSW on each hit). The cache is invalidated
-    by restarting the API process — if image_vectors changes, restart.
+    by restarting the API process - if image_vectors changes, restart.
     """
     import numpy as np  # local import to keep module load fast on cold start
 
     storage = get_storage()
     stored = storage.load_image_vectors()
     if not stored:
-        # No vectors yet — return empty; the API layer surfaces a 503 to the user.
+        # No vectors yet - return empty; the API layer surfaces a 503 to the user.
         return []
 
     dataset_ids = list(stored.keys())

@@ -13,7 +13,7 @@ This project **L2-normalises** all vectors first (in `CLIPEmbeddingModel.encode_
 | **Cosine similarity** | (a . b) / (\|\|a\|\| * \|\|b\|\|) | `BruteForceCosineEngine` | `brute_force_cosine.py` |
 | **L2 distance** | \|\|a - b\|\| | `FaissFlatEngine` | `faiss_flat.py` |
 | **Squared inner product** | \|<psi\|phi>\|^2 | `QiskitSwapTestEngine` | `qiskit_swaptest.py` |
-| **Grover measurement frequency** | shots hitting \|target⟩ / total shots, after floor(π√N/4) oracle calls | `QiskitGroverEngine` | `qiskit_grover.py` |
+| **Grover measurement frequency** | shots hitting \|target> / total shots, after floor(pi*sqrt(N)/4) oracle calls | `QiskitGroverEngine` | `qiskit_grover.py` |
 
 > Three different rulers - inches, centimetres, and one that squares the reading. Different numbers, same ranking of which objects are closer.
 
@@ -97,7 +97,7 @@ This is the key difference: classical search is sequential elimination. Grover i
 
 **What the engine does:** Pre-computes the closest match classically, then runs Grover's circuit to find it. This isolates the search step so oracle call counts can be measured independently.
 
-| N | Brute-force comparisons (O(N)) | Grover oracle calls (O(√N)) |
+| N | Brute-force comparisons (O(N)) | Grover oracle calls (O(sqrt(N))) |
 |---|---|---|
 | 100 | 100 | 8 |
 | 1,000 | 1,000 | 25 |

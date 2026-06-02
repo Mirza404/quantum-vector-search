@@ -68,7 +68,7 @@ def _oracle_calls(engine_name: str, dataset_size: int) -> int | None:
     Exact classical engines: N comparisons (linear scan).
     HNSW:                    ceil(log2(N)) approximate graph steps.
     Swap test:               N circuit executions (one per vector - quantum brute force).
-    Grover:                  floor(π√N / 4) oracle calls.
+    Grover:                  floor(pi*sqrt(N) / 4) oracle calls.
     """
     if engine_name in ("brute_force_cosine", "faiss_flat_l2", "qiskit_swap_test"):
         return dataset_size

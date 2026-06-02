@@ -35,8 +35,8 @@ the same direction = high similarity. A right angle = completely unrelated.
 
 ![Angle between two vectors - cosine similarity](https://upload.wikimedia.org/wikipedia/commons/7/76/Inner-product-angle.svg)
 
-> cos(0°) = 1.0 (identical direction, perfect match).
-> cos(90°) = 0.0 (perpendicular, no relation).
+> cos(0 deg) = 1.0 (identical direction, perfect match).
+> cos(90 deg) = 0.0 (perpendicular, no relation).
 
 Because all our vectors are normalised to length 1 first, the denominator of the
 formula disappears and this reduces to a simple dot product - fast to compute.
@@ -70,7 +70,7 @@ vectors are normalised to length 1 before storage. On unit-length vectors, minim
 L2 distance is mathematically the same as maximising cosine similarity:
 
 ```
-||a - b||² = 2 - 2·cos(θ)
+||a - b||^2 = 2 - 2*cos(theta)
 ```
 
 Smaller L2 = smaller angle = higher cosine. The rankings come out the same.
@@ -94,7 +94,7 @@ on 8 or 16 numbers simultaneously instead of 1.
 
 ![L2 / Euclidean distance between two vectors](https://upload.wikimedia.org/wikipedia/commons/5/55/Euclidean_distance_2d.svg)
 
-> ||a - b||² = 2 - 2·cos(θ). On normalised vectors, smallest distance = highest cosine.
+> ||a - b||^2 = 2 - 2*cos(theta). On normalised vectors, smallest distance = highest cosine.
 > Different ruler, same ranking - but only because of normalisation.
 
 ### Complexity
@@ -131,12 +131,12 @@ similarity. More shots = more accurate estimate.
 
 The circuit has three parts:
 - Two **registers** - each holds one vector encoded as quantum amplitudes
-  (log₂(dim) qubits per register; at dim=64 that's 6 qubits per register)
+  (log2(dim) qubits per register; at dim=64 that's 6 qubits per register)
 - One **ancilla qubit** - the "referee"
-- The sequence: Hadamard on ancilla → controlled-SWAP between registers → Hadamard →
+- The sequence: Hadamard on ancilla -> controlled-SWAP between registers -> Hadamard ->
   measure ancilla
 
-The math: `P(ancilla = 0) = (1 + |overlap|²) / 2`
+The math: `P(ancilla = 0) = (1 + |overlap|^2) / 2`
 
 You run the circuit many times (shots) and count how often the ancilla measures 0.
 That fraction tells you the overlap between the two vectors.
@@ -162,7 +162,7 @@ to be useful? We also verify the circuit produces the mathematically correct ove
 ## 4. Qiskit Grover Oracle
 
 **One sentence:** Use quantum superposition and interference to find the best match in
-O(√N) steps instead of O(N) - the central quantum speedup this project studies.
+O(sqrt(N)) steps instead of O(N) - the central quantum speedup this project studies.
 
 ### The analogy - the maze
 
@@ -177,9 +177,9 @@ try 500 doors before finding the prize.
    red without you being able to see it yet.
 3. A diffusion step uses quantum interference to cancel out all the non-prize doors
    (they destructively interfere) and amplify the prize door (constructive interference).
-4. After about √1,000 ≈ 31 rounds of oracle + diffusion, you collapse to the prize door.
+4. After about sqrt1,000 ~ 31 rounds of oracle + diffusion, you collapse to the prize door.
 
-31 attempts instead of 500. That is the O(√N) speedup.
+31 attempts instead of 500. That is the O(sqrt(N)) speedup.
 
 ### How the circuit works
 
@@ -187,13 +187,13 @@ try 500 doors before finding the prize.
 2. **Oracle** flips the phase of the target state (the closest matching vector)
 3. **Diffusion operator** reflects all amplitudes around their average - this amplifies
    the marked state and suppresses everything else
-4. Repeat steps 2+3 for `floor(π·√N / 4)` iterations
+4. Repeat steps 2+3 for `floor(pi*sqrt(N) / 4)` iterations
 5. **Measure** - target state has probability close to 1
 
 ![Grover's algorithm circuit](https://upload.wikimedia.org/wikipedia/commons/a/ae/Grovers_algorithm.svg)
 
 > Oracle marks the target; diffusion amplifies it. Each repetition boosts the target
-> amplitude further. After O(√N) rounds, measurement almost certainly returns it.
+> amplitude further. After O(sqrt(N)) rounds, measurement almost certainly returns it.
 
 | Dataset size | Classical comparisons | Grover oracle calls |
 |---|---|---|
@@ -213,7 +213,7 @@ story.
 ### Role in this project
 
 The central experiment. We run real Grover circuits on AerSimulator and verify the
-oracle call count follows `floor(π·√N / 4)` empirically across different N values.
+oracle call count follows `floor(pi*sqrt(N) / 4)` empirically across different N values.
 The speedup is real - we just also explain honestly why it doesn't win in practice yet.
 
 **Important caveat - the oracle is classically pre-specified.** For Grover to work as
@@ -226,7 +226,7 @@ wipes out the speedup.
 Since qRAM does not exist, this simulation does the next best thing: find the nearest
 neighbour classically with brute force, then construct an oracle that marks exactly that
 index. The quantum amplitude amplification runs correctly and the oracle call count
-follows the `floor(π·√N / 4)` curve. What is being verified is the *scaling behaviour*
+follows the `floor(pi*sqrt(N) / 4)` curve. What is being verified is the *scaling behaviour*
 of the algorithm, not a search that could replace the classical step.
 
 ---
@@ -273,10 +273,10 @@ miss rate is invisible.
 | Method | Complexity | Requires |
 |---|---|---|
 | Brute force / FAISS | O(N) | Nothing |
-| Grover + ideal qRAM | O(√N) | qRAM (does not exist) |
+| Grover + ideal qRAM | O(sqrt(N)) | qRAM (does not exist) |
 | **HNSW** | **O(log N)** | **Nothing** |
 
-O(log N) grows slower than O(√N). At N = 1,000,000:
+O(log N) grows slower than O(sqrt(N)). At N = 1,000,000:
 - HNSW needs ~20 operations
 - Grover with ideal (non-existent) qRAM needs ~785 oracle calls
 

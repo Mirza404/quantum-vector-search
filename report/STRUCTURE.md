@@ -5,17 +5,19 @@ you, for each chapter:
 
 - what content goes in,
 - which **existing project artefacts** to mine for that content
-  (we have a lot of material already — `docs/*.md`, `docs/midterm/`, the
+  (we have a lot of material already: `docs/*.md`, `midterm/`, the
   benchmark database, the speaker notes),
 - which **figures** belong in that chapter and where they come from,
 - and what we still need to **produce** before the section can be filled in.
 
 The goal of this file is to make sure no chapter starts from a blank page.
 
-> **Pictures**: every figure in this plan is currently a `\fbox{...}`
-> placeholder in the .tex file. The team explicitly deferred creating real
-> figures. Each placeholder lists its filename and what it should show, so we
-> can batch them at the end.
+> **Pictures**: the figures for the written chapters (Ch 3 + Ch 4) are now
+> real (see the status table at the end of this file). The two pipeline
+> diagrams are TikZ; the two Qiskit circuit diagrams and the Grover
+> oracle-scaling plot are produced by `backend/scripts/make_report_figures.py`.
+> Figures for not-yet-written chapters remain to be made when those chapters
+> are drafted.
 
 ---
 
@@ -37,9 +39,9 @@ The goal of this file is to make sure no chapter starts from a blank page.
 
 | Section | What it covers | Source material |
 |---|---|---|
-| 1.0 opening | Why cross-modal vector search matters; one paragraph framing the report. | `docs/midterm/speaker_notes.md` slides 1–2, `docs/NOTES.md` "What This Project Does". |
+| 1.0 opening | Why cross-modal vector search matters; one paragraph framing the report. | `midterm/speaker_notes.md` slides 1–2, `docs/NOTES.md` "What This Project Does". |
 | 1.1 Background | Vector search, embeddings, CLIP, quantum primitives at a high level. | `docs/THEORY.md`, `docs/QUANTUM_INTUITION.md`. |
-| 1.2 Problem statement | Frame as empirical investigation, not advantage claim. | `docs/midterm/speaker_notes.md` slide 11 (qRAM honesty). |
+| 1.2 Problem statement | Frame as empirical investigation, not advantage claim. | `midterm/speaker_notes.md` slide 11 (qRAM honesty). |
 | 1.3 RQs + objectives | 3 research questions already drafted in the .tex file. Confirm or revise. | `docs/RESEARCH_QUESTIONS.md` (152 lines — primary source). |
 
 **Figures**: none in this chapter.
@@ -150,7 +152,8 @@ Three candidates listed in the file. Trim to what is actually useful.
 
 ## Build & Iteration
 
-- `cd report && make` — produces `report/report.pdf`.
+- `cd report && make` produces
+  `report/SoftwareEngineering_QuantumVectorSearch_Mahmutovic_Kikanovic_Musanovic_Abdulahovic_2026.pdf`.
 - `make clean` — removes generated files.
 - `make watch` — rebuilds on every save (requires `entr`).
 - Word count: `detex chapters/01_introduction.tex | wc -w`.
@@ -293,9 +296,9 @@ A single batch to handle once the prose is mostly stable. Each entry tells you
 | `ius_logo.png` | `chapters/00_cover.tex` | ✅ |
 | `architecture.png` | `chapters/03_methodology.tex` (Fig. 3.1) | ✅ placeholder box |
 | `methodology.png` | `chapters/03_methodology.tex` (Fig. 3.2) | ✅ placeholder box |
-| `swap_test_circuit.png` | not yet — add to §3.5.2 when ready | ☐ |
-| `grover_circuit.png` | not yet — add to §3.5.2 when ready | ☐ |
-| `oracle_scaling.png` | `chapters/04_results.tex` (Fig. 4.1) | ✅ placeholder box |
-| `mrr_chart.png` | poster `index.html` | ✅ placeholder box |
+| `swap_test_circuit.png` | `chapters/03_methodology.tex` (§3.5, Fig. 3) | ✅ generated, wired |
+| `grover_circuit.png` | `chapters/03_methodology.tex` (§3.5, Fig. 4) | ✅ generated, wired |
+| `oracle_scaling.png` | `chapters/04_results.tex` (Fig. 5) | ✅ generated, wired |
+| `mrr_chart.png` | poster `index.html` | ☐ poster-only, not in report |
 | `clip_pipeline.png` | not yet — optional | ☐ |
 | `qr_repo.png` | poster `index.html` | ✅ placeholder box |

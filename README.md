@@ -1,95 +1,44 @@
 # Quantum Vector Search
 
-## What is this?
+This BSc graduation project compares text-to-image vector search across seven active engines: three classical baselines (brute force, FAISS flat, FAISS HNSW) and four quantum or hybrid engines (swap test, Grover, Grover with quantum state preparation, and HNSW plus swap-test reranking). The project is an honest empirical investigation of accuracy and quantum resource cost, not a quantum-advantage claim.
 
-You type `"a dog on a beach"`. The app finds matching images - even though no one labelled them
-with that phrase. That is cross-modal search: searching one type of data (text) and getting
-results in another type (images).
+## Repo Map
 
-The core question this project answers: **does quantum similarity search work, how accurate is
-it, and what does it cost in quantum resources?** We run the same search through multiple
-engines - classical (standard CPU math) and quantum (circuits on a simulated or real quantum
-chip) - and measure accuracy (MRR) alongside quantum resource cost (qubits, circuit depth,
-measurement shots).
-
-**We are not claiming quantum is faster.** Classical computers have already won that race for
-now. The point is to establish the baseline - built now, while quantum hardware is still too
-limited to run it at scale, so the benchmarking framework and resource cost model are ready
-when the hardware catches up.
-
-## Architecture at a glance
-
-```
-            ┌────────────┐     ┌────────────┐     ┌─────────────────┐     ┌──────────────┐     ┌────────────┐
-  text  →   │   CLIP     │  →  │  truncate  │  →  │   one of 8      │  →  │ PostgreSQL   │  ←  │  FastAPI   │
-            │  ViT-B/32  │     │   to dim   │     │   engines       │     │  +  pgvector │     │  +  React  │
-            └────────────┘     └────────────┘     └─────────────────┘     └──────────────┘     └────────────┘
-            512-dim vector     64/128/256-dim     classical / quantum     benchmark_results        UI + REST
-```
-
-A proper diagram (`docs/architecture.png`) is on the figure punch list — see `report/STRUCTURE.md`.
-
-## Documentation
-
-| Doc | What's in it |
+| Path | What is there |
 |---|---|
-| [`docs/NOTES.md`](docs/NOTES.md) | Architecture, engineering principles, five-phase pipeline, DB schema |
-| [`docs/THEORY.md`](docs/THEORY.md) | Cheat sheet: similarity metrics, CLIP, swap test, Grover, MRR, qubit counts |
-| [`docs/ENGINES_GUIDE.md`](docs/ENGINES_GUIDE.md) | Every engine, its parameters, and what they trade off |
-| [`docs/QUANTUM_INTUITION.md`](docs/QUANTUM_INTUITION.md) | Plain-language walk-through of the quantum bits |
-| [`docs/QUANTUM_SEARCH_ANALYSIS.md`](docs/QUANTUM_SEARCH_ANALYSIS.md) | qRAM, scaling, the honest quantum picture |
-| [`docs/RESEARCH_QUESTIONS.md`](docs/RESEARCH_QUESTIONS.md) | What we set out to measure |
-| [`docs/BENCHMARK_KPIS.md`](docs/BENCHMARK_KPIS.md) | MRR, oracle calls, circuit depth — precise definitions |
-| [`docs/FAQ.md`](docs/FAQ.md) | Questions the team kept hitting while building |
-| [`docs/LEARNING_ROADMAP.md`](docs/LEARNING_ROADMAP.md) | If you want to learn the theory end-to-end |
-| [`docs/midterm/`](docs/midterm/) | Midterm presentation HTML + speaker notes |
-| [`report/`](report/) | LaTeX graduation-project report (build with `make` inside `report/`) |
-| [`poster/`](poster/) | A0 portrait HTML poster (open `poster/index.html` in a browser) |
+| [`backend/`](backend/) | FastAPI app, CLIP indexing, benchmark scripts, engine implementations, generated benchmark report. |
+| [`frontend/`](frontend/) | React interface for live side-by-side search and benchmark summaries. |
+| [`db/`](db/) | PostgreSQL + pgvector Docker setup, migrations, and seed data. |
+| [`docs/`](docs/) | Engineering notes, theory notes, engine guide, KPIs, and FAQ. |
+| [`midterm/`](midterm/) | Midterm presentation HTML and speaker notes. |
+| [`report/`](report/) | Final LaTeX graduation report and submission-named PDF. |
+| [`poster/`](poster/) | HTML/CSS reference version of the A0 exhibition poster and poster assets. |
 
-## Quick Start
+## Quickstart
 
-**Prerequisites:** Docker + Compose v2, Python 3.12+
+Prerequisites: Docker with Compose v2, Python 3.12 or newer, and a shell that can run the provided scripts.
 
-1. **Database**
-   ```bash
-   cd db
-   cp .env.example .env
-   make up
-   make seed
-   ```
+```bash
+cd db
+cp .env.example .env
+make up
+make migrate
+make seed
 
-2. **Backend**
-   ```bash
-   cd backend
-   cp .env.example .env
-   python3 -m venv .venv && source .venv/bin/activate
-   pip install -r requirements.txt
-   ```
+cd ../backend
+cp .env.example .env
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-3. **Index images** (one-time - encodes images with CLIP and stores vectors in Postgres)
-   ```bash
-   python3 scripts/index_dataset.py
-   ```
+The database must be running before the backend scripts or API start. See [`db/README.md`](db/README.md) for database setup and [`backend/README.md`](backend/README.md) for indexing, benchmark, and report commands.
 
-4. **Run benchmarks**
-   ```bash
-   python3 scripts/run_benchmarks.py
-   ```
+## Reproduce The Benchmarks
 
-5. **Generate report**
-   ```bash
-   python3 scripts/generate_report.py
-   ```
-   The report is generated at `backend/reports/benchmark_report.md`.
+The benchmark flow is documented in [`backend/README.md`](backend/README.md). In short: start and seed the database from [`db/`](db/), install backend dependencies, index the dataset if needed, run `scripts/run_benchmarks.py`, then run `scripts/generate_report.py`. The generated source of truth is [`backend/reports/benchmark_report.md`](backend/reports/benchmark_report.md).
 
-## Database
+## Deliverables
 
-All db commands run from the `db/` directory - see `db/Makefile` for the full list.
-
-To share results: `make dump` from `db/`, then commit `db/seeds/seed.sql`.
-
-## Adminer
-
-Open **http://localhost:8080** after `make up`. Use `postgres` as the server (Docker service name), credentials from `.env`.
-
-See `backend/README.md` for package layout, config, and advanced usage.
+- Final report PDF: [`report/SoftwareEngineering_QuantumVectorSearch_Mahmutovic_Kikanovic_Musanovic_Abdulahovic_2026.pdf`](report/SoftwareEngineering_QuantumVectorSearch_Mahmutovic_Kikanovic_Musanovic_Abdulahovic_2026.pdf)
+- Poster reference: [`poster/index.html`](poster/index.html)

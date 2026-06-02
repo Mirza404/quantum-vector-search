@@ -7,10 +7,21 @@
 % Target length: ~600-900 words for this chapter (project is 5,000-10,000 total).
 % See report/STRUCTURE.md for the full per-section budget.
 
-[INTRODUCTION \,--\, opening paragraphs framing why cross-modal vector search matters
-in modern machine-learning systems, and why a side-by-side comparison with quantum
-similarity is worth doing now even though quantum hardware is not yet competitive.
-See GUIDELINES.md \S Claims-must-be-sourced before writing.]
+Modern machine-learning systems represent text, images, and other media as
+high-dimensional vectors called embeddings. Items with similar meaning are placed
+near one another, so searching a collection becomes a nearest-vector problem.
+This is vector search, the operation behind image search, recommendation, and
+retrieval-augmented language models. When the query and stored items are
+different media, such as text-to-image search, the task is cross-modal retrieval.
+
+Quantum computing offers two primitives that appear, at first sight, well matched
+to this task. Grover's algorithm finds a marked item in an unstructured
+collection using far fewer queries than a classical scan, and the swap test
+estimates how similar two quantum states are. This study asks, through
+measurement rather than assertion, whether those primitives are of practical use
+for cross-modal vector search at the scale and on the hardware available today.
+It is an investigation of where quantum search does and does not fit, not an
+attempt to demonstrate a quantum advantage.
 
 \section{Background of Study}
 \label{sec:background}
@@ -19,9 +30,33 @@ See GUIDELINES.md \S Claims-must-be-sourced before writing.]
 % does "quantum similarity" mean here. Two or three paragraphs. Cite the
 % foundational papers (CLIP, Grover, Buhrman et al. swap test).
 
-[BACKGROUND \,--\, define vector search, embeddings, CLIP, and the quantum primitives
-referenced later (swap test, Grover, amplitude encoding). All claims must point to a
-reference in \texttt{references.bib}.]
+For cross-modal retrieval we use CLIP, which maps images and captions into a
+shared space~\cite{radford2021clip}. Once both modalities live there, a query is
+answered by ranking image vectors by closeness to the text vector. Exhaustive
+search compares the query with every stored vector and costs $O(N)$ comparisons
+for $N$ items. FAISS implements this exact scan efficiently~\cite{johnson2019faiss},
+while approximate methods such as the Hierarchical Navigable Small World (HNSW)
+graph reach a near neighbour in roughly $O(\log N)$ graph
+steps~\cite{malkov2020hnsw}.
+
+The quantum side of the comparison rests on two ideas. Grover's algorithm
+searches an unstructured collection of $N$ items for a marked one using only
+about $\sqrt{N}$ queries to an oracle, a quadratic improvement over the linear
+classical scan~\cite{grover1996}. The swap test takes two quantum states and
+estimates the squared overlap between them from a single measured
+qubit~\cite{buhrman2001swaptest}; because a normalised embedding can be encoded
+in the amplitudes of a quantum state, that overlap is a similarity score. Both
+techniques therefore have a natural reading as vector-search operations, Grover
+as the search itself and the swap test as the similarity comparison.
+
+The difficulty is that these speed-ups assume the data is already available
+inside the quantum computer. For Grover to search real vectors, an oracle would
+have to recognise the closest item while the whole dataset is held in
+superposition, which requires a quantum random-access memory that does not yet
+exist at usable scale; loading the data one item at a time instead costs $O(N)$
+and removes the very advantage the algorithm promises~\cite{aaronson2015readfine}.
+This tension between an algorithm's asymptotic promise and the cost of getting
+data into the machine is the central question the study examines.
 
 \section{Problem Statement and Research Aims}
 \label{sec:problem}
@@ -30,9 +65,21 @@ reference in \texttt{references.bib}.]
 % relevance of quantum vector search at NISQ scale is not. State what we set out
 % to MEASURE - not what we set out to PROVE.
 
-[PROBLEM STATEMENT \,--\, frame the work as an empirical investigation, not a
-claim of quantum advantage. Borrow framing from docs/midterm/speaker\_notes.md
-slide 3 and slide 11.]
+Classical vector search is mature and fast. Whether quantum methods add anything
+at today's scale is less clear, and popular accounts often overstate the case.
+The gap this work addresses is empirical: there are few like-for-like comparisons
+that run classical and quantum similarity search on the same data while reporting
+both retrieval accuracy and resource cost. We built such a comparison. A common
+interface lets classical, quantum, and hybrid engines answer the same queries
+over the same embeddings, so their rankings are scored identically.
+
+We frame the work as a measurement rather than a proof of advantage. Present-day
+devices are small and noisy, the regime usually called noisy intermediate-scale
+quantum (NISQ), so we run the quantum engines mostly on a classical simulator and
+validate the hardware path with a single small run on a real quantum processor.
+The goal is to determine, on a controlled cross-modal dataset, how the quantum
+and hybrid engines compare with strong classical baselines, and to state plainly
+the conditions under which each approach is preferable.
 
 \section{Research Questions and Objectives}
 \label{sec:questions}
@@ -46,7 +93,7 @@ slide 3 and slide 11.]
         classical cosine similarity, and what is the shot budget required to do so?
   \item \emph{Scaling:} Does our Grover implementation reproduce the
         $\lfloor \pi\sqrt{N}/4 \rfloor$ oracle-call scaling in practice?
-  \item \emph{Practicality:} Under what conditions \,--\, if any \,--\, would a
+  \item \emph{Practicality:} Under what conditions, if any, would a
         quantum vector-search engine outperform a production classical baseline
         (HNSW) on the same dataset?
   \item \emph{Suitability:} Independent of hardware maturity, is cross-modal
@@ -55,6 +102,19 @@ slide 3 and slide 11.]
         data rather than data-bound retrieval?
 \end{enumerate}
 
-[OBJECTIVES \,--\, list 3-4 deliverable-shaped goals (engines implemented,
-benchmarks collected, web app for inspection, written analysis). Each
-deliverable must be checkable against the repository.]
+To answer these questions we set four objectives, each corresponding to a
+concrete artefact in the project repository:
+
+\begin{enumerate}[leftmargin=*]
+  \item Implement a suite of search engines spanning classical, quantum, and
+        hybrid approaches behind a single common interface, so that one query can
+        be answered by any of them and the results compared directly.
+  \item Build a reproducible benchmark harness and a controlled cross-modal
+        dataset, and collect a complete set of results across embedding
+        dimensions and measurement shot counts.
+  \item Provide a web application that displays the engines' rankings side by
+        side for inspection.
+  \item Produce an honest written analysis that answers the research questions
+        from the measured data, including the cases where quantum methods do not
+        help.
+\end{enumerate}

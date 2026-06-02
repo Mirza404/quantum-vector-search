@@ -16,7 +16,7 @@ function SearchLoading() {
       <p className="text-sm font-semibold text-slate-900">Running search engines</p>
       <p className="mt-1 text-xs text-slate-500">
         Comparing 7 engines side by side. Classical engines finish in milliseconds; the
-        quantum simulator dominates the wait. <strong>Expect ~10–20 s at dim 128.</strong>
+        quantum simulator dominates the wait. <strong>Expect ~10-20 s at dim 128.</strong>
       </p>
       <div className="mx-auto mt-4 h-1.5 max-w-sm overflow-hidden rounded-full bg-white">
         <div className="h-full w-1/3 animate-[loading-bar_1.4s_ease-in-out_infinite] rounded-full bg-violet-500" />
@@ -86,7 +86,7 @@ function SearchRoute() {
   )
 }
 
-const TOTAL_ENGINES = Object.keys(ENGINES).length
+const ACTIVE_ENGINE_COUNT = Object.values(ENGINES).filter((engine) => engine.category !== 'ibm').length
 const CURRENT_YEAR = new Date().getFullYear()
 
 function App() {
@@ -105,7 +105,7 @@ function App() {
           Classical vs. Quantum Image Search
         </h1>
         <p className="mt-2 text-base text-slate-500">
-          Cross-modal retrieval using CLIP embeddings — benchmarked across {TOTAL_ENGINES} engines
+          Cross-modal retrieval using CLIP embeddings - benchmarked across {ACTIVE_ENGINE_COUNT} active engines + IBM validation
         </p>
         <p className="mt-1 text-xs text-slate-400">IUS Graduation Project, {CURRENT_YEAR}</p>
       </header>

@@ -1,12 +1,12 @@
 # Build the FENS graduation project report.
 #
-#   make           - build report.pdf
+#   make           - build the submission-named PDF
 #   make clean     - remove all generated build artefacts
 #   make watch     - rebuild on every save (requires entr)
 #
 # Uses pdflatex + bibtex with IEEEtran.bst. No latexmk, no biber dependency.
 
-JOB := report
+JOB := SoftwareEngineering_QuantumVectorSearch_Mahmutovic_Kikanovic_Musanovic_Abdulahovic_2026
 TEX := main.tex
 
 PDFLATEX := pdflatex -interaction=nonstopmode -halt-on-error -file-line-error
@@ -31,6 +31,8 @@ $(JOB).pdf: $(TEX) chapters/*.tex references.bib $(wildcard figures/*)
 clean:
 	rm -f $(JOB).aux $(JOB).log $(JOB).toc $(JOB).lof $(JOB).lot \
 	      $(JOB).bbl $(JOB).blg $(JOB).out $(JOB).fls $(JOB).fdb_latexmk \
+	      report.aux report.log report.toc report.lof report.lot \
+	      report.bbl report.blg report.out report.fls report.fdb_latexmk \
 	      chapters/*.aux $(JOB).pdf
 
 watch:

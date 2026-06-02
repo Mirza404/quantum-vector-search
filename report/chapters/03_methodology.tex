@@ -11,49 +11,23 @@
 % One paragraph describing the modular monolith - data loader, embedding
 % pipeline, engines, storage, API+UI. Reference Figure \ref{fig:architecture}.
 
-The system is a modular monolith that performs cross-modal retrieval: given a
-short text query such as ``a dog on a beach'', it returns the dataset images
-whose content best matches that description. Text and images are never compared
-directly. Instead, the same embedding model maps both into a shared vector
-space, and retrieval becomes the problem of finding the dataset vectors closest
-to the query vector. The defining property of the system is that the component
-performing this closest-vector search is interchangeable. A classical engine, a
-quantum engine, and a hybrid of the two all expose one common interface, so a
-single query can be answered by any of them and the rankings placed side by
-side. This makes the system an instrument for comparing search strategies
-rather than a single retrieval product.
+The system is a modular monolith for cross-modal retrieval. A text query and the
+dataset images are embedded into the same vector space, then one interchangeable
+engine ranks the image vectors closest to the query vector. Classical, quantum,
+and hybrid engines all implement the same \texttt{SearchEngineStrategy}
+interface, with \texttt{build\_index} and \texttt{search} as the required
+operations. The rest of the harness, data loading, embedding, query execution,
+and result storage, is therefore identical for every engine.\footnote{The full
+source code, benchmark harness, and dataset configuration are publicly available
+at \url{https://github.com/Mirza404/quantum-vector-search}.}
 
-This interchangeability is enforced by a single design decision that runs
-through the whole codebase: the strategy pattern. Each stage of the pipeline is
-defined by an abstract interface, and concrete implementations plug into it.
-Data loaders implement \texttt{BaseDataLoader}, embedding models implement
-\texttt{EmbeddingGenerator}, and every search engine implements
-\texttt{SearchEngineStrategy}, which requires just two operations,
-\texttt{build\_index} and \texttt{search}. Because all engines satisfy the same
-contract, the surrounding harness that loads data, generates embeddings, runs
-queries, and records results is identical for every engine. Any difference we
-measure between a classical and a quantum engine therefore reflects the engine
-itself, not the code around it. Which engines run, at which vector dimensions,
-and with how many measurement shots is selected in a configuration file
-(\texttt{benchmarks.yaml}) rather than by editing source, so an experiment is
-defined by configuration rather than by code changes.
-
-The pipeline is organised into five phases, shown in
-Figure~\ref{fig:architecture}. In the first phase, data loading, a
-\texttt{DirectoryDataLoader} reads the image files and the accompanying
-ground-truth pairs that define which image each query should retrieve. In the
-second phase, the embedding pipeline, a CLIP model converts every image and
-every text query into a vector. In the third phase the search engines build
-their indexes over these vectors and answer queries, each engine applying its
-own strategy, whether classical, quantum, or hybrid. In the fourth phase the
-outcome of every run, including its accuracy and resource measurements, is
-written to a PostgreSQL database. The fifth phase exposes the system through a
-FastAPI backend and a React interface, which lets a user issue a query and
-inspect the rankings returned by each engine. The sections that follow describe
-each phase in turn: the dataset and ground truth in
-Section~\ref{sec:method:dataset}, the embedding pipeline in
-Section~\ref{sec:method:embeddings}, and the individual search engines in
-Section~\ref{sec:method:engines}.
+Figure~\ref{fig:architecture} shows the five phases. A
+\texttt{DirectoryDataLoader} reads the images and ground-truth query pairs; CLIP
+embeds the images and text; the selected engine builds an index and answers the
+query; PostgreSQL records accuracy and resource measurements; FastAPI and React
+surface the rankings. The experiment is configured in \texttt{benchmarks.yaml},
+where the active engines, dimensions, and shot counts are selected without
+editing source code.
 
 \begin{figure}[ht]
   \centering
@@ -94,7 +68,7 @@ Section~\ref{sec:method:engines}.
     \draw[arr] (hy.south) -- (db.north);
     \draw[arr] (db) -- (api);
   \end{tikzpicture}
-  \caption{End-to-end pipeline. Data loading and CLIP embedding feed a common
+  \caption[End-to-end system pipeline]{End-to-end pipeline. Data loading and CLIP embedding feed a common
   engine-strategy interface, behind which the classical, quantum, and hybrid
   engines are interchangeable. Every run is recorded in PostgreSQL and surfaced
   through the FastAPI and React interface.}
@@ -139,74 +113,70 @@ Section~\ref{sec:method:engines}.
     \draw[arr] (res) -- (rep);
     \draw[arr] (ibm.south) |- (res.east);
   \end{tikzpicture}
-  \caption{Methodology flow. Four scripts run in order, from dataset import
+  \caption[Experimental methodology flow]{Methodology flow. Four scripts run in order, from dataset import
   through CLIP indexing, the simulator benchmark sweep, and report generation.
   The IBM hardware validation is a one-off side arm that writes its single
   result into the same database table.}
   \label{fig:methodology}
 \end{figure}
 
-The study follows a fixed sequence of steps, shown in
-Figure~\ref{fig:methodology}, each implemented by a single script so the whole
-experiment can be reproduced from a clean checkout. The first two steps prepare
-the data. The script \texttt{import\_dataset.py} downloads a fixed subset of the
-Flickr30k dataset and, in the same pass, writes the ground-truth file that
-records which image each text query should retrieve. This download is
-deterministic: every run regenerates the same image set and the same
-query-to-image pairing, so the results do not drift between machines. The second
-script, \texttt{index\_dataset.py}, loads each image, passes it through the CLIP
-model to obtain a vector, and stores that vector in PostgreSQL. After these two
-steps the database holds one embedding per image, ready to be searched.
+The experiment follows the script sequence in Figure~\ref{fig:methodology}. The
+import script downloads the fixed Flickr30k subset and writes the ground-truth
+query file. The indexing script encodes each image with CLIP and stores one
+vector per image in PostgreSQL. The benchmark script then iterates over every
+enabled engine, vector dimension, shot count, and query. Quantum and hybrid
+engines run on Qiskit's noiseless simulator, so the sweep measures algorithm
+behaviour and finite-shot sampling rather than device noise.
 
-With the embeddings in place, \texttt{run\_benchmarks.py} carries out the main
-experiment. It iterates over every combination of engine, vector dimension, and
-shot count listed in \texttt{benchmarks.yaml}, and for each combination it
-answers all of the ground-truth queries. The quantum and hybrid engines execute
-their circuits on Qiskit's \texttt{AerSimulator}, a noiseless simulator that
-isolates the effect of finite sampling (shot noise) from the physical noise of
-real hardware. Every individual run is recorded as one row in the
-\texttt{benchmark\_results} table, together with its accuracy and its resource
-cost: the Mean Reciprocal Rank of the retrieved images, and, for the quantum
-engines, the number of oracle calls, the circuit depth, and the qubit count.
-Because the configuration file drives the sweep, widening the experiment to a
-new dimension or shot count is a change to that file alone, not to the code.
-
-Alongside the simulator sweep, \texttt{run\_ibm\_validation.py} runs the hybrid
-swap-test engine once on real IBM quantum hardware, at the smallest workable
-size: two dimensions, two candidate images, and 32 shots. Its purpose is
-narrow, to confirm that the swap-test circuit executes on a physical device and
-returns a sensible result, rather than to measure scaling. The single outcome
-is written to the same \texttt{benchmark\_results} table, tagged as the
-\texttt{hybrid\_hnsw\_swap\_test\_ibm} engine, so it sits beside the simulator
-runs without being confused for one.
-
-The final step turns the stored runs back into something readable. The script
-\texttt{generate\_report.py} queries the \texttt{benchmark\_results} table and
-produces a Markdown summary, \texttt{benchmark\_report.md}, that groups the runs
-by engine and reports accuracy per dimension and per shot count. This report is
-the single source of truth for the Results chapter: every figure quoted in
-Chapter~\ref{ch:results} traces back to a row this script read from the
-database, rather than to any number recorded by hand. Keeping the analysis in
-one generated file, derived directly from the stored runs, is what lets the
-whole study be regenerated by re-running the four scripts in order.
+Each run is stored as one row in \texttt{benchmark\_results}, including MRR,
+oracle calls, circuit depth, and qubit count where applicable. The IBM
+validation script executes the hybrid swap test once on real hardware at two
+dimensions, two candidates, and 32 shots. This result is tagged with the IBM
+engine ID and is treated as a validation run, not as part of the normal sweep.
+Finally, the report-generation script produces \texttt{benchmark\_report.md}
+directly from the database; Chapter~\ref{ch:results} uses that generated file as
+the source of truth for all reported numbers.
 
 \section{Dataset and Ground Truth}
 \label{sec:method:dataset}
 
-% Flickr30k subset, how it is loaded, what counts as a "correct" hit. Be
-% explicit that ground truth is image-caption pairs from the dataset itself,
-% not human relevance judgements.
+The evaluation set is a fixed 20-image subset of Flickr30k, an image-caption
+corpus in which each photograph has several human-written captions. The importer
+requests a fixed configuration and split, then reads the first twenty rows in the
+dataset viewer order, with no random sampling or shuffling. A different machine
+therefore regenerates the same images and queries. Twenty images is small for
+information retrieval, but it keeps the full seven-engine simulator sweep
+tractable on a CPU; the separate IBM hardware validation is excluded from this
+count because it is a tiny real-device sanity check.
 
-[DATASET \,--\, source, size, how queries were derived, what counts as a
-correct retrieval. Reference backend/data/ground\_truth.jsonc.]
+For each image we use the first caption as the query text and record the image's
+Flickr identifier as the target. The result is a one-to-one evaluation: every
+query has exactly one correct image. This choice ignores alternate captions and
+cannot reward a different image that a human might also consider relevant, but it
+makes scoring deterministic. An engine ranks all twenty images, and MRR assigns
+full credit when the target is first and partial credit when it appears lower.
 
 \section{Embedding Pipeline}
 \label{sec:method:embeddings}
 
-% CLIP ViT-B/32, L2-normalisation, dimension truncation (64 / 128). Explain why
-% truncation is necessary for the swap test on a CPU simulator.
+CLIP embeds both images and text into one vision-language space
+\cite{radford2021clip}. It is trained contrastively so matching images and
+captions are close while mismatches are pushed apart \cite{radford2021clip}. We
+use ViT-B/32, which produces 512-dimensional vectors, and L2-normalise every
+image and query vector. On unit vectors, cosine similarity, Euclidean distance,
+and the squared inner product estimated by the swap test induce the same
+ranking, which lets MRR be compared across engines that compute different
+similarity quantities.
 
-[EMBEDDINGS \,--\, model, normalisation, truncation rationale.]
+The benchmark uses truncated dimensions of 64, 128, and 256 rather than the full
+512. The reason is simulation cost. Amplitude encoding a $d$-dimensional vector
+requires $\lceil \log_2 d \rceil$ qubits, and the swap test needs two such
+registers plus one ancilla, or $1 + 2\lceil \log_2 d \rceil$ qubits. At 512
+dimensions the swap test would need nineteen qubits and more than half a million
+state-vector amplitudes per comparison; at 64 dimensions it needs thirteen
+qubits and roughly eight thousand amplitudes. Truncation reduces simulator cost
+but discards information, so the Results chapter measures the accuracy loss.
+Engines that rely on unit length re-normalise after truncation.
 
 \section{Search Engines}
 \label{sec:method:engines}
@@ -217,13 +187,29 @@ correct retrieval. Reference backend/data/ground\_truth.jsonc.]
 
 \subsection{Classical Baselines}
 \subsubsection{Brute-Force Cosine}
-[BRUTE FORCE \,--\, NumPy dot product against every vector. Ground truth.]
+The reference engine compares the query with every image. After normalisation,
+cosine similarity is the dot product, so the engine computes twenty dot products,
+sorts the scores, and returns the top results. Its work grows as $O(N)$, but it
+cannot skip the closest image. We use its ordering as the reference ranking for
+the other engines.
 
 \subsubsection{FAISS Flat (Exact)}
-[FAISS FLAT \,--\, SIMD-vectorised exact search.]
+FAISS Flat delegates the same exhaustive search to FAISS, a similarity-search
+library covering exact, approximate, and compressed-domain search
+\cite{johnson2019faiss}. We use its exact L2 index. For unit vectors, L2 distance
+and cosine similarity are linked by $\|a - b\|^2 = 2 - 2\cos\theta$, so the
+ranking matches brute-force cosine after re-normalisation. FAISS Flat is
+therefore a production-grade exact baseline that should reproduce the reference
+ranking.
 
 \subsubsection{FAISS HNSW (Approximate)}
-[FAISS HNSW \,--\, multi-layer proximity graph, $O(\log N)$ retrieval.]
+FAISS HNSW uses a Hierarchical Navigable Small World graph, an approximate
+nearest-neighbour index that searches a layered proximity graph instead of the
+whole collection \cite{malkov2020hnsw}. Its expected query cost is
+$O(\log N)$, with a recall trade-off at large scale. On our 20-image collection
+the graph is too small for the approximation to matter, so HNSW reproduces the
+exact ranking. Its role is to place the quantum engines next to the classical
+index a real retrieval system would use.
 
 \subsection{Quantum Engines}
 \subsubsection{Qiskit Swap Test}
@@ -235,23 +221,85 @@ P(\text{ancilla}=0) = \frac{1 + |\langle\psi|\phi\rangle|^2}{2}.
 \label{eq:swaptest}
 \end{equation}
 
-[SWAP TEST \,--\, explain circuit (Hadamard, controlled-SWAP, Hadamard,
-measure), shot-noise scaling, and the choice of AerSimulator over IBM
-hardware.]
+The procedure originates in quantum fingerprinting, where it distinguishes two
+unknown quantum states with high probability \cite{buhrman2001swaptest}. In our
+engine each vector is amplitude-encoded into a register, and one ancilla qubit
+controls a swap between the registers. Figure~\ref{fig:swaptest_circuit} shows a
+four-dimensional example. Equation~\ref{eq:swaptest} converts the probability of
+measuring the ancilla as zero into an overlap score. Because that probability is
+estimated from a finite number of shots, the score has sampling error, so we
+sweep the shot count. The swap test compares one query with one candidate; a
+full ranking still needs $O(N)$ circuits. We run the sweep on Qiskit's Aer
+simulator \cite{qiskit2024}, with a separate small IBM hardware validation.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.7\linewidth]{figures/swap_test_circuit.png}
+  \caption[Swap-test circuit]{Swap-test circuit for a four-dimensional example,
+  in which each vector is amplitude-encoded into two qubits. The ancilla
+  ($q_0$) is placed in superposition, controls a swap of the two encoded
+  registers ($q_1 q_2$ and $q_3 q_4$), and is measured after a second Hadamard.
+  The probability of reading the ancilla as zero gives the squared overlap of
+  the two states, as in Equation~\ref{eq:swaptest}.}
+  \label{fig:swaptest_circuit}
+\end{figure}
 
 \subsubsection{Qiskit Grover (Hardcoded Oracle)}
-[GROVER \,--\, $\lfloor\pi\sqrt{N}/4\rfloor$ oracle calls, how we measure that
-empirically, why the oracle is classically pre-specified (qRAM caveat).]
+Grover's algorithm finds a marked item in an unstructured collection using about
+$\sqrt{N}$ oracle queries, a quadratic improvement over a classical scan
+\cite{grover1996}. Our engine pads $N$ to a power of two, prepares a uniform
+index superposition, then repeats an oracle and diffusion operator
+$\lfloor\pi\sqrt{N}/4\rfloor$ times before measuring. The oracle marks the target
+index, and the diffusion step amplifies it; Figure~\ref{fig:grover_circuit}
+shows one iteration for four items.
+
+The limitation is the oracle. A real vector-search oracle would need to decide,
+in superposition, which stored vector is closest to the query, which requires
+quantum random access memory (qRAM) for loading data in superposition
+\cite{giovannetti2008qram}. Practical qRAM does not exist, and loading vectors
+one by one costs $O(N)$, removing the advantage \cite{aaronson2015readfine}. We
+therefore hardcode the nearest-neighbour index classically and test only the
+Grover search step. The claim being tested is oracle-call scaling, not
+end-to-end quantum speedup.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\linewidth]{figures/grover_circuit.png}
+  \caption[Grover circuit, one iteration]{One Grover iteration for a
+  four-element index ($N=4$, two index qubits). After preparing a uniform
+  superposition, the oracle flips the phase of the marked index and the
+  diffusion operator amplifies its amplitude; the two qubits are then measured.
+  The barriers separate the preparation, oracle, and diffusion phases.}
+  \label{fig:grover_circuit}
+\end{figure}
 
 \subsubsection{Qiskit Grover with Quantum State Preparation}
-[GROVER (quantum prep) \,--\, contrast with the hardcoded variant.]
+The quantum-preparation Grover variant chooses the target index with quantum
+measurements instead of a classical dot product. Each stored vector and query are
+loaded with Qiskit state-preparation gates; a swap test estimates each overlap;
+the highest measured overlap becomes the index marked by the Grover oracle. The
+remaining Grover circuit is unchanged. This makes target selection noisy:
+state-preparation circuits are deep, the swap tests have shot noise, and Grover
+amplifies whichever index it is given. The Results chapter shows that this
+variant is the least accurate engine.
 
 \subsubsection{Hybrid HNSW + Swap Test}
-[HYBRID \,--\, HNSW prefilter, swap-test rerank. Discuss the rationale.]
+The hybrid engine uses HNSW to shortlist candidates, then applies the swap test
+only to that fixed-size pool. The classical stage performs the search; the
+quantum stage reranks the survivors. This mirrors common retrieval pipelines in
+which a fast approximate index proposes candidates and a slower scorer refines
+them. Because the swap test is not a search algorithm, this is the most plausible
+place for it in the system. On our small dataset the shortlist usually already
+contains the target, so the hybrid tracks the classical baseline closely.
 
 \subsubsection{IBM Hardware Validation}
-[IBM HARDWARE \,--\, the dimension-2, 2-candidate, 32-shot run on real QPU.
-Frame as a sanity check, not a scaling study.]
+To check that the quantum path is not only a simulator artefact, we ran the
+hybrid engine once through IBM Quantum runtime. The run uses two-dimensional
+vectors, two candidates, and thirty-two shots, small enough for the free-tier
+device time and shallow enough for noisy hardware. It is a sanity check, not a
+scaling experiment. The Results chapter reports low accuracy, as expected from
+aggressive truncation, few shots, and real-device noise. We draw no scaling
+conclusions from it.
 
 \section{Evaluation Metrics}
 \label{sec:method:metrics}
@@ -259,7 +307,12 @@ Frame as a sanity check, not a scaling study.]
 % Define MRR formally, then define oracle calls. Explain why wall-clock is per-
 % engine only - the simulator-time issue.
 
-[MRR DEFINITION \,--\, formula + intuition.]
+The primary accuracy measure is mean reciprocal rank (MRR). For each query, the
+engine receives the reciprocal of the rank at which the correct image appears:
+rank one scores one, rank two scores one half, and a target outside the top $k$
+results, with $k=10$, scores zero. Averaging over all queries gives
+Equation~\ref{eq:mrr}. Because every engine is scored against the same target
+image, MRR is comparable across engines.
 
 \begin{equation}
 \text{MRR} = \frac{1}{|Q|} \sum_{q \in Q} \frac{1}{\text{rank}_q},
@@ -268,26 +321,46 @@ Frame as a sanity check, not a scaling study.]
 where $\text{rank}_q$ is the position of the first relevant result for query
 $q \in Q$ and $1/\text{rank}_q \coloneqq 0$ if no relevant result is in the top-$k$.
 
-[ORACLE CALLS, CIRCUIT DEPTH, QUBIT COUNT \,--\, define each, state which
-engines populate which fields.]
+We also store operation count, the number of core comparisons, graph steps, or
+oracle calls per query. Brute force, FAISS flat, and the standalone swap test
+scale as $O(N)$; HNSW as $O(\log N)$; the hybrid as $O(\log N + M)$; and Grover
+as $O(\sqrt{N})$ with $\lfloor\pi\sqrt{N}/4\rfloor$ oracle cycles. This
+hardware-independent count is the only speed-like quantity compared across
+engines.
+
+For circuit engines we record depth and qubit count. Depth is a proxy for noise
+exposure on real hardware, while qubit count is the circuit width. We do not
+compare wall-clock time across engines because the quantum engines run on a
+classical simulator whose runtime reflects state-vector simulation overhead.
+Wall-clock appears only within an engine, where the hardware and simulator are
+held fixed.
 
 \section{Experimental Configuration}
 \label{sec:method:config}
 
-% Table summarising the cartesian product of (engine, dimension, shots, layers)
-% actually run. Pull values from backend/config/benchmarks.yaml.
+Table~\ref{tab:config} lists the sweep. Each engine is evaluated at every vector
+dimension; quantum and hybrid engines also run at every shot count. With twenty
+queries, this gives 900 simulator runs: three classical configurations and
+twelve quantum configurations per dimension, across three dimensions. The IBM
+hardware validation adds 20 rows, for a stored total of 920 results. The layers
+parameter is fixed at one because the harness requires it, although no enabled
+engine uses it. Results are stored in PostgreSQL and dumped to the committed seed
+file.
 
 \begin{table}[ht]
   \centering
   \caption{Benchmark configuration grid.}
   \label{tab:config}
-  \begin{tabular}{ll}
+  \begin{tabular}{l p{7.2cm}}
     \toprule
     \textbf{Parameter} & \textbf{Values} \\
     \midrule
-    Engines             & [PULL FROM benchmarks.yaml] \\
-    Dimensions          & 64, 128 \\
-    Shots               & 512, 1024 \\
+    Engines             & Brute-force cosine, FAISS flat, FAISS HNSW
+                          (classical); swap test, Grover (hardcoded oracle),
+                          Grover (quantum prep), hybrid HNSW + swap test
+                          (quantum) \\
+    Dimensions          & 64, 128, 256 \\
+    Shots               & 512, 1024, 2048 (quantum engines only) \\
     Layers              & 1 \\
     Top-$k$             & 10 \\
     \bottomrule
@@ -301,8 +374,19 @@ engines populate which fields.]
 % MANDATORY per FENS handbook \S1.1. Be specific - generic disclaimers fail
 % the originality check. State which tools were used for which tasks.
 
-[USE OF AI TOOLS \,--\, list every AI-assisted activity: code generation /
-review, prose drafting, diagram drafting, brainstorming. State explicitly which
-parts of the algorithm design, implementation, and analysis are the authors'
-own. Responsibility for correctness rests with the authors. See
-GUIDELINES.md \S AI Disclosure for the exact phrasing template.]
+This project used AI assistants, specifically Claude Code and ChatGPT, as
+productivity tools during development and writing. They assisted with routine
+code generation and refactoring, code review, bug-location during the audit,
+prose drafts revised by the authors, and diagram rendering from author-specified
+layouts.
+
+The intellectual core is the authors' own: system architecture, engine
+selection, benchmark design, research questions, and interpretation. Every
+benchmark figure reported here was produced by our own runs, and every external
+reference was verified by the authors before citation.
+
+The authors take full responsibility for the correctness, originality, and
+verification of all code, data, and conclusions in this report. Where AI tools
+contributed text or code, that output was read, checked, and where necessary
+corrected and rewritten by the authors, who treat it as a draft to be
+scrutinised rather than as an authority to be trusted.

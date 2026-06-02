@@ -37,10 +37,10 @@ cmd_up() {
         applied=$(psql_exec -t -A -c \
             "SELECT COUNT(*) FROM schema_migrations WHERE filename = '$filename';")
         if [ "$applied" = "0" ]; then
-            echo "→ up    $filename"
+            echo "-> up    $filename"
             psql_exec -v ON_ERROR_STOP=1 < "$file"
             psql_exec -c "INSERT INTO schema_migrations (filename) VALUES ('$filename');"
-            echo "  ✓ done"
+            echo "  done"
         else
             echo "  skip  $filename"
         fi
@@ -63,10 +63,10 @@ cmd_down() {
                 if [ ! -f "$down_file" ]; then
                     echo "ERROR: no down migration for $filename" >&2; exit 1
                 fi
-                echo "↓ down  $filename"
+                echo "<- down  $filename"
                 psql_exec -v ON_ERROR_STOP=1 < "$down_file"
                 psql_exec -c "DELETE FROM schema_migrations WHERE filename = '$filename';"
-                echo "  ✓ done"
+                echo "  done"
             fi
         fi
     done 3< <(find "$UP_DIR" -maxdepth 1 -name "*.sql" | sort -Vr)

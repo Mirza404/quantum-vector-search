@@ -8,7 +8,7 @@ Three metrics answer three different questions about the engines. For theory: [L
 
 **Mean Reciprocal Rank** = average of 1/(rank of correct result) across all queries.
 
-- Rank 1 → 1.0, rank 2 → 0.5, rank 5 → 0.2
+- Rank 1 -> 1.0, rank 2 -> 0.5, rank 5 -> 0.2
 - Evaluated over top_k results (default 10). Correct result outside top 10 = 0 for that query.
 - This is the primary accuracy metric. Directly comparable across all engines.
 
@@ -27,7 +27,7 @@ The number of times the core operation runs per query - literally the loop itera
 | `faiss_hnsw_l2` | No - approximate graph traversal | **O(log N)** |
 | `hybrid_hnsw_swap_test` | HNSW prefilter plus M swap tests | **O(log N + M)** |
 | `qiskit_swap_test` | Yes - one circuit per vector | O(N) |
-| `qiskit_grover` | No - floor(π√N/4) oracle cycles | **O(√N)** |
+| `qiskit_grover` | No - floor(pi*sqrt(N)/4) oracle cycles | **O(sqrt(N))** |
 
 This is why you can't compare wall-clock time across engines - one runs on a CPU, one on a simulator, one eventually on quantum hardware. Iteration count is the only fair comparison.
 
@@ -60,7 +60,7 @@ IBM hardware rows are also treated separately. The saved IBM validation uses int
 **Self-test**
 
 **Q: What's the only valid cross-engine speed metric?**
-A: Operation count. Classical = N iterations, Grover = floor(π√N/4) iterations.
+A: Operation count. Classical = N iterations, Grover = floor(pi*sqrt(N)/4) iterations.
 
 **Q: Why not compare wall-clock times across engines?**
 A: Simulator wall-clock measures how expensive it is to *simulate* quantum on a CPU - not how fast the quantum algorithm is. It would make quantum look worse for the wrong reason.

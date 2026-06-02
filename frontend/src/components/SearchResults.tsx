@@ -47,7 +47,7 @@ function EnginePanel({ result }: { result: EngineResult }) {
 
       {truthBeyondInitial && (
         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Correct image is at position #{truthRank} of {totalAvailable} — beyond the {initialCount} shown.{' '}
+          Correct image is at position #{truthRank} of {totalAvailable} - beyond the {initialCount} shown.{' '}
           <button
             type="button"
             onClick={() => setExpanded(true)}
