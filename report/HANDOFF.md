@@ -30,7 +30,9 @@ false.
 
 - **LaTeX scaffold** at `report/main.tex` + `report/chapters/*.tex`. Build with
   `cd report && make` (`make force` to rebuild from scratch, `make clean` to
-  wipe). PDF at `report/report.pdf`, currently **46 pages**.
+  wipe). PDF at
+  `report/SoftwareEngineering_QuantumVectorSearch_Mahmutovic_Kikanovic_Musanovic_Abdulahovic_2026.pdf`,
+  currently **40 pages**.
 - **Formatting is locked in the preamble** (Times 12pt, 1.5 spacing, FENS
   margins, IEEE numeric citations, sequential numbering, dotted TOC leaders,
   coloured hyperlinks). Added since scaffold: `\usepackage{tikz}` and
@@ -53,9 +55,8 @@ false.
   check against our own `docs/*.md` showed 0.07% self-overlap, so the self-paste
   risk is negligible, but only the supervisor's tool gives the official number).
 - Signatures on the printed approval/declaration pages.
-- Final renamed PDF per handbook §2.5:
-  `SoftwareEngineering_QuantumVectorSearch_Mahmutovic_Kikanovic_Musanovic_Abdulahovic_2026.pdf`
-  (regenerate from the latest `report.pdf` before submitting).
+- Final PDF per handbook §2.5:
+  `SoftwareEngineering_QuantumVectorSearch_Mahmutovic_Kikanovic_Musanovic_Abdulahovic_2026.pdf`.
 - Open team decisions: poster group photo; the report builds without them.
 
 ---
@@ -66,7 +67,7 @@ false.
 swap test, Grover, MRR), `docs/ENGINES_GUIDE.md` (engine params),
 `docs/QUANTUM_SEARCH_ANALYSIS.md` (qRAM, honest scaling),
 `docs/BENCHMARK_KPIS.md` (MRR/oracle-call definitions),
-`docs/midterm/speaker_notes.md` (the team's framing, esp. the honest quantum
+`midterm/speaker_notes.md` (the team's framing, esp. the honest quantum
 picture), `backend/reports/benchmark_report.md` (**the numbers, source of
 truth**). The docs are the team's own writing, so they will not raise the
 similarity score, but their tone is engineering-internal; reword for a thesis.

@@ -8,14 +8,11 @@
 % See report/STRUCTURE.md for the full per-section budget.
 
 Modern machine-learning systems represent text, images, and other media as
-high-dimensional vectors called embeddings, arranged so that items with similar
-meaning sit close together in the vector space. Searching a collection then
-reduces to finding the stored vectors nearest to a query vector, a task known as
-vector search. It underlies image search, recommendation systems, and the
-retrieval step of retrieval-augmented language models. When the query and the
-stored items are different kinds of media, such as retrieving images from a
-written description, the task is cross-modal retrieval, and it becomes tractable
-once a single embedding model places both modalities in one shared space.
+high-dimensional vectors called embeddings. Items with similar meaning are placed
+near one another, so searching a collection becomes a nearest-vector problem.
+This is vector search, the operation behind image search, recommendation, and
+retrieval-augmented language models. When the query and stored items are
+different media, such as text-to-image search, the task is cross-modal retrieval.
 
 Quantum computing offers two primitives that appear, at first sight, well matched
 to this task. Grover's algorithm finds a marked item in an unstructured
@@ -33,20 +30,14 @@ attempt to demonstrate a quantum advantage.
 % does "quantum similarity" mean here. Two or three paragraphs. Cite the
 % foundational papers (CLIP, Grover, Buhrman et al. swap test).
 
-An embedding model maps an input to a fixed-length vector so that semantically
-related inputs map to nearby vectors. For cross-modal retrieval we use CLIP, a
-model trained on a large collection of image and caption pairs to place an image
-and its description close together in a shared
-space~\cite{radford2021clip}. Once both a text query and a set of images live in
-that space, answering the query means ranking the image vectors by their
-closeness to the query vector. The simplest way to do this is an exhaustive scan
-that compares the query against every stored vector, which costs $O(N)$
-comparisons for $N$ items. Production systems reduce this cost with specialised
-libraries such as FAISS, which performs the exact scan
-efficiently~\cite{johnson2019faiss}, or with approximate methods such as the
-Hierarchical Navigable Small World (HNSW) graph, which reaches a near neighbour
-in roughly $O(\log N)$ steps by navigating a layered proximity
-graph~\cite{malkov2020hnsw}.
+For cross-modal retrieval we use CLIP, which maps images and captions into a
+shared space~\cite{radford2021clip}. Once both modalities live there, a query is
+answered by ranking image vectors by closeness to the text vector. Exhaustive
+search compares the query with every stored vector and costs $O(N)$ comparisons
+for $N$ items. FAISS implements this exact scan efficiently~\cite{johnson2019faiss},
+while approximate methods such as the Hierarchical Navigable Small World (HNSW)
+graph reach a near neighbour in roughly $O(\log N)$ graph
+steps~\cite{malkov2020hnsw}.
 
 The quantum side of the comparison rests on two ideas. Grover's algorithm
 searches an unstructured collection of $N$ items for a marked one using only
@@ -74,15 +65,13 @@ data into the machine is the central question the study examines.
 % relevance of quantum vector search at NISQ scale is not. State what we set out
 % to MEASURE - not what we set out to PROVE.
 
-Classical vector search is mature, fast, and well understood. Whether quantum
-methods add anything to it at the scale available today is far less clear, and
-popular accounts often overstate the case. The gap this work addresses is
-empirical: there are few honest, like-for-like comparisons that run classical and
-quantum similarity search on the same data and report both retrieval accuracy and
-the resources each method consumes. We built such a comparison. A single common
+Classical vector search is mature and fast. Whether quantum methods add anything
+at today's scale is less clear, and popular accounts often overstate the case.
+The gap this work addresses is empirical: there are few like-for-like comparisons
+that run classical and quantum similarity search on the same data while reporting
+both retrieval accuracy and resource cost. We built such a comparison. A common
 interface lets classical, quantum, and hybrid engines answer the same queries
-over the same embeddings, so their rankings can be placed side by side and scored
-identically.
+over the same embeddings, so their rankings are scored identically.
 
 We frame the work as a measurement rather than a proof of advantage. Present-day
 devices are small and noisy, the regime usually called noisy intermediate-scale
@@ -104,7 +93,7 @@ the conditions under which each approach is preferable.
         classical cosine similarity, and what is the shot budget required to do so?
   \item \emph{Scaling:} Does our Grover implementation reproduce the
         $\lfloor \pi\sqrt{N}/4 \rfloor$ oracle-call scaling in practice?
-  \item \emph{Practicality:} Under what conditions \,--\, if any \,--\, would a
+  \item \emph{Practicality:} Under what conditions, if any, would a
         quantum vector-search engine outperform a production classical baseline
         (HNSW) on the same dataset?
   \item \emph{Suitability:} Independent of hardware maturity, is cross-modal

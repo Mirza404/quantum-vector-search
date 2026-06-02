@@ -9,6 +9,3 @@
 *.fls
 *.fdb_latexmk
 chapters/*.aux
-
-# Submission copy (regenerated from report.pdf at submission time)
-SoftwareEngineering_*2026.pdf

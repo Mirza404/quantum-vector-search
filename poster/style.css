@@ -22,18 +22,18 @@
   --c-accent:      #16a34a;   /* green-600 */
   --c-callout-bg:  #fef3c7;   /* amber-100 */
 
-  --pad: 13mm;
-  --gap: 8mm;
+  --pad: 9mm;
+  --gap: 5mm;
   --radius: 4mm;
 
   /* Reading distance ~1.5 m -> body >= 24 pt. We use mm so print and screen
      stay in lockstep. 1 pt ~ 0.353 mm. 24 pt ~ 8.5 mm. */
-  --fs-body:     7mm;
-  --fs-body-sm:  5.6mm;
-  --fs-h2:       12mm;
-  --fs-h1:       26mm;
-  --fs-subtitle: 9.5mm;
-  --fs-caption:  5.2mm;
+  --fs-body:     6.9mm;
+  --fs-body-sm:  5.4mm;
+  --fs-h2:       10mm;
+  --fs-h1:       23mm;
+  --fs-subtitle: 8.2mm;
+  --fs-caption:  4.9mm;
 }
 
 * { box-sizing: border-box; }
@@ -66,9 +66,25 @@ img {
 }
 
 @media print {
-  @page { size: A0 portrait; margin: 0; }
-  html, body { background: white; }
-  #poster { transform: none; box-shadow: none; }
+  @page { size: 841mm 1189mm; margin: 0; }
+  html,
+  body {
+    width: 841mm;
+    height: 1189mm;
+    margin: 0;
+    padding: 0;
+    background: white;
+    overflow: hidden;
+  }
+  #poster {
+    width: 841mm;
+    height: 1189mm;
+    margin: 0;
+    transform: none;
+    box-shadow: none;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
 }
 
 /* ----- Header ------------------------------------------------------------- */
@@ -79,9 +95,9 @@ img {
     "logo title"
     "logo meta";
   align-items: center;
-  column-gap: 12mm;
-  row-gap: 3mm;
-  padding: 8mm 10mm;
+  column-gap: 10mm;
+  row-gap: 2mm;
+  padding: 6mm 9mm;
   background: var(--c-text);
   color: white;
   border-radius: var(--radius);
@@ -89,8 +105,8 @@ img {
 
 .poster-header .logo-slot {
   grid-area: logo;
-  height: 72mm;
-  width: 72mm;
+  height: 62mm;
+  width: 62mm;
   background: white;
   border-radius: 3mm;
   display: flex;
@@ -126,8 +142,8 @@ img {
 .poster-header .title-block .subtitle {
   margin: 0;
   font-size: var(--fs-subtitle);
-  color: #cbd5e1;
-  font-weight: 400;
+  color: #ffffff;
+  font-weight: 500;
 }
 
 .poster-header .meta-block {
@@ -137,18 +153,20 @@ img {
   line-height: 1.28;
   overflow-wrap: anywhere;
 }
-.poster-header .meta-block .authors { font-weight: 600; margin: 0 0 2mm 0; font-size: 6mm; }
-.poster-header .meta-block .mentor  { margin: 0 0 1.5mm 0; color: #cbd5e1; }
-.poster-header .meta-block .institution { margin: 0; color: #94a3b8; font-size: 5mm; }
+.poster-header .meta-block .authors { font-weight: 700; margin: 0 0 1.5mm 0; font-size: 5.9mm; color: #ffffff; }
+.poster-header .meta-block .mentor  { margin: 0 0 1mm 0; color: #f8fafc; font-size: 5.5mm; }
+.poster-header .meta-block .institution { margin: 0; color: #e2e8f0; font-size: 5.1mm; }
 
 /* ----- Abstract banner ---------------------------------------------------- */
 .abstract-banner {
-  background: linear-gradient(135deg, var(--c-classical), var(--c-quantum));
-  color: white;
-  padding: 7mm 11mm;
+  background: #ffffff;
+  color: var(--c-text);
+  border: 1.2mm solid #1e40af;
+  border-left: 5mm solid #1e40af;
+  padding: 5mm 9mm;
   border-radius: var(--radius);
-  font-size: 6.1mm;
-  line-height: 1.35;
+  font-size: 6.2mm;
+  line-height: 1.28;
 }
 .abstract-banner p { margin: 0; }
 
@@ -162,18 +180,18 @@ img {
   background: var(--c-card);
   border: 1px solid var(--c-border);
   border-radius: var(--radius);
-  padding: 8.5mm 9.5mm;
+  padding: 6mm 7mm;
   display: flex;
   flex-direction: column;
-  gap: 4.5mm;
+  gap: 3mm;
   min-width: 0;
 }
 .card h2 {
-  margin: 0 0 2mm 0;
+  margin: 0 0 1mm 0;
   font-size: var(--fs-h2);
   color: var(--c-text);
   border-bottom: 0.7mm solid var(--c-accent);
-  padding-bottom: 2mm;
+  padding-bottom: 1.5mm;
   letter-spacing: 0;
   line-height: 1.12;
 }
@@ -186,7 +204,7 @@ img {
 .callout {
   background: var(--c-callout-bg);
   border-left: 1.8mm solid var(--c-accent);
-  padding: 3.5mm 5mm;
+  padding: 2.5mm 4mm;
   border-radius: 0 3mm 3mm 0;
   font-size: var(--fs-body);
 }
@@ -199,9 +217,9 @@ img {
   font-size: var(--fs-body);
   line-height: 1.34;
 }
-.rq-list li, .contributions li { margin-bottom: 2mm; }
+.rq-list li, .contributions li { margin-bottom: 1.2mm; }
 .refs { font-size: var(--fs-body-sm); }
-.refs li { margin-bottom: 1.8mm; }
+.refs li { margin-bottom: 1.1mm; }
 
 /* ----- Engine table ------------------------------------------------------- */
 table.engines {
@@ -211,7 +229,7 @@ table.engines {
   table-layout: fixed;
 }
 table.engines th, table.engines td {
-  padding: 2.2mm 3mm;
+  padding: 1.6mm 2.4mm;
   text-align: left;
   border-bottom: 0.5mm solid var(--c-border);
   overflow-wrap: anywhere;
@@ -226,7 +244,7 @@ table.engines thead th {
 table.engines td.classical { color: var(--c-classical); font-weight: 600; }
 table.engines td.quantum   { color: var(--c-quantum);   font-weight: 600; }
 table.engines td.ibm       { color: var(--c-ibm);       font-weight: 600; }
-table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono", "SF Mono", monospace; font-size: 3.7mm; }
+table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono", "SF Mono", monospace; font-size: 3.4mm; }
 
 /* ----- Figure placeholders ----------------------------------------------- */
 .figure-slot {
@@ -267,8 +285,8 @@ table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono"
 /* The methodology diagram is the only figure in a full-width card; cap and
    centre it so it does not dominate the section. Percentage works in both
    print (mm layout) and the on-screen preview (vw layout). */
-.figure-slot.diagram img { max-width: 50%; }
-.qr-slot img { width: 92%; height: auto; }
+.figure-slot.diagram img { max-width: 38%; }
+.qr-slot img { width: 90%; height: auto; }
 
 .caption {
   font-size: var(--fs-caption);
@@ -283,7 +301,7 @@ table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono"
   grid-template-columns: 1fr 1fr;
   gap: var(--gap);
 }
-.results-grid .figure-slot { min-height: 125mm; }
+.results-grid .figure-slot { min-height: 95mm; }
 .results-grid > div { min-width: 0; }
 
 /* ----- Honest section two-column ----------------------------------------- */
@@ -302,12 +320,12 @@ table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono"
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2.5mm;
-  margin-top: 3mm;
+  gap: 1.5mm;
+  margin-top: 1mm;
 }
 .qr-slot {
-  width: 55mm;
-  height: 55mm;
+  width: 46mm;
+  height: 46mm;
   background: white;
   border: 0.5mm solid var(--c-border);
   border-radius: 4mm;
@@ -331,16 +349,16 @@ table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono"
     --poster-w: 80vw;
     --poster-h: 113.10vw;
 
-    --pad: 1.24vw;
-    --gap: 0.76vw;
+    --pad: 0.86vw;
+    --gap: 0.48vw;
     --radius: 0.38vw;
 
-    --fs-body: 0.67vw;
-    --fs-body-sm: 0.53vw;
-    --fs-h2: 1.14vw;
-    --fs-h1: 2.47vw;
-    --fs-subtitle: 0.9vw;
-    --fs-caption: 0.49vw;
+    --fs-body: 0.66vw;
+    --fs-body-sm: 0.51vw;
+    --fs-h2: 0.95vw;
+    --fs-h1: 2.19vw;
+    --fs-subtitle: 0.78vw;
+    --fs-caption: 0.47vw;
   }
 
   body {
@@ -357,56 +375,58 @@ table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono"
 
   .poster-header {
     grid-template-columns: 7.61vw minmax(0, 1fr);
-    column-gap: 1.14vw;
-    row-gap: 0.29vw;
-    padding: 0.76vw 0.95vw;
+    column-gap: 0.95vw;
+    row-gap: 0.19vw;
+    padding: 0.57vw 0.86vw;
   }
 
   .poster-header .logo-slot {
-    height: 6.85vw;
-    width: 6.85vw;
+    height: 5.9vw;
+    width: 5.9vw;
     border-radius: 0.29vw;
     padding: 0.48vw;
   }
 
   .poster-header .title-block h1 { margin-bottom: 0.19vw; }
-  .poster-header .meta-block .authors { margin-bottom: 0.19vw; font-size: 0.57vw; }
-  .poster-header .meta-block .mentor { margin-bottom: 0.14vw; }
-  .poster-header .meta-block .institution { font-size: 0.48vw; }
+  .poster-header .meta-block .authors { margin-bottom: 0.14vw; font-size: 0.56vw; }
+  .poster-header .meta-block .mentor { margin-bottom: 0.1vw; }
+  .poster-header .meta-block .mentor { font-size: 0.52vw; }
+  .poster-header .meta-block .institution { font-size: 0.49vw; }
 
   .abstract-banner {
-    padding: 0.67vw 1.05vw;
-    font-size: 0.58vw;
+    border-left-width: 0.48vw;
+    padding: 0.48vw 0.86vw;
+    font-size: 0.59vw;
   }
 
   .card {
-    padding: 0.81vw 0.9vw;
-    gap: 0.43vw;
+    padding: 0.57vw 0.67vw;
+    gap: 0.29vw;
   }
 
   .card h2 {
-    margin-bottom: 0.19vw;
+    margin-bottom: 0.1vw;
     border-bottom-width: 0.07vw;
-    padding-bottom: 0.19vw;
+    padding-bottom: 0.14vw;
   }
 
   .callout {
     border-left-width: 0.17vw;
-    padding: 0.33vw 0.48vw;
+    padding: 0.24vw 0.38vw;
     border-radius: 0 0.29vw 0.29vw 0;
   }
 
   .rq-list, .contributions, .refs { padding-left: 0.57vw; }
-  .rq-list li, .contributions li { margin-bottom: 0.19vw; }
-  .refs li { margin-bottom: 0.17vw; }
+  .rq-list li, .contributions li { margin-bottom: 0.11vw; }
+  .refs li { margin-bottom: 0.1vw; }
 
   table.engines th, table.engines td {
-    padding: 0.21vw 0.29vw;
+    padding: 0.15vw 0.23vw;
     border-bottom-width: 0.05vw;
   }
 
   table.engines thead th { border-bottom-width: 0.1vw; }
-  table.engines tbody td:first-child { font-size: 0.35vw; }
+  table.engines tbody td:first-child { font-size: 0.32vw; }
 
   .figure-slot {
     border-width: 0.1vw;
@@ -420,14 +440,14 @@ table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono"
     padding: 0.29vw 0.48vw;
   }
 
-  .results-grid .figure-slot { min-height: 11.89vw; }
+  .results-grid .figure-slot { min-height: 9.04vw; }
   .qr-block {
-    gap: 0.24vw;
-    margin-top: 0.29vw;
+    gap: 0.14vw;
+    margin-top: 0.1vw;
   }
   .qr-slot {
-    width: 5.23vw;
-    height: 5.23vw;
+    width: 4.38vw;
+    height: 4.38vw;
     border-width: 0.05vw;
     border-radius: 0.38vw;
   }

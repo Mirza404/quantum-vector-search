@@ -115,7 +115,7 @@ Reuse, do not invent.
 - **RQs**: same three RQs as the report (`01_introduction.tex` Sec. 1.3).
 - **Engines table**: dump from `backend/config/benchmarks.yaml` +
   `docs/ENGINES_GUIDE.md`.
-- **Honest quantum picture**: condense `docs/midterm/speaker_notes.md`
+- **Honest quantum picture**: condense `midterm/speaker_notes.md`
   slide 11 - that is already the best version of this argument we have.
 - **References**: top 5 from `report/references.bib`. No URLs (QR replaces them).
 

@@ -471,7 +471,7 @@ For more on how this applies to vector search specifically, see
 `QUANTUM_SEARCH_ANALYSIS.md`. For how the circuits are actually implemented in this
 project, see `THEORY.md`.
 
-Quantum computing isn't powerful because it's faster at everything - it's powerful because for certain problems (like factoring large numbers, simulating quantum systems, and some structured algebraic problems), it uses interference and quantum states to achieve exponential or otherwise unique speedups that classical computers can't match; but for problems like vector search, Grover's algorithm only gives a limited sqrt(N) improvement (at large hardware costs) and doesn't beat well-optimized classical approaches that already use massive parallelism and indexing effectively.
+Quantum computing is not faster at everything. For certain problems, such as factoring large numbers, simulating quantum systems, and some structured algebraic problems, it uses interference and quantum states to achieve speedups that classical computers cannot match. For vector search, Grover's algorithm gives only a limited sqrt(N) improvement at large hardware cost, and it does not beat well-optimized classical approaches that already use parallelism and indexing effectively.
 
 
 ---
