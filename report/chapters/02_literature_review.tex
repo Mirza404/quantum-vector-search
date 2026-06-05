@@ -17,19 +17,20 @@
 The baseline for vector search is an exact scan: the query vector is compared
 against every stored vector, and the closest are returned. This guarantees the
 correct nearest neighbours but costs $O(N)$ comparisons per query, which becomes
-the bottleneck as a collection grows. FAISS is a widely used library that
-performs this exact search efficiently by exploiting the vectorised instructions
-of modern processors, and extends it to very large
+the bottleneck as a collection grows. Facebook AI Similarity Search (FAISS) is a
+widely used library that performs this exact search efficiently by exploiting the
+vectorised instructions of modern processors, and extends it to very large
 collections~\cite{johnson2019faiss}. When exact search is too slow, approximate
 nearest-neighbour methods accept a small loss in recall for a large gain in
 speed. The most widely used of these is the Hierarchical Navigable Small World
 (HNSW) graph, which links each vector to a set of near neighbours across several
 layers and answers a query by greedily descending the graph, reaching a near
-neighbour in roughly $O(\log N)$ steps~\cite{malkov2020hnsw}. HNSW is the de
-facto production standard for similarity search, and it is the most demanding
-classical baseline against which a quantum method must be judged: a quantum
-search that hopes to be useful has to improve on a classical method that is
-already sublinear.
+neighbour in roughly $O(\log N)$ steps~\cite{malkov2020hnsw}. We use HNSW as the
+strongest classical baseline in this report because it is the kind of fast,
+approximate index a practical retrieval system would choose before considering a
+quantum alternative. A quantum search that hopes to be useful must therefore
+improve on a classical method that is already sublinear, not only on a simple
+linear scan.
 
 \section{Cross-Modal Embeddings}
 \label{sec:lit:embeddings}
@@ -58,7 +59,7 @@ chapters.
 % Be honest about what is "speedup" and what is "amortised state preparation
 % cost" - the qRAM caveat goes here, not in the methodology.
 
-Two quantum primitives are relevant to similarity search. Grover's algorithm
+Two quantum building blocks are relevant to similarity search. Grover's algorithm
 searches an unstructured collection of $N$ items for one that satisfies a
 condition checked by an oracle, and it does so with about $\lfloor (\pi/4)\sqrt{N}
 \rfloor$ oracle queries, a quadratic improvement on the $N$ checks a classical
@@ -69,17 +70,20 @@ the probability of reading the ancilla as zero is $(1 + |\langle\psi|\phi\rangle
 so the test recovers the squared overlap of the states and with it a similarity
 score~\cite{buhrman2001swaptest}.
 
-Both primitives assume the data is already present as quantum states, and this
+Both techniques assume the data is already present as quantum states, and this
 assumption carries the cost that the asymptotic figures hide. Encoding $N$
 vectors into a quantum state, or building an oracle that recognises the closest
 of them, requires reading all $N$ items. A quantum random-access memory has been
 proposed to supply data items in superposition~\cite{giovannetti2008qram}, but no
 such device exists at usable scale, and if the data must instead be loaded one
 item at a time, the $O(N)$ preparation cost cancels Grover's quadratic advantage
-at the level of the whole system~\cite{aaronson2015readfine}. The present work
-therefore treats Grover's scaling as a property of the search step in isolation
-and is explicit about the data-loading cost it does not include, a distinction
-returned to in the results chapter.
+at the level of the whole system~\cite{aaronson2015readfine}. Hoefler, H\"{a}ner,
+and Troyer make the same practical point more broadly: quantum computers are
+most promising for small-data problems with very large computation, while
+big-data search is limited by input and output movement~\cite{hoefler2023practicality}.
+The present work therefore treats Grover's scaling as a property of the search
+step in isolation and is explicit about the data-loading cost it does not
+include, a distinction returned to in the results chapter.
 
 \section{Hybrid Classical--Quantum Architectures}
 \label{sec:lit:hybrid}

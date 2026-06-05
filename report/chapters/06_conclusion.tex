@@ -6,19 +6,20 @@
 
 This study built a single framework in which classical, quantum, and hybrid
 engines answer the same cross-modal queries over the same embeddings, and used it
-to measure where quantum similarity search helps. The findings are consistent and,
-in places, sobering. Retrieval accuracy was governed by the embedding dimension
-rather than by whether an engine was quantum: the swap test reproduced classical
-accuracy once given a sufficient measurement budget (RQ1), and our Grover
-implementation reproduced its theoretical $\lfloor (\pi/4)\sqrt{N} \rfloor$
-oracle-call count exactly at the size we tested (RQ2). No engine that performed
-its search quantumly outperformed the classical HNSW baseline on this dataset;
-the only quantum-containing engine to match it, the hybrid, did so by delegating
-the search to the classical index (RQ3). The structural reason is that vector
-retrieval is dominated by reading the dataset, a data-bound task, whereas quantum
-advantage concentrates on compute-bound problems over small inputs, so cross-modal
-search is not a natural fit for quantum methods even setting hardware maturity
-aside (RQ4).
+to measure where quantum similarity search helps. In the simulator benchmark,
+retrieval accuracy mainly depended on the embedding dimension rather than on
+whether an engine was quantum: the swap test reproduced classical accuracy once
+given a sufficient measurement budget (RQ1), and our Grover implementation
+reproduced its theoretical $\lfloor (\pi/4)\sqrt{N} \rfloor$ oracle-call count
+exactly at the size we tested (RQ2). No engine that performed the search on a
+quantum circuit outperformed the classical HNSW baseline on this dataset; the
+only quantum-containing engine to match it, the hybrid, did so by delegating the
+search to the classical index (RQ3). The reason is that vector retrieval is
+dominated by reading the dataset, while quantum advantage is most plausible when
+a small amount of data requires very large computation. Under the methods we
+tested, cross-modal search is therefore not a strong target for a quantum search
+engine, although a quantum reranker can still be studied as a bounded second
+stage (RQ4).
 
 This work delivers four things. The first is a reproducible benchmarking framework
 that runs seven engines, classical, quantum, and hybrid, behind one interface and

@@ -1,12 +1,12 @@
 \chapter{APPENDICES}
 \label{ch:appendix}
-\addcontentsline{toc}{chapter}{APPENDICES}
 
 \section*{Appendix A: Engine Configuration}
+\phantomsection
 \addcontentsline{toc}{section}{Appendix A: Engine Configuration}
 
 The benchmark sweep is driven by a single configuration file,
-\texttt{backend/config/benchmarks.yaml}. The active configuration used for the
+\path{backend/config/benchmarks.yaml}. The active configuration used for the
 results in Chapter~\ref{ch:results} is reproduced below. Commenting out an entry
 removes it from the sweep without changing any code; the IBM hardware engine is
 kept commented out so that it runs only when quantum-processor time is
@@ -39,6 +39,7 @@ live_search:
 \end{lstlisting}
 
 \section*{Appendix B: Database Schema}
+\phantomsection
 \addcontentsline{toc}{section}{Appendix B: Database Schema}
 
 Every benchmark run is stored as one row in the \texttt{benchmark\_results}
@@ -73,6 +74,7 @@ CREATE TABLE benchmark_results (
 \end{lstlisting}
 
 \section*{Appendix C: Source Code Repository}
+\phantomsection
 \addcontentsline{toc}{section}{Appendix C: Source Code Repository}
 
 The complete source code, the benchmark harness, the dataset configuration, and
