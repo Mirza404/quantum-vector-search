@@ -282,10 +282,29 @@ table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono"
   height: auto;
   border-radius: 3mm;
 }
-/* The methodology diagram is the only figure in a full-width card; cap and
-   centre it so it does not dominate the section. Percentage works in both
-   print (mm layout) and the on-screen preview (vw layout). */
-.figure-slot.diagram img { max-width: 38%; }
+/* Methodology is a full-width card split into the data-flow diagram (left) and
+   a sourced facts panel (right) so the section reads at a glance without the
+   diagram having to dominate or leave the card half-empty. Percentages work in
+   both print (mm layout) and the on-screen preview (vw layout). */
+.methodology-grid {
+  display: grid;
+  grid-template-columns: 42% 1fr;
+  gap: var(--gap);
+  align-items: center;
+}
+.methodology-grid > .method-facts { min-width: 0; }
+.figure-slot.diagram img { max-width: 100%; }
+.method-facts .facts {
+  margin: 2.5mm 0 0 0;
+  padding-left: 6mm;
+  font-size: var(--fs-body);
+  line-height: 1.34;
+}
+.method-facts .facts li { margin-bottom: 1.6mm; }
+.method-facts .facts code {
+  font-family: ui-monospace, "JetBrains Mono", "SF Mono", monospace;
+  font-size: 0.9em;
+}
 .qr-slot img { width: 90%; height: auto; }
 
 .caption {
@@ -416,7 +435,9 @@ table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono"
     border-radius: 0 0.29vw 0.29vw 0;
   }
 
-  .rq-list, .contributions, .refs { padding-left: 0.57vw; }
+  .rq-list, .contributions, .refs, .method-facts .facts { padding-left: 0.57vw; }
+  .method-facts .facts { margin-top: 0.24vw; }
+  .method-facts .facts li { margin-bottom: 0.13vw; }
   .rq-list li, .contributions li { margin-bottom: 0.11vw; }
   .refs li { margin-bottom: 0.1vw; }
 

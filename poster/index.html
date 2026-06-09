@@ -72,13 +72,25 @@
     <section class="grid-row">
       <article class="card full">
         <h2>3. Methodology</h2>
-        <div class="figure-slot filled diagram">
-          <img src="figures/methodology.png" alt="Methodology data-flow diagram: import, index, benchmark, report, with the IBM validation as a side arm." />
+        <div class="methodology-grid">
+          <div class="figure-slot filled diagram">
+            <img src="figures/methodology.png" alt="Methodology data-flow diagram: import, index, benchmark, report, with the IBM validation as a side arm." />
+          </div>
+          <div class="method-facts">
+            <p class="caption">
+              Pipeline: Flickr30k images &rarr; CLIP ViT-B/32 embeddings &rarr; 64 / 128 / 256 dimensions &rarr;
+              seven engines &rarr; PostgreSQL benchmark rows &rarr; FastAPI + React results.
+            </p>
+            <ul class="facts">
+              <li><strong>Dataset.</strong> Flickr30k subset, N = 20 images, 20 text queries with hand-checked ground truth.</li>
+              <li><strong>Embeddings.</strong> CLIP ViT-B/32, evaluated at 64 / 128 / 256 dimensions (plus dim 2 for hardware).</li>
+              <li><strong>Engines.</strong> Eight in total: 3 classical, 3 quantum, 1 classical-quantum hybrid, 1 IBM QPU validation.</li>
+              <li><strong>Scale.</strong> 920 benchmark runs across engine &times; dimension &times; query, one row each in PostgreSQL.</li>
+              <li><strong>Backends.</strong> Qiskit AerSimulator for the sweep; one dim-2 run on a real IBM QPU at 32 shots.</li>
+              <li><strong>Reproducible.</strong> Every number traces to <code>benchmark_report.md</code>, the generated source of truth.</li>
+            </ul>
+          </div>
         </div>
-        <p class="caption">
-          Pipeline: Flickr30k images &rarr; CLIP ViT-B/32 embeddings &rarr; 64 / 128 / 256 dimensions &rarr;
-          seven engines &rarr; PostgreSQL benchmark rows &rarr; FastAPI + React results.
-        </p>
       </article>
     </section>
 
