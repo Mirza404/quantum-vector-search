@@ -115,8 +115,8 @@ editing source code.
   \end{tikzpicture}
   \caption[Experimental methodology flow]{Methodology flow. Four scripts run in order, from dataset import
   through CLIP indexing, the simulator benchmark sweep, and report generation.
-  The IBM hardware validation is a one-off side arm that writes its single
-  result into the same database table.}
+  The IBM hardware validation is a separate run that writes its single result
+  into the same database table.}
   \label{fig:methodology}
 \end{figure}
 
@@ -293,7 +293,7 @@ place for it in the system. On our small dataset the shortlist usually already
 contains the target, so the hybrid tracks the classical baseline closely.
 
 \subsubsection{IBM Hardware Validation}
-To check that the quantum path is not only a simulator artefact, we ran the
+To check that the quantum path is not only a simulator-only result, we ran the
 hybrid engine once through IBM Quantum runtime. The run uses two-dimensional
 vectors, two candidates, and thirty-two shots, small enough for the free-tier
 device time and shallow enough for noisy hardware. It is a sanity check, not a
@@ -324,9 +324,9 @@ $q \in Q$ and $1/\text{rank}_q \coloneqq 0$ if no relevant result is in the top-
 We also store operation count, the number of core comparisons, graph steps, or
 oracle calls per query. Brute force, FAISS flat, and the standalone swap test
 scale as $O(N)$; HNSW as $O(\log N)$; the hybrid as $O(\log N + M)$; and Grover
-as $O(\sqrt{N})$ with $\lfloor\pi\sqrt{N}/4\rfloor$ oracle cycles. This
-hardware-independent count is the only speed-like quantity compared across
-engines.
+as $O(\sqrt{N})$ with $\lfloor\pi\sqrt{N}/4\rfloor$ oracle cycles. This count is
+not tied to any particular hardware, so it is the only speed-like quantity
+compared across engines.
 
 For circuit engines we record depth and qubit count. Depth is a proxy for noise
 exposure on real hardware, while qubit count is the circuit width. We do not
@@ -351,20 +351,20 @@ file.
   \centering
   \caption{Benchmark configuration grid.}
   \label{tab:config}
-  \begin{tabular}{l p{7.2cm}}
+  \begin{tabularx}{\linewidth}{l X}
     \toprule
     \textbf{Parameter} & \textbf{Values} \\
     \midrule
-    Engines             & Brute-force cosine, FAISS flat, FAISS HNSW
-                          (classical); swap test, Grover (hardcoded oracle),
-                          Grover (quantum prep), hybrid HNSW + swap test
-                          (quantum) \\
+    Classical engines   & Brute-force cosine; FAISS flat; FAISS HNSW \\
+    Quantum engines     & Swap test; Grover (hardcoded oracle);
+                          Grover (quantum prep) \\
+    Hybrid engine       & HNSW + swap test \\
     Dimensions          & 64, 128, 256 \\
     Shots               & 512, 1024, 2048 (quantum engines only) \\
     Layers              & 1 \\
     Top-$k$             & 10 \\
     \bottomrule
-  \end{tabular}
+  \end{tabularx}
 \end{table}
 
 \section*{Use of AI Tools}
