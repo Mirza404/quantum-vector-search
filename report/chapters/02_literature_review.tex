@@ -17,15 +17,15 @@
 The baseline for vector search is an exact scan: the query vector is compared
 against every stored vector, and the closest are returned. This guarantees the
 correct nearest neighbours but costs $O(N)$ comparisons per query, which becomes
-the bottleneck as a collection grows. Facebook AI Similarity Search (FAISS) is a
-widely used library that performs this exact search efficiently by exploiting the
-vectorised instructions of modern processors, and extends it to very large
+the bottleneck as a collection grows. FAISS is a widely used library that
+performs this exact search efficiently by exploiting the vectorised instructions
+of modern processors, and extends it to very large
 collections~\cite{johnson2019faiss}. When exact search is too slow, approximate
 nearest-neighbour methods accept a small loss in recall for a large gain in
-speed. The most widely used of these is the Hierarchical Navigable Small World
-(HNSW) graph, which links each vector to a set of near neighbours across several
-layers and answers a query by greedily descending the graph, reaching a near
-neighbour in roughly $O(\log N)$ steps~\cite{malkov2020hnsw}. We use HNSW as the
+speed. The most widely used of these is the HNSW graph, which links each vector
+to a set of near neighbours across several layers and answers a query by greedily
+descending the graph, reaching a near neighbour in roughly $O(\log N)$
+steps~\cite{malkov2020hnsw}. We use HNSW as the
 strongest classical baseline in this report because it is the kind of fast,
 approximate index a practical retrieval system would choose before considering a
 quantum alternative. A quantum search that hopes to be useful must therefore
@@ -39,8 +39,8 @@ linear scan.
 % and why text and image embeddings end up in the same metric space.
 
 Cross-modal retrieval depends on embedding different kinds of media into a
-common space. CLIP (Contrastive Language-Image Pre-training) does this for text
-and images by training a text encoder and an image encoder together, so that an
+common space. CLIP does this for text and images by training a text encoder and
+an image encoder together, so that an
 image and its caption map to nearby vectors while mismatched pairs are pushed
 apart~\cite{radford2021clip}. The variant we use pairs a Vision Transformer image
 encoder (ViT-B/32) with a text encoder and produces 512-dimensional embeddings,
@@ -73,8 +73,8 @@ score~\cite{buhrman2001swaptest}.
 Both techniques assume the data is already present as quantum states, and this
 assumption carries the cost that the asymptotic figures hide. Encoding $N$
 vectors into a quantum state, or building an oracle that recognises the closest
-of them, requires reading all $N$ items. A quantum random-access memory has been
-proposed to supply data items in superposition~\cite{giovannetti2008qram}, but no
+of them, requires reading all $N$ items. A qRAM has been proposed to supply data
+items in superposition~\cite{giovannetti2008qram}, but no
 such device exists at usable scale, and if the data must instead be loaded one
 item at a time, the $O(N)$ preparation cost cancels Grover's quadratic advantage
 at the level of the whole system~\cite{aaronson2015readfine}. Hoefler, H\"{a}ner,

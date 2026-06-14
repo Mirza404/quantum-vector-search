@@ -203,7 +203,7 @@ therefore a production-grade exact baseline that should reproduce the reference
 ranking.
 
 \subsubsection{FAISS HNSW (Approximate)}
-FAISS HNSW uses a Hierarchical Navigable Small World graph, an approximate
+FAISS HNSW uses an HNSW graph, an approximate
 nearest-neighbour index that searches a layered proximity graph instead of the
 whole collection \cite{malkov2020hnsw}. Its expected query cost is
 $O(\log N)$, with a recall trade-off at large scale. On our 20-image collection
@@ -307,7 +307,7 @@ conclusions from it.
 % Define MRR formally, then define oracle calls. Explain why wall-clock is per-
 % engine only - the simulator-time issue.
 
-The primary accuracy measure is mean reciprocal rank (MRR). For each query, the
+The primary accuracy measure is MRR. For each query, the
 engine receives the reciprocal of the rank at which the correct image appears:
 rank one scores one, rank two scores one half, and a target outside the top $k$
 results, with $k=10$, scores zero. Averaging over all queries gives
@@ -351,17 +351,24 @@ file.
   \centering
   \caption{Benchmark configuration grid.}
   \label{tab:config}
+  \renewcommand{\arraystretch}{1.3}
   \begin{tabularx}{\linewidth}{l X}
     \toprule
     \textbf{Parameter} & \textbf{Values} \\
     \midrule
     Classical engines   & Brute-force cosine; FAISS flat; FAISS HNSW \\
+    \addlinespace
     Quantum engines     & Swap test; Grover (hardcoded oracle);
                           Grover (quantum prep) \\
+    \addlinespace
     Hybrid engine       & HNSW + swap test \\
+    \addlinespace
     Dimensions          & 64, 128, 256 \\
+    \addlinespace
     Shots               & 512, 1024, 2048 (quantum engines only) \\
+    \addlinespace
     Layers              & 1 \\
+    \addlinespace
     Top-$k$             & 10 \\
     \bottomrule
   \end{tabularx}
