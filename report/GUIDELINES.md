@@ -70,12 +70,15 @@ Footnotes that are really just a citation belong in `\cite{}` instead.
 
 ## 5. Acronyms
 
-- Expand on **first use** in the body: "Mean Reciprocal Rank (MRR)".
-- After that, use the acronym alone.
-- Every acronym used in the body must also appear in
+- Every acronym used in the body must appear in
   `chapters/00_abbreviations.tex`, alphabetised.
-- Common acronyms (CPU, API, SQL) do not need to be expanded in the body but
-  still belong in the list.
+- Because every acronym is defined in that list, **do not re-expand it in the
+  body**. Use the acronym alone (CLIP, FAISS, HNSW, qRAM, NISQ, MRR) and let the
+  list carry the definition. This avoids repeating "Full Name (ACRONYM)" across
+  several chapters and keeps the word count down.
+- Exception: a metric or term may be glossed in one sentence where it is first
+  computed if the explanation aids the reader, but without re-spelling the
+  acronym itself.
 
 ## 6. Figures, Tables, and Equations
 

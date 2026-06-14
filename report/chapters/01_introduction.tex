@@ -38,15 +38,14 @@ search does and does not fit, not an attempt to demonstrate a quantum advantage.
 % does "quantum similarity" mean here. Two or three paragraphs. Cite the
 % foundational papers (CLIP, Grover, Buhrman et al. swap test).
 
-For cross-modal retrieval we use CLIP (Contrastive Language-Image Pre-training),
-a model that turns images and captions into vectors in the same
-space~\cite{radford2021clip}. Once both media are represented there, a query is
-answered by ranking image vectors by closeness to the text vector. Exhaustive
-search compares the query with every stored vector and costs $O(N)$ comparisons
-for $N$ items. Facebook AI Similarity Search (FAISS) implements this exact scan
-efficiently~\cite{johnson2019faiss}, while approximate methods such as the
-Hierarchical Navigable Small World (HNSW) graph reach a near neighbour in roughly
-$O(\log N)$ graph steps~\cite{malkov2020hnsw}.
+For cross-modal retrieval we use CLIP, a model that turns images and captions
+into vectors in the same space~\cite{radford2021clip}. Once both media are
+represented there, a query is answered by ranking image vectors by closeness to
+the text vector. Exhaustive search compares the query with every stored vector
+and costs $O(N)$ comparisons for $N$ items. FAISS implements this exact scan
+efficiently~\cite{johnson2019faiss}, while approximate methods such as the HNSW
+graph reach a near neighbour in roughly $O(\log N)$ graph
+steps~\cite{malkov2020hnsw}.
 
 The quantum side of the comparison rests on two ideas. Grover's algorithm
 searches an unstructured collection of $N$ items for a marked one using only
@@ -71,15 +70,21 @@ already roughly logarithmic because it accepts an approximate nearest neighbour.
   hybrid shortlist size. The quantum costs count the search or comparison step
   only; data loading is discussed below.}
   \label{tab:early_cost}
+  \renewcommand{\arraystretch}{1.3}
   \begin{tabularx}{\linewidth}{l l >{\raggedright\arraybackslash}X}
     \toprule
     \textbf{Method} & \textbf{Cost} & \textbf{Meaning in this project} \\
     \midrule
     Brute-force cosine & $O(N)$ & Exact baseline; reads every stored vector. \\
+    \addlinespace
     FAISS flat & $O(N)$ & Same exact scan implemented by FAISS. \\
+    \addlinespace
     HNSW & $O(\log N)$ approx. & Fast approximate graph index; can miss the exact nearest neighbour. \\
+    \addlinespace
     Swap test & $O(N)$ circuits & Quantum similarity estimate; a full ranking still compares against every candidate. \\
+    \addlinespace
     Grover & $O(\sqrt{N})$ oracle calls & Faster than an exact scan on paper, but only after a useful oracle exists. \\
+    \addlinespace
     Hybrid & $O(\log N + M)$ & HNSW searches; the swap test reranks a shortlist of $M$ candidates. \\
     \bottomrule
   \end{tabularx}
@@ -88,8 +93,8 @@ already roughly logarithmic because it accepts an approximate nearest neighbour.
 The difficulty is that these speed-ups assume the data is already available
 inside the quantum computer. For Grover to search real vectors, an oracle would
 have to recognise the closest item while the whole dataset is held in
-superposition, which requires a quantum random-access memory that does not yet
-exist at usable scale; loading the data one item at a time instead costs $O(N)$
+superposition, which requires a qRAM that does not yet exist at usable scale;
+loading the data one item at a time instead costs $O(N)$
 and removes the very advantage the algorithm promises~\cite{aaronson2015readfine}.
 This tension between an algorithm's asymptotic promise and the cost of getting
 data into the machine is the central question the study examines.
@@ -112,12 +117,13 @@ classical, quantum, and hybrid engines answer the same queries over the same
 embeddings, so their rankings are scored identically.
 
 We frame the work as a measurement rather than a proof of advantage. Present-day
-devices are small and noisy, the regime usually called noisy intermediate-scale
-quantum (NISQ), so we run the quantum engines mostly on a classical simulator and
-validate the hardware path with a single small run on a real quantum processor.
-The goal is to determine, on a controlled cross-modal dataset, how the quantum
-and hybrid engines compare with strong classical baselines, and to state plainly
-the conditions under which each approach is preferable.
+devices are small and noisy, characteristic of current NISQ hardware, so we run
+the quantum engines mostly on a classical simulator and validate the hardware
+path with a single small run on a real quantum processor. The goal is to
+determine, on a controlled cross-modal dataset, how the quantum and hybrid
+engines compare with strong classical baselines, the established methods any new
+approach must outperform to be worth adopting, and to state plainly the
+conditions under which each approach is preferable.
 
 \section{Research Questions and Objectives}
 \label{sec:questions}
