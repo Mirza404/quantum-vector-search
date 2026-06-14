@@ -34,12 +34,12 @@
 
   /* Reading distance ~1.5 m -> body >= 24 pt. We use mm so print and screen
      stay in lockstep. 1 pt ~ 0.353 mm. 24 pt ~ 8.5 mm. */
-  --fs-body:     6.9mm;
-  --fs-body-sm:  5.4mm;
-  --fs-h2:       10mm;
-  --fs-h1:       23mm;
-  --fs-subtitle: 8.2mm;
-  --fs-caption:  4.9mm;
+  --fs-body:     7.6mm;
+  --fs-body-sm:  6.0mm;
+  --fs-h2:       11mm;
+  --fs-h1:       25mm;
+  --fs-subtitle: 9.0mm;
+  --fs-caption:  5.4mm;
 }
 
 * { box-sizing: border-box; }
@@ -161,9 +161,9 @@ img {
   line-height: 1.28;
   overflow-wrap: anywhere;
 }
-.poster-header .meta-block .authors { font-weight: 700; margin: 0 0 1.5mm 0; font-size: 5.9mm; color: #ffffff; }
-.poster-header .meta-block .mentor  { margin: 0 0 1mm 0; color: #f8fafc; font-size: 5.5mm; }
-.poster-header .meta-block .institution { margin: 0; color: #e2e8f0; font-size: 5.1mm; }
+.poster-header .meta-block .authors { font-weight: 700; margin: 0 0 1.5mm 0; font-size: 6.5mm; color: #ffffff; }
+.poster-header .meta-block .mentor  { margin: 0 0 1mm 0; color: #f8fafc; font-size: 6.0mm; }
+.poster-header .meta-block .institution { margin: 0; color: #e2e8f0; font-size: 5.6mm; }
 
 /* ----- Abstract banner ---------------------------------------------------- */
 .abstract-banner {
@@ -173,7 +173,7 @@ img {
   border-left: 5mm solid #1e40af;
   padding: 5mm 9mm;
   border-radius: var(--radius);
-  font-size: 6.2mm;
+  font-size: 6.8mm;
   line-height: 1.28;
 }
 .abstract-banner p { margin: 0; }
@@ -254,7 +254,7 @@ table.engines thead th {
 table.engines td.classical { color: var(--c-classical); font-weight: 600; }
 table.engines td.quantum   { color: var(--c-quantum);   font-weight: 600; }
 table.engines td.ibm       { color: var(--c-ibm);       font-weight: 600; }
-table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono", "SF Mono", monospace; font-size: 3.4mm; }
+table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono", "SF Mono", monospace; font-size: 3.8mm; }
 
 /* ----- Figure placeholders ----------------------------------------------- */
 .figure-slot {
@@ -382,12 +382,12 @@ table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono"
     --gap: 0.48vw;
     --radius: 0.38vw;
 
-    --fs-body: 0.66vw;
-    --fs-body-sm: 0.51vw;
-    --fs-h2: 0.95vw;
-    --fs-h1: 2.19vw;
-    --fs-subtitle: 0.78vw;
-    --fs-caption: 0.47vw;
+    --fs-body: 0.73vw;
+    --fs-body-sm: 0.57vw;
+    --fs-h2: 1.05vw;
+    --fs-h1: 2.38vw;
+    --fs-subtitle: 0.86vw;
+    --fs-caption: 0.51vw;
   }
 
   body {
@@ -417,15 +417,15 @@ table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono"
   }
 
   .poster-header .title-block h1 { margin-bottom: 0.19vw; }
-  .poster-header .meta-block .authors { margin-bottom: 0.14vw; font-size: 0.56vw; }
+  .poster-header .meta-block .authors { margin-bottom: 0.14vw; font-size: 0.62vw; }
   .poster-header .meta-block .mentor { margin-bottom: 0.1vw; }
-  .poster-header .meta-block .mentor { font-size: 0.52vw; }
-  .poster-header .meta-block .institution { font-size: 0.49vw; }
+  .poster-header .meta-block .mentor { font-size: 0.57vw; }
+  .poster-header .meta-block .institution { font-size: 0.53vw; }
 
   .abstract-banner {
     border-left-width: 0.48vw;
     padding: 0.48vw 0.86vw;
-    font-size: 0.59vw;
+    font-size: 0.65vw;
   }
 
   .card {
@@ -457,7 +457,7 @@ table.engines tbody td:first-child { font-family: ui-monospace, "JetBrains Mono"
   }
 
   table.engines thead th { border-bottom-width: 0.1vw; }
-  table.engines tbody td:first-child { font-size: 0.32vw; }
+  table.engines tbody td:first-child { font-size: 0.36vw; }
 
   .figure-slot {
     border-width: 0.1vw;
