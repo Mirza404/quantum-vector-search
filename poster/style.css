@@ -22,6 +22,12 @@
   --c-accent:      #16a34a;   /* green-600 */
   --c-callout-bg:  #fef3c7;   /* amber-100 */
 
+  /* Space Grotesk for headings (geometric, technical), Inter for body. Both
+     are embedded locally in fonts/fonts.css so the print PDF self-contains
+     them; the system fallbacks only apply if the woff2 files are missing. */
+  --font-head: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, "Helvetica Neue", Arial, sans-serif;
+
   --pad: 9mm;
   --gap: 5mm;
   --radius: 4mm;
@@ -42,7 +48,7 @@ html, body {
   margin: 0;
   padding: 0;
   background: #c7cdd6;            /* grey "table" so the poster pops on screen */
-  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-body);
   color: var(--c-text);
   line-height: 1.35;
 }
@@ -133,9 +139,11 @@ img {
 
 .poster-header .title-block h1 {
   margin: 0 0 2mm 0;
+  font-family: var(--font-head);
+  font-weight: 700;
   font-size: var(--fs-h1);
   line-height: 1.08;
-  letter-spacing: 0;
+  letter-spacing: -0.01em;
   overflow-wrap: normal;
   word-break: normal;
 }
@@ -188,6 +196,8 @@ img {
 }
 .card h2 {
   margin: 0 0 1mm 0;
+  font-family: var(--font-head);
+  font-weight: 700;
   font-size: var(--fs-h2);
   color: var(--c-text);
   border-bottom: 0.7mm solid var(--c-accent);
