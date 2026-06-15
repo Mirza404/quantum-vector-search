@@ -6,6 +6,22 @@
 % CS-bachelor reader to follow the methodology chapter.
 % Target length: ~800-1,200 words.
 
+\section{Overview}
+\label{sec:lit:overview}
+
+This chapter reviews the prior work the study builds on, in the order the
+methodology uses it. Section~\ref{sec:lit:classical} covers classical vector
+search, from the exact scan to the approximate graph indexes that are the
+production standard and the strongest classical baseline a quantum method must
+beat. Section~\ref{sec:lit:embeddings} covers the cross-modal embeddings that
+place text and images in one comparable space. Section~\ref{sec:lit:quantum}
+covers the two quantum primitives relevant to similarity search, Grover's search
+and the swap test, and the data-loading cost their asymptotic figures omit.
+Section~\ref{sec:lit:hybrid} reviews the retrieve-and-rerank cascade that
+motivates pairing a classical index with a quantum scorer. The aim throughout is
+to give a reader who is not a quantum specialist just enough background to follow
+the methodology.
+
 \section{Classical Vector Search}
 \label{sec:lit:classical}
 
@@ -20,17 +36,26 @@ correct nearest neighbours but costs $O(N)$ comparisons per query, which becomes
 the bottleneck as a collection grows. FAISS is a widely used library that
 performs this exact search efficiently by exploiting the vectorised instructions
 of modern processors, and extends it to very large
-collections~\cite{johnson2019faiss}. When exact search is too slow, approximate
+collections~\cite{johnson2019faiss}. To fit very large collections in memory,
+the stored vectors are often compressed: product quantization splits each vector
+into subvectors and quantizes them separately~\cite{jegou2011pq}, and the
+inverted multi-index organises the compressed codes for fast
+lookup~\cite{babenko2015multiindex}. When exact search is too slow, approximate
 nearest-neighbour methods accept a small loss in recall for a large gain in
-speed. The most widely used of these is the HNSW graph, which links each vector
-to a set of near neighbours across several layers and answers a query by greedily
-descending the graph, reaching a near neighbour in roughly $O(\log N)$
-steps~\cite{malkov2020hnsw}. We use HNSW as the
-strongest classical baseline in this report because it is the kind of fast,
-approximate index a practical retrieval system would choose before considering a
-quantum alternative. A quantum search that hopes to be useful must therefore
-improve on a classical method that is already sublinear, not only on a simple
-linear scan.
+speed. These span several families: hashing schemes such as locality-sensitive
+hashing~\cite{datar2004lsh}, learned quantization such as
+ScaNN~\cite{guo2020scann}, and graph-based indexes that connect each vector to a
+set of neighbours~\cite{fu2019nsg,subramanya2019diskann}, with standardised
+benchmarks comparing them on the recall-versus-speed
+trade-off~\cite{aumuller2020annbenchmarks}. The most widely used of these is the
+HNSW graph, which links each vector to a set of near neighbours across several
+layers and answers a query by greedily descending the graph, reaching a near
+neighbour in roughly $O(\log N)$ steps~\cite{malkov2020hnsw}. HNSW is the kind of
+fast, approximate index a
+practical retrieval system would choose before considering a quantum
+alternative, so it is the relevant point of comparison: a quantum search that
+hopes to be useful must improve on a classical method that is already sublinear,
+not only on a simple linear scan.
 
 \section{Cross-Modal Embeddings}
 \label{sec:lit:embeddings}
@@ -39,18 +64,22 @@ linear scan.
 % and why text and image embeddings end up in the same metric space.
 
 Cross-modal retrieval depends on embedding different kinds of media into a
-common space. CLIP does this for text and images by training a text encoder and
-an image encoder together, so that an
-image and its caption map to nearby vectors while mismatched pairs are pushed
-apart~\cite{radford2021clip}. The variant we use pairs a Vision Transformer image
-encoder (ViT-B/32) with a text encoder and produces 512-dimensional embeddings,
-in which the cosine similarity between a text vector and an image vector measures
-their relevance. This reduces text-to-image retrieval to ordinary
-nearest-neighbour search in a single vector space. For the quantum engines, which
-encode a vector into the amplitudes of a quantum state, we truncate these
-512-dimensional embeddings to 64, 128, or 256 components to keep the number of
-simulated qubits manageable, a trade-off examined in the methodology and results
-chapters.
+common space. Modern encoders are built on the Transformer
+architecture~\cite{vaswani2017attention}: images are encoded by a Vision
+Transformer that treats image patches as tokens~\cite{dosovitskiy2021vit}, and
+text by a bidirectional language model in the style of
+BERT~\cite{devlin2019bert}. CLIP brings the two together for text and images by
+training a text encoder and an image encoder jointly, so that an image and its
+caption map to nearby vectors while mismatched pairs are pushed
+apart~\cite{radford2021clip}. The same contrastive idea underlies sentence
+embeddings~\cite{reimers2019sentencebert} and has been scaled to noisier
+web-sized data by later models such as ALIGN~\cite{jia2021align}. A common CLIP
+variant pairs a Vision Transformer image encoder (ViT-B/32) with a text encoder
+and produces 512-dimensional embeddings, in which the cosine similarity between a
+text vector and an image vector measures their relevance. This reduces
+text-to-image retrieval to ordinary nearest-neighbour search in a single vector
+space, which is what makes a quantum similarity primitive applicable to the
+cross-modal task at all.
 
 \section{Quantum Similarity Primitives}
 \label{sec:lit:quantum}
@@ -59,11 +88,14 @@ chapters.
 % Be honest about what is "speedup" and what is "amortised state preparation
 % cost" - the qRAM caveat goes here, not in the methodology.
 
-Two quantum building blocks are relevant to similarity search. Grover's algorithm
-searches an unstructured collection of $N$ items for one that satisfies a
-condition checked by an oracle, and it does so with about $\lfloor (\pi/4)\sqrt{N}
-\rfloor$ oracle queries, a quadratic improvement on the $N$ checks a classical
-scan requires~\cite{grover1996}. The swap test, introduced in work on quantum
+Two quantum building blocks are relevant to similarity search; both are
+described in standard form by Nielsen and Chuang~\cite{nielsen2010quantum}.
+Grover's algorithm searches an unstructured collection of $N$ items for one that
+satisfies a condition checked by an oracle, and it does so with about $\lfloor
+(\pi/4)\sqrt{N} \rfloor$ oracle queries, a quadratic improvement on the $N$
+checks a classical scan requires~\cite{grover1996}; it is the best-known instance
+of the more general amplitude-amplification framework~\cite{brassard2002amplitude}.
+The swap test, introduced in work on quantum
 fingerprinting, compares two quantum states by placing an ancilla qubit in
 superposition, conditionally swapping the two states, and measuring the ancilla;
 the probability of reading the ancilla as zero is $(1 + |\langle\psi|\phi\rangle|^2)/2$,
@@ -73,17 +105,24 @@ score~\cite{buhrman2001swaptest}.
 Both techniques assume the data is already present as quantum states, and this
 assumption carries the cost that the asymptotic figures hide. Encoding $N$
 vectors into a quantum state, or building an oracle that recognises the closest
-of them, requires reading all $N$ items. A qRAM has been proposed to supply data
-items in superposition~\cite{giovannetti2008qram}, but no
+of them, requires reading all $N$ items, and the state-preparation circuits that
+load a classical vector as amplitudes grow in depth with the vector
+dimension~\cite{mottonen2005statprep,plesch2011statprep}. A qRAM has been
+proposed to supply data items in superposition~\cite{giovannetti2008qram}, but no
 such device exists at usable scale, and if the data must instead be loaded one
 item at a time, the $O(N)$ preparation cost cancels Grover's quadratic advantage
-at the level of the whole system~\cite{aaronson2015readfine}. Hoefler, H\"{a}ner,
-and Troyer make the same practical point more broadly: quantum computers are
-most promising for small-data problems with very large computation, while
-big-data search is limited by input and output movement~\cite{hoefler2023practicality}.
-The present work therefore treats Grover's scaling as a property of the search
-step in isolation and is explicit about the data-loading cost it does not
-include, a distinction returned to in the results chapter.
+at the level of the whole system~\cite{aaronson2015readfine}. The same caveat
+applies to quantum linear-algebra routines such as the HHL algorithm, whose
+exponential speedup is contingent on efficient state preparation and
+readout~\cite{harrow2009hhl}. These constraints are sharpest on the noisy
+intermediate-scale (NISQ) devices available today~\cite{preskill2018nisq}.
+Hoefler, H\"{a}ner, and Troyer make the same practical point more broadly:
+quantum computers are most promising for small-data problems with very large
+computation, while big-data search is limited by input and output
+movement~\cite{hoefler2023practicality}.
+The distinction between Grover's scaling as a property of the search step alone
+and the data-loading cost that figure omits is the central tension the prior
+literature raises for quantum vector search.
 
 \section{Hybrid Classical--Quantum Architectures}
 \label{sec:lit:hybrid}
@@ -95,21 +134,39 @@ include, a distinction returned to in the results chapter.
 The retrieve-and-rerank cascade is a standard pattern in information retrieval: a
 fast, inexpensive first stage selects a small set of candidates from the whole
 collection, and a slower but more accurate second stage reorders only those
-candidates. The cost of the expensive stage is then bounded by the size of the
-shortlist rather than by the size of the collection. This pattern is a natural
-fit for near-term quantum hardware. Quantum machine learning remains constrained
-by considerable hardware and software challenges~\cite{biamonte2017qml}, so a
-practical near-term design keeps the global, data-bound work on classical
-hardware and reserves the quantum processor for a small, structured subproblem.
+candidates. The pattern is widely used in modern neural retrieval, where a dense
+retriever shortlists passages~\cite{karpukhin2020dpr} and a heavier model
+re-ranks them~\cite{nogueira2019passagererank}. The cost of the expensive stage
+is then bounded by the size of the shortlist rather than by the size of the
+collection. This pattern is a natural fit for near-term quantum hardware. Quantum
+machine learning has been proposed for a range of tasks, including clustering and
+classification~\cite{lloyd2013quantum,rebentrost2014qsvm}, nearest-neighbour
+methods~\cite{wiebe2015nearestneighbor}, and kernel methods that embed data in a
+quantum feature space~\cite{schuld2019featurehilbert,havlicek2019supervised,lloyd2020embeddings,schuld2021kernelmethods},
+often realised as variational circuits~\cite{cerezo2021variational}. In practice
+it remains constrained by considerable hardware and software
+challenges~\cite{biamonte2017qml,wittek2014qml}, so a practical near-term design
+keeps the global, data-bound work on classical hardware and reserves the quantum
+processor for a small, structured subproblem.
+Confining the quantum scorer to a fixed-size shortlist keeps the number of
+circuit executions independent of the collection size and places any estimation
+error where it can only reorder an already-relevant shortlist rather than miss a
+relevant item entirely. The hybrid engine evaluated in this report is an instance
+of this cascade; its construction and results are described in
+Chapters~\ref{ch:methodology} and~\ref{ch:results}.
 
-Our \texttt{hybrid\_hnsw\_swap\_test} engine is an instance of this cascade. The
-classical HNSW index of Section~\ref{sec:lit:classical} selects a small candidate
-pool in roughly $O(\log N)$ steps, and the swap test of
-Section~\ref{sec:lit:quantum} reranks only those candidates by their estimated
-similarity, executed on the Qiskit Aer simulator~\cite{qiskit2024}. Because the
-swap test runs one circuit per candidate, confining it to the shortlist keeps the
-number of circuit executions independent of the collection size, at $O(\log N +
-M)$ for a shortlist of $M$ candidates. This places the quantum step where its
-cost is bounded and where an estimation error can only reorder an already-relevant
-shortlist rather than miss a relevant item entirely, an arrangement whose accuracy
-and cost we evaluate in the results chapter.
+\section{Summary}
+\label{sec:lit:summary}
+
+The prior work reviewed here frames the comparison the rest of the report carries
+out. Classical vector search already reaches sublinear query cost through
+approximate graph indexes, so HNSW, not the linear scan, is the baseline a
+quantum method must beat. Cross-modal embeddings such as CLIP reduce text-to-image
+retrieval to nearest-neighbour search in one space, which is what lets a quantum
+similarity primitive apply to the task. Grover's search and the swap test offer,
+respectively, a quadratic reduction in oracle queries and a measurement-based
+overlap estimate, but both assume the data is already encoded as quantum states,
+and the cost of that encoding is what the asymptotic figures omit. The
+retrieve-and-rerank cascade suggests the most plausible near-term role for a
+quantum scorer: a bounded second stage behind a classical first stage. These
+threads motivate the methodology of the next chapter.

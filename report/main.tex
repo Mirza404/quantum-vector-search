@@ -30,6 +30,8 @@
 \graphicspath{{figures/}}
 \usepackage{caption}
 \captionsetup{font=small,labelfont=bf,justification=centering}
+\usepackage{float}                          % [H] to pin floats exactly where written
+\usepackage{placeins}                        % \FloatBarrier to confine floats to a section
 \usepackage{booktabs}                       % proper table rules
 \usepackage{array}
 \usepackage{amsmath,amssymb,amsthm}
@@ -43,12 +45,14 @@
 \usepackage{tabularx}
 \usepackage{tikz}                           % diagram-as-code figures
 \usetikzlibrary{arrows.meta, positioning, calc}
-% Coloured, clickable hyperlinks. Single muted blue across internal references,
-% citations, and URLs. Color must be defined BEFORE hyperref is loaded.
+% Coloured, clickable hyperlinks. Per the supervisor's review, internal
+% navigation links (table of contents, list of tables, list of figures, and
+% cross-references) are black so the front-matter lists read as plain text;
+% citations and URLs keep the muted blue. Color must be defined BEFORE hyperref.
 \definecolor{iuslink}{HTML}{1E40AF}
 \usepackage[%
   colorlinks=true,
-  linkcolor=iuslink,
+  linkcolor=black,
   citecolor=iuslink,
   urlcolor=iuslink,
   filecolor=iuslink,
@@ -58,6 +62,9 @@
 % -------- IEEE citation style (numeric, [1], [2,3,4]) -------------------------
 \usepackage[numbers,sort&compress]{natbib}
 \bibliographystyle{IEEEtran}
+% Tighten the gap between reference entries (the document-wide 12pt \parskip
+% otherwise leaves large blank bands between resources in the bibliography).
+\setlength{\bibsep}{2pt plus 0.5ex}
 
 % -------- Chapter heading formatting ------------------------------------------
 \usepackage{titlesec}
@@ -98,12 +105,27 @@
 \renewcommand{\bibname}{REFERENCES}
 
 % -------- Project-wide constants (single source of truth for the cover) -------
-\newcommand{\ProjectTitle}{Quantum-Enhanced Multi-Modal Vector Search: A Hybrid Database Web App}
-\newcommand{\ProjectShortTitle}{Quantum-Enhanced Multi-Modal Vector Search}
-\newcommand{\Supervisor}{Assist.\,Prof.\,Dr. Ali Abd Almisreb}
+\newcommand{\ProjectTitle}{Research and Empirical Comparison of Classical and Quantum Methods for Multi-Modal Vector Search}
+\newcommand{\ProjectShortTitle}{Classical and Quantum Methods for Multi-Modal Vector Search}
+\newcommand{\Supervisor}{Assoc.\,Prof.\,Dr. Ali Abd Almisreb}
 \newcommand{\InstitutionName}{International University of Sarajevo}
 \newcommand{\FacultyName}{Faculty of Engineering and Natural Sciences}
 \newcommand{\SubmissionMonthYear}{\ifcase\month\or January\or February\or March\or April\or May\or June\or July\or August\or September\or October\or November\or December\fi{} \the\year}
+
+% -------- Placeholder box for figures whose image file is not yet available ----
+% Renders a labelled, dashed frame at the requested width so the document still
+% compiles. Replace the \placeholderfig{...}{...} call with \includegraphics once
+% the real image (PNG) is dropped into figures/. Usage:
+%   \placeholderfig{0.8\linewidth}{short description of the missing image}
+\newcommand{\placeholderfig}[2]{%
+  \setlength{\fboxsep}{0pt}%
+  \fbox{\begin{minipage}[c][4.5cm][c]{#1}%
+    \centering\itshape\small
+    [\,placeholder image\,]\\[4pt]
+    #2\\[4pt]
+    (replace with \texttt{\textbackslash includegraphics})%
+  \end{minipage}}%
+}
 
 % =============================================================================
 \begin{document}
@@ -139,6 +161,11 @@
 \include{chapters/04_results}
 \include{chapters/05_sustainability}
 \include{chapters/06_conclusion}
+
+% Use of AI Tools disclosure. Per the supervisor's review this is placed after
+% the conclusion, immediately before the references (handbook \S1.1 requires the
+% disclosure; the supervisor specified its position here rather than in Ch. 3).
+\include{chapters/06_use_of_ai}
 
 % ============================  BACK MATTER  ==================================
 \cleardoublepage

@@ -3,7 +3,8 @@
 
 % Describe how the study was conducted, well enough for someone else to
 % reproduce it. This chapter is the bulk of the report (~1,500-2,500 words).
-% The "Use of AI Tools" subsection at the END is MANDATORY per handbook \S1.1.
+% The mandatory "Use of AI Tools" disclosure (handbook \S1.1) now lives in
+% chapters/06_use_of_ai.tex, after the conclusion (supervisor's review).
 
 \section{System Overview}
 \label{sec:method:overview}
@@ -29,7 +30,7 @@ surface the rankings. The experiment is configured in \texttt{benchmarks.yaml},
 where the active engines, dimensions, and shot counts are selected without
 editing source code.
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \begin{tikzpicture}[
       font=\small,
@@ -81,7 +82,7 @@ editing source code.
 % Per project brief: "Trebamo diagram metodologije napravit, kao diagram how we
 % did all od this step by step." Insert it here.
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \begin{tikzpicture}[
       font=\small,
@@ -113,10 +114,10 @@ editing source code.
     \draw[arr] (res) -- (rep);
     \draw[arr] (ibm.south) |- (res.east);
   \end{tikzpicture}
-  \caption[Experimental methodology flow]{Methodology flow. Four scripts run in order, from dataset import
-  through CLIP indexing, the simulator benchmark sweep, and report generation.
-  The IBM hardware validation is a separate run that writes its single result
-  into the same database table.}
+  \caption[Methodology pipeline diagram]{Methodology pipeline diagram. Four
+  scripts run in order, from dataset import through CLIP indexing, the simulator
+  benchmark sweep, and report generation. The IBM hardware validation is a
+  separate run that writes its single result into the same database table.}
   \label{fig:methodology}
 \end{figure}
 
@@ -140,8 +141,25 @@ the source of truth for all reported numbers.
 \section{Dataset and Ground Truth}
 \label{sec:method:dataset}
 
-The evaluation set is a fixed 20-image subset of Flickr30k, an image-caption
-corpus in which each photograph has several human-written captions. The importer
+The dataset is cross-modal: it contains both images and text. The evaluation set
+is a fixed 20-image subset of Flickr30k~\cite{young2014flickr30k}, an
+image-caption corpus in which each photograph (the image modality) is paired with
+several human-written captions (the text modality); it is one of the standard
+benchmarks for image-caption retrieval, alongside MS-COCO~\cite{lin2014mscoco}. A
+query is a caption and the answer it should retrieve is the matching photograph,
+so each benchmark query exercises both modalities at once.
+\begin{figure}[H]
+  \centering
+  % TODO (team): replace the placeholder below with the real asset once exported.
+  % Drop a small grid of a few Flickr30k images (each with its first caption
+  % underneath) at figures/dataset_sample.png, then swap \placeholderfig for:
+  %   \includegraphics[width=0.85\linewidth]{figures/dataset_sample.png}
+  \placeholderfig{0.85\linewidth}{Sample of the Flickr30k evaluation subset: a grid of example images with their first caption underneath.}
+  \caption[Sample of the Flickr30k evaluation subset]{Sample of the Flickr30k evaluation subset. Each photograph is paired with a human-written caption that serves as a query.}
+  \label{fig:dataset_sample}
+\end{figure}
+
+The importer
 requests a fixed configuration and split, then reads the first twenty rows in the
 dataset viewer order, with no random sampling or shuffling. A different machine
 therefore regenerates the same images and queries. Twenty images is small for
@@ -162,11 +180,39 @@ full credit when the target is first and partial credit when it appears lower.
 CLIP embeds both images and text into one vision-language space
 \cite{radford2021clip}. It is trained contrastively so matching images and
 captions are close while mismatches are pushed apart \cite{radford2021clip}. We
-use ViT-B/32, which produces 512-dimensional vectors, and L2-normalise every
-image and query vector. On unit vectors, cosine similarity, Euclidean distance,
-and the squared inner product estimated by the swap test induce the same
-ranking, which lets MRR be compared across engines that compute different
-similarity quantities.
+use ViT-B/32, which produces 512-dimensional vectors. Formally, an image $x$ and
+a query text $q$ are mapped by the two encoders to vectors $f_{\text{img}}(x)$ and
+$f_{\text{txt}}(q)$ in $\mathbb{R}^{512}$, and every vector is L2-normalised onto
+the unit hypersphere,
+\begin{equation}
+\hat{v} = \frac{v}{\lVert v \rVert_2},
+\qquad \lVert \hat{v} \rVert_2 = 1 .
+\label{eq:l2norm}
+\end{equation}
+The relevance of an image to a query is then the cosine similarity of their
+embeddings, which on unit vectors (Equation~\ref{eq:l2norm}) is simply the inner
+product,
+\begin{equation}
+\operatorname{sim}(q, x)
+  = \cos\theta
+  = \frac{\langle f_{\text{txt}}(q),\, f_{\text{img}}(x)\rangle}
+         {\lVert f_{\text{txt}}(q)\rVert_2\,\lVert f_{\text{img}}(x)\rVert_2}
+  = \langle \hat{q},\, \hat{x}\rangle .
+\label{eq:cosine}
+\end{equation}
+Working on unit vectors is what makes the engines comparable: cosine similarity,
+Euclidean distance, and the squared inner product estimated by the swap test all
+induce the same ranking, so MRR can be compared across engines that compute
+different similarity quantities. The Euclidean and cosine forms are linked, for
+unit vectors, by
+\begin{equation}
+\lVert \hat{a} - \hat{b} \rVert_2^{2}
+  = 2 - 2\langle \hat{a}, \hat{b}\rangle
+  = 2 - 2\cos\theta ,
+\label{eq:l2cosine}
+\end{equation}
+so an index that ranks by smallest L2 distance returns the same order as one that
+ranks by largest cosine similarity.
 
 The benchmark uses truncated dimensions of 64, 128, and 256 rather than the full
 512. The reason is simulation cost. Amplitude encoding a $d$-dimensional vector
@@ -186,23 +232,22 @@ Engines that rely on unit length re-normalise after truncation.
 % source on parameter ranges.
 
 \subsection{Classical Baselines}
-\subsubsection{Brute-Force Cosine}
+\subsubsection{A) Brute-Force Cosine}
 The reference engine compares the query with every image. After normalisation,
 cosine similarity is the dot product, so the engine computes twenty dot products,
 sorts the scores, and returns the top results. Its work grows as $O(N)$, but it
 cannot skip the closest image. We use its ordering as the reference ranking for
 the other engines.
 
-\subsubsection{FAISS Flat (Exact)}
+\subsubsection{B) FAISS Flat (Exact)}
 FAISS Flat delegates the same exhaustive search to FAISS, a similarity-search
 library covering exact, approximate, and compressed-domain search
 \cite{johnson2019faiss}. We use its exact L2 index. For unit vectors, L2 distance
-and cosine similarity are linked by $\|a - b\|^2 = 2 - 2\cos\theta$, so the
-ranking matches brute-force cosine after re-normalisation. FAISS Flat is
-therefore a production-grade exact baseline that should reproduce the reference
-ranking.
+and cosine similarity are linked by Equation~\ref{eq:l2cosine}, so the ranking
+matches brute-force cosine after re-normalisation. FAISS Flat is therefore a
+production-grade exact baseline that should reproduce the reference ranking.
 
-\subsubsection{FAISS HNSW (Approximate)}
+\subsubsection{C) FAISS HNSW (Approximate)}
 FAISS HNSW uses an HNSW graph, an approximate
 nearest-neighbour index that searches a layered proximity graph instead of the
 whole collection \cite{malkov2020hnsw}. Its expected query cost is
@@ -211,8 +256,8 @@ the graph is too small for the approximation to matter, so HNSW reproduces the
 exact ranking. Its role is to place the quantum engines next to the classical
 index a real retrieval system would use.
 
-\subsection{Quantum Engines}
-\subsubsection{Qiskit Swap Test}
+\subsection{Quantum and Hybrid Engines}
+\subsubsection{A) Qiskit Swap Test}
 % Include the formula here. Equations must be numbered per FENS template.
 The swap test estimates the squared inner product of two amplitude-encoded
 vectors $\ket{\psi}$ and $\ket{\phi}$ via a single ancilla measurement:
@@ -232,7 +277,7 @@ sweep the shot count. The swap test compares one query with one candidate; a
 full ranking still needs $O(N)$ circuits. We run the sweep on Qiskit's Aer
 simulator \cite{qiskit2024}, with a separate small IBM hardware validation.
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \includegraphics[width=0.7\linewidth]{figures/swap_test_circuit.png}
   \caption[Swap-test circuit]{Swap-test circuit for a four-dimensional example,
@@ -244,7 +289,7 @@ simulator \cite{qiskit2024}, with a separate small IBM hardware validation.
   \label{fig:swaptest_circuit}
 \end{figure}
 
-\subsubsection{Qiskit Grover (Hardcoded Oracle)}
+\subsubsection{B) Qiskit Grover (Hardcoded Oracle)}
 Grover's algorithm finds a marked item in an unstructured collection using about
 $\sqrt{N}$ oracle queries, a quadratic improvement over a classical scan
 \cite{grover1996}. Our engine pads $N$ to a power of two, prepares a uniform
@@ -262,7 +307,7 @@ therefore hardcode the nearest-neighbour index classically and test only the
 Grover search step. The claim being tested is oracle-call scaling, not
 end-to-end quantum speedup.
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{figures/grover_circuit.png}
   \caption[Grover circuit, one iteration]{One Grover iteration for a
@@ -273,7 +318,7 @@ end-to-end quantum speedup.
   \label{fig:grover_circuit}
 \end{figure}
 
-\subsubsection{Qiskit Grover with Quantum State Preparation}
+\subsubsection{C) Qiskit Grover with Quantum State Preparation}
 The quantum-preparation Grover variant chooses the target index with quantum
 measurements instead of a classical dot product. Each stored vector and query are
 loaded with Qiskit state-preparation gates; a swap test estimates each overlap;
@@ -283,7 +328,7 @@ state-preparation circuits are deep, the swap tests have shot noise, and Grover
 amplifies whichever index it is given. The Results chapter shows that this
 variant is the least accurate engine.
 
-\subsubsection{Hybrid HNSW + Swap Test}
+\subsubsection{D) Hybrid HNSW + Swap Test}
 The hybrid engine uses HNSW to shortlist candidates, then applies the swap test
 only to that fixed-size pool. The classical stage performs the search; the
 quantum stage reranks the survivors. This mirrors common retrieval pipelines in
@@ -292,7 +337,7 @@ them. Because the swap test is not a search algorithm, this is the most plausibl
 place for it in the system. On our small dataset the shortlist usually already
 contains the target, so the hybrid tracks the classical baseline closely.
 
-\subsubsection{IBM Hardware Validation}
+\subsubsection{E) IBM Hardware Validation}
 To check that the quantum path is not only a simulator-only result, we ran the
 hybrid engine once through IBM Quantum runtime. The run uses two-dimensional
 vectors, two candidates, and thirty-two shots, small enough for the free-tier
@@ -347,7 +392,7 @@ parameter is fixed at one because the harness requires it, although no enabled
 engine uses it. Results are stored in PostgreSQL and dumped to the committed seed
 file.
 
-\begin{table}[ht]
+\begin{table}[htbp]
   \centering
   \caption{Benchmark configuration grid.}
   \label{tab:config}
@@ -374,26 +419,6 @@ file.
   \end{tabularx}
 \end{table}
 
-\section*{Use of AI Tools}
-\label{sec:method:ai}
-\addcontentsline{toc}{section}{Use of AI Tools}
-
-% MANDATORY per FENS handbook \S1.1. Be specific - generic disclaimers fail
-% the originality check. State which tools were used for which tasks.
-
-This project used AI assistants, specifically Claude Code and ChatGPT, as
-productivity tools during development and writing. They assisted with routine
-code generation and refactoring, code review, bug-location during the audit,
-prose drafts revised by the authors, and diagram rendering from author-specified
-layouts.
-
-The intellectual core is the authors' own: system architecture, engine
-selection, benchmark design, research questions, and interpretation. Every
-benchmark figure reported here was produced by our own runs, and every external
-reference was verified by the authors before citation.
-
-The authors take full responsibility for the correctness, originality, and
-verification of all code, data, and conclusions in this report. Where AI tools
-contributed text or code, that output was read, checked, and where necessary
-corrected and rewritten by the authors, who treat it as a draft to be
-scrutinised rather than as an authority to be trusted.
+% The "Use of AI Tools" disclosure has been moved out of this chapter. Per the
+% supervisor's review it now appears after the conclusion, immediately before the
+% references, in chapters/06_use_of_ai.tex (included from main.tex).

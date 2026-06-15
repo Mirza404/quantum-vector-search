@@ -190,8 +190,10 @@ acceptable when it is a diacritic inside a proper name.
 
 ## 9. AI Disclosure (Mandatory)
 
-The handbook (§1.1) requires a `Use of AI Tools` subsection at the **end of
-the Methodology chapter** (`chapters/03_methodology.tex`). It must:
+The handbook (§1.1) requires a `Use of AI Tools` disclosure. Per the
+supervisor's review it lives in `chapters/06_use_of_ai.tex`, placed **after the
+Conclusion and immediately before the References** (not inside the Methodology
+chapter). It must:
 
 1. Name the tools used (e.g. "Claude Code, GitHub Copilot").
 2. List the activities the tools assisted with (code generation, code review,

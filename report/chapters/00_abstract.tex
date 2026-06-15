@@ -1,40 +1,28 @@
 \chapter*{ABSTRACT}
 \addcontentsline{toc}{chapter}{ABSTRACT}
 
-\begin{center}\textbf{\MakeUppercase{\ProjectTitle}}\end{center}
+% ~150-250 words. Cover: (1) problem/hook, (2) methods, (3) results. Keep it
+% short - the supervisor's review asked for a tighter abstract with no title
+% line. See GUIDELINES.md \S Abstract for the structure to follow.
 
-% 250-500 words. Cover: (1) problem, (2) methods, (3) results, (4) implications.
-% Write this LAST, after the rest of the report has stabilised. See GUIDELINES.md
-% \S Abstract for the structure to follow.
-
-Vector search finds stored items whose numerical representations, called
-embeddings, are closest to a query. It is used in systems such as text-to-image
-retrieval, where a caption is used to find matching images. Quantum algorithms
-such as Grover's search and the swap test suggest possible speed-ups for this
-kind of similarity search, but their practical value depends on data loading,
-hardware noise, and comparison with strong classical indexes.
-
-We built a benchmark framework in which seven engines answer the same queries
-over the same CLIP embeddings. The
-engines include exact classical search, approximate graph search, quantum
-similarity and search variants, and a hybrid graph-search plus quantum-reranking
-method. We tested them on a fixed twenty-image dataset across embedding
-dimensions and measurement shot counts. Accuracy was measured with Mean
-Reciprocal Rank, while cost was measured with comparisons, oracle calls, qubits,
-and circuit depth. The quantum engines ran mainly on a noiseless Qiskit
-simulator; one small IBM hardware run was used only to check that the execution
-path works on a real quantum processor.
-
-The measured results do not show a practical quantum advantage for this task.
-Accuracy mainly followed embedding dimension, not whether the engine was quantum.
-The swap test matched the classical ranking at dimension 256 when enough
-measurements were used, and Grover matched its expected oracle-call count at the
-tested size. However, no quantum search engine beat the classical graph-search
-baseline. Grover's apparent speed-up counts only the search after the data is
-already available to the oracle; building that oracle or loading the data would
-add back the main retrieval cost. We conclude that cross-modal vector search is
-mainly a data-access problem, not a task where quantum computation is the
-bottleneck, under current methods and hardware.
+Quantum algorithms such as Grover's search and the swap test suggest possible
+speed-ups for vector search, the operation that retrieves stored items whose
+embeddings are closest to a query, but their practical value at present-day
+scale is unclear. We built a benchmark framework in which seven classical,
+quantum, and hybrid engines answer the same queries over the same CLIP
+embeddings, evaluated on a fixed twenty-image cross-modal dataset across
+embedding dimensions and measurement shot counts. Accuracy was measured with
+Mean Reciprocal Rank and cost with comparisons, oracle calls, qubits, and
+circuit depth; the quantum engines ran mainly on a noiseless Qiskit simulator,
+with one small IBM hardware run to confirm the execution path. The results show
+no practical quantum advantage for this task. Accuracy followed the embedding
+dimension rather than whether an engine was quantum: the swap test matched the
+classical ranking at dimension 256, and Grover matched its expected oracle-call
+count, yet no quantum search engine beat the classical graph-search baseline.
+Grover's apparent speed-up counts only the search after the data is loaded into
+the oracle, so building that oracle restores the main retrieval cost. We conclude
+that cross-modal vector search is mainly a data-access problem rather than one
+where quantum computation is the bottleneck, under current methods and hardware.
 
 \vspace{1em}
 \noindent\textbf{Keywords:} \emph{quantum computing, vector search, similarity search, swap test, Grover's algorithm, CLIP, benchmarking}

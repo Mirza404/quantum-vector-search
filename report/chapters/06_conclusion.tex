@@ -3,6 +3,11 @@
 
 % Summarise findings, highlight contributions, point to future work.
 % Target length: ~300-500 words. No new results may appear here.
+% Structure per the supervisor's review: 6.1 Summary, 6.2 Limitations (moved
+% here from the Results chapter), 6.3 Future Work. No Overview subsection.
+
+\section{Summary}
+\label{sec:conclusion:summary}
 
 This study built a single framework in which classical, quantum, and hybrid
 engines answer the same cross-modal queries over the same embeddings, and used it
@@ -31,6 +36,23 @@ comparison inspectable rather than abstract. The fourth, and the one we consider
 most important, is the honest framing itself: stating plainly where quantum search
 does not help, and why, is a contribution in a setting where that question is
 often left unasked.
+
+\section{Limitations}
+\label{sec:conclusion:limitations}
+
+Several constraints bound the results. The dataset has twenty images and one
+query per image, which kept the sweep simulable and the target unambiguous but
+limited statistical power. HNSW did not have enough vectors to exercise its
+approximation, so its match with exact search holds only here. Except for the
+IBM sanity check, the quantum engines ran on a classical simulator, so the
+results do not measure present-day hardware noise or latency. Embeddings were
+truncated from 512 to at most 256 dimensions to fit the qubit budget, so absolute
+MRR values are comparisons under a shared handicap. Grover used a classically
+precomputed oracle, and its oracle-call scaling was checked at one dataset size,
+not across a range.
+
+\section{Future Work}
+\label{sec:conclusion:futurework}
 
 Several directions would extend the study. A larger dataset, drawn from the full
 Flickr30k set or an ImageNet subset, would exercise the HNSW approximation that

@@ -6,6 +6,9 @@
 % generated from it. No prose claims without a number behind them.
 % Target length: ~1,500-2,500 words.
 
+\section{Overview}
+\label{sec:results:overview}
+
 In the noiseless simulator benchmark, retrieval accuracy mainly depended on the
 embedding dimension, not on whether the engine was classical or quantum. The
 three classical baselines returned identical rankings and tied at MRR 0.829, and
@@ -31,7 +34,7 @@ circuit depth are low enough for the chosen workload.
 % MRR per engine, broken out by dimension and shots where relevant. Use the
 % same table layout as the frontend BenchmarkResults component.
 
-\begin{table}[ht]
+\begin{table}[htbp]
   \centering
   \caption[Mean Reciprocal Rank by engine and dimension]{Average MRR by engine and embedding
   dimension, over the twenty benchmark queries. Higher is better: an MRR of
@@ -59,8 +62,11 @@ circuit depth are low enough for the chosen workload.
   \end{tabularx}
 \end{table}
 
-Table~\ref{tab:mrr} shows that brute-force cosine, FAISS flat, and FAISS HNSW
-all scored MRR 0.829 and produced the same query-by-query ordering. This is
+The MRR values in Table~\ref{tab:mrr} are computed with
+Equation~\ref{eq:mrr} of Section~\ref{sec:method:metrics}, averaged over the
+twenty benchmark queries. Table~\ref{tab:mrr} shows that brute-force cosine,
+FAISS flat, and FAISS HNSW all scored MRR 0.829 and produced the same
+query-by-query ordering. This is
 expected: brute force and FAISS flat are exact searches over the same twenty
 unit vectors, and HNSW's approximation does not matter on a graph this small. We
 treat the brute-force result as the reference ordering.
@@ -110,7 +116,7 @@ Table~\ref{tab:opcount} reports the first of these: the number of similarity
 comparisons or oracle calls each engine makes for a single query over the
 twenty-image dataset.
 
-\begin{table}[ht]
+\begin{table}[htbp]
   \centering
   \caption[Operations per query and complexity class]{Operations per query and
   algorithmic complexity for each engine over
@@ -150,7 +156,7 @@ $N' = 32$ this evaluates to $\lfloor 4.44 \rfloor = 4$, matching the measured
 count. Figure~\ref{fig:oracle_scaling} places this verified point on the
 theoretical curve.
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \includegraphics[width=0.8\linewidth]{figures/oracle_scaling.png}
   \caption[Grover oracle-call scaling]{Theoretical Grover oracle-call count
@@ -175,7 +181,7 @@ greater depth gives decoherence more time to corrupt the state, which is the
 practical reason the deep Grover circuits would be the harder of the two to run
 faithfully on a real device.
 
-\begin{table}[ht]
+\begin{table}[htbp]
   \centering
   \caption[Quantum circuit width and depth]{Circuit width and depth for the
   quantum engines, from the compiled
@@ -227,7 +233,7 @@ compare two unrelated quantities. The within-engine comparison across dimension
 is meaningful, because there the hardware is held fixed and only the problem size
 changes.
 
-\begin{table}[ht]
+\begin{table}[htbp]
   \centering
   \caption[Mean query time by engine and dimension]{Mean total time per query,
   in milliseconds, by engine and embedding
@@ -285,6 +291,16 @@ semantic information, two candidates make the task close to a coin toss, and
 thirty-two shots give a noisy overlap estimate before device noise is added. The
 run establishes only that the hardware path works end to end. It does not
 support accuracy or scaling claims.
+
+\begin{figure}[H]
+  \centering
+  % TODO (team): replace with Elhan's IBM hardware diagram(s) from Teams.
+  % Drop the exported image at figures/ibm_hardware.png and swap \placeholderfig
+  % for: \includegraphics[width=0.85\linewidth]{figures/ibm_hardware.png}
+  \placeholderfig{0.85\linewidth}{IBM Quantum hardware validation: transpiled swap-test circuit and/or the measured results from the IBM Quantum run.}
+  \caption[IBM Quantum hardware validation run]{IBM Quantum hardware validation run: the swap-test circuit as executed on the physical device and its measured outcome (dimension 2, 2 candidates, 32 shots).}
+  \label{fig:ibm_hardware}
+\end{figure}
 
 \section{Discussion}
 \label{sec:results:discussion}
@@ -344,19 +360,6 @@ vector retrieval is not a good match for quantum advantage under the methods we
 tested. A quantum step is more plausible as a reranker for a small shortlist than
 as the engine that scans or indexes the whole dataset.}
 
-\section{Limitations}
-\label{sec:results:limitations}
-
-% Be honest. Small dataset (20 images), simulator-only quantum execution,
-% truncated CLIP embeddings, classical-precomputed Grover oracle.
-
-Several constraints bound the results. The dataset has twenty images and one
-query per image, which kept the sweep simulable and the target unambiguous but
-limited statistical power. HNSW did not have enough vectors to exercise its
-approximation, so its match with exact search holds only here. Except for the
-IBM sanity check, the quantum engines ran on a classical simulator, so the
-results do not measure present-day hardware noise or latency. Embeddings were
-truncated from 512 to at most 256 dimensions to fit the qubit budget, so absolute
-MRR values are comparisons under a shared handicap. Grover used a classically
-precomputed oracle, and its oracle-call scaling was checked at one dataset size,
-not across a range.
+% The Limitations section has been moved to the Conclusion chapter (Section 6.2)
+% per the supervisor's review, which asked for the structure
+% 6.1 Summary / 6.2 Limitations / 6.3 Future Work.
