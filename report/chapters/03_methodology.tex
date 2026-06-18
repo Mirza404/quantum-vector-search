@@ -76,6 +76,28 @@ editing source code.
   \label{fig:architecture}
 \end{figure}
 
+The React frontend is the inspection layer for the system rather than a separate
+experiment. It has three views: a dataset browser for checking the indexed
+images and their captions, a search view for sending one query through the live
+engine catalogue, and a benchmark view for reading the stored MRR and quantum
+resource metrics. In the search view, every engine is rendered with the same
+result-card structure: top-ranked images, the ground-truth rank, per-query MRR,
+and search time. Classical, quantum, hybrid, and IBM validation engines use the
+same labels and category colours as the report tables, which keeps the interface
+aligned with the analysis in Chapter~\ref{ch:results}. Figure~\ref{fig:frontend}
+shows the live search interface used during manual result inspection.
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=0.95\linewidth,height=0.78\textheight,keepaspectratio]{figures/frontend_interface.png}
+  \caption[Frontend search interface]{Frontend search interface used to inspect
+  the indexed dataset and run the same query across the live search engines. The
+  grouped panels make the classical, quantum, and hybrid outputs visually
+  comparable while preserving each engine's MRR, target rank, timing, and score
+  context.}
+  \label{fig:frontend}
+\end{figure}
+
 \section{Methodology Diagram}
 \label{sec:method:diagram}
 
