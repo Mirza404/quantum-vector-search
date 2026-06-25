@@ -29,7 +29,10 @@
 \usepackage{graphicx}
 \graphicspath{{figures/}}
 \usepackage{caption}
-\captionsetup{font=small,labelfont=bf,justification=centering}
+% FENS template: captions are 10pt and single-spaced (Word "Caption" style is
+% sz=20 half-points = 10pt, line=240 = single). With \onehalfspacing active,
+% stretch=1.0 forces captions back to single spacing; footnotesize = 10pt at 12pt.
+\captionsetup{font={footnotesize,stretch=1.0},labelfont=bf,justification=centering}
 \usepackage{float}                          % [H] to pin floats exactly where written
 \usepackage{placeins}                        % \FloatBarrier to confine floats to a section
 \usepackage{booktabs}                       % proper table rules
@@ -71,6 +74,11 @@
 \titleformat{\chapter}[block]
   {\normalfont\Large\bfseries}{\thechapter.}{0.5em}{\Large\MakeUppercase}
 \titlespacing*{\chapter}{0pt}{0pt}{18pt}
+% FENS template numbers subsections with a trailing period ("1.1." not "1.1").
+% \titlelabel governs every level not individually formatted above (sections,
+% subsections, ...) and adds the dot in the heading only; \ref cross-references
+% keep using the bare \thesection, so "see Section 1.1" stays correct.
+\titlelabel{\thetitle.\quad}
 
 % -------- TOC dot leaders for every level (default report class omits dots
 %          on chapter rows; we want them everywhere for the FENS template). ---
